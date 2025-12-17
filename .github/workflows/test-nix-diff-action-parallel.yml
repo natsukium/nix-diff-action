@@ -1,0 +1,42 @@
+name: Test nix-diff-action parallel
+
+on:
+  pull_request:
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - displayName: devShell
+            attribute: devShells.x86_64-linux.default
+          - displayName: formatter
+            attribute: formatter.x86_64-linux
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: ./.github/actions/setup-nix
+      - name: Run nix-diff-action (diff-only mode)
+        uses: ./
+        with:
+          mode: diff-only
+          attributes: |
+            - displayName: ${{ matrix.displayName }}
+              attribute: ${{ matrix.attribute }}
+
+  comment:
+    needs: diff
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Run nix-diff-action (comment-only mode)
+        uses: ./
+        with:
+          mode: comment-only

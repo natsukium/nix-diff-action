@@ -1,0 +1,21 @@
+name: Test nix-diff-action
+
+on:
+  pull_request:
+
+jobs:
+  full:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: ./.github/actions/setup-nix
+      - name: Run nix-diff-action
+        uses: ./
+        with:
+          attributes: |
+            - displayName: devShell
+              attribute: devShells.x86_64-linux.default

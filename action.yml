@@ -1,0 +1,54 @@
+name: Nix Diff Check
+description: Compare Nix derivations between base and PR branches using dix
+author: natsukium
+
+branding:
+  icon: package
+  color: blue
+
+inputs:
+  mode:
+    description: 'Operation mode: "full" for simple single-job workflow, "diff-only" for parallel execution, "comment-only" for aggregating results'
+    required: false
+    default: "full"
+  attributes:
+    description: |
+      Nix attributes to compare in YAML array format. Each item requires:
+        - displayName: Name shown in PR comment headers (e.g., "myhost" appears as "### myhost")
+        - attribute: Nix attribute path (without '#' prefix)
+      Example:
+        - displayName: myapp
+          attribute: packages.x86_64-linux.default
+        - displayName: nixos-config
+          attribute: nixosConfigurations.myhost.config.system.build.toplevel
+      Note: Do not include '#' or '.#' prefix - the reference is constructed automatically.
+    required: false
+  build:
+    description: "Build outputs before comparing. Enables closure size comparison but increases workflow time. Requires running on a platform matching the output (e.g., x86_64-linux outputs need Linux runners)."
+    required: false
+    default: "false"
+  directory:
+    description: "Directory containing the Nix expression to evaluate. Defaults to repository root."
+    required: false
+    default: "."
+  github-token:
+    description: GitHub token for commenting on PRs. Required for full and comment-only modes.
+    required: false
+    default: ${{ github.token }}
+  skip-no-change:
+    description: Skip posting comment when there are no differences.
+    required: false
+    default: "true"
+  comment-strategy:
+    description: "'create' to always create new comment, 'update' to update existing comment instead of creating new one."
+    required: false
+    default: "create"
+
+outputs:
+  diff:
+    description: JSON array of diff results. Each item has `displayName` and `diff` keys.
+
+runs:
+  using: node24
+  main: dist/index.js
+  post: dist/cleanup.js

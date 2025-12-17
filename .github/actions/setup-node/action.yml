@@ -1,0 +1,10 @@
+name: Setup Node.js
+description: Setup Node.js environment via Nix
+
+runs:
+  using: composite
+  steps:
+    - run: nix profile install nixpkgs#nodejs_24
+      shell: bash
+    - run: npm ci
+      shell: bash
