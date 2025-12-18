@@ -1,4 +1,4 @@
-import { F as gen, K as sync, L as logInfo, U as runPromise, k as catchAll, n as removeWorktree, sr as require_core, vr as __toESM } from "./assets/git-3H4i0TAR.js";
+import { F as gen, K as sync, L as logInfo, U as runPromise, k as catchAll, n as removeWorktree, sr as require_core, vr as __toESM } from "./assets/git-DeJfUOOW.js";
 var import_core = /* @__PURE__ */ __toESM(require_core(), 1);
 var cleanup = gen(function* () {
 	const worktreePath = yield* sync(() => import_core.getState("worktreePath"));
