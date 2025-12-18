@@ -53,7 +53,7 @@ const fetchRef = (baseRef: string) =>
       exec.exec("git", [
         "fetch",
         "origin",
-        `${baseRef}:refs/remotes/origin/${baseRef}`,
+        `+${baseRef}:refs/remotes/origin/${baseRef}`,
         "--depth=1",
       ]),
     catch: () =>
