@@ -1,4 +1,4 @@
-name: Nix Diff Check
+name: Nix Diff Action
 description: Compare Nix derivations between base and PR branches using dix
 author: natsukium
 

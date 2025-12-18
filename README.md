@@ -2,7 +2,8 @@
 
 A GitHub Action to compare Nix derivations between base and PR branches using [dix](https://github.com/faukah/dix).
 
-> ⚠️ **Alpha Version** - This action is under active development. APIs and behavior may change without notice. We recommend pinning to a specific release version or commit SHA.
+> [!WARNING]
+> **Alpha Version** - This action is under active development. APIs and behavior may change without notice. We recommend pinning to a specific release version or commit SHA.
 
 ## Features
 
@@ -15,7 +16,8 @@ A GitHub Action to compare Nix derivations between base and PR branches using [d
 
 - Nix with flakes enabled (requires a Nix installer action, e.g., [cachix/install-nix-action](https://github.com/cachix/install-nix-action))
 
-> **Note**: This action now only supports Nix flakes. Traditional Nix expressions (`nix-build`) are not supported.
+> [!NOTE]
+> This action now only supports Nix flakes. Traditional Nix expressions (`nix-build`) are not supported.
 
 ## Quick Start
 
@@ -26,7 +28,7 @@ on:
   pull_request:
 
 jobs:
-  dix:
+  nix-diff:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -187,7 +189,8 @@ Required permissions vary by mode:
 
 When using this action with pull requests from forks, the default `GITHUB_TOKEN` has limited permissions and cannot post comments to the PR. To enable commenting on fork PRs, use `pull_request_target` trigger.
 
-**Security Note:** When using `pull_request_target`, the workflow runs in the context of the base branch with write permissions. Always use `actions/checkout` with `ref: ${{ github.event.pull_request.head.sha }}` to checkout the PR's code, and be cautious about running untrusted code from forks.
+> [!CAUTION]
+> When using `pull_request_target`, the workflow runs in the context of the base branch with write permissions. Always use `actions/checkout` with `ref: ${{ github.event.pull_request.head.sha }}` to checkout the PR's code, and be cautious about running untrusted code from forks.
 
 ## License
 
