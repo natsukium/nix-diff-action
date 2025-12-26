@@ -1,5 +1,6 @@
 import * as core from "@actions/core";
 import * as exec from "@actions/exec";
+import * as fs from "fs";
 import * as nodePath from "path";
 import * as os from "os";
 import { Effect, Scope } from "effect";
@@ -79,8 +80,10 @@ export class GitService extends Effect.Service<GitService>()("GitService", {
       baseRef: string,
       runId: string,
     ): Effect.Effect<WorktreeInfo, GitWorktreeError, Scope.Scope> => {
+      // Use realpathSync to resolve symlinks (e.g., /var -> /private/var on macOS)
+      // because Nix rejects paths containing symlinks
       const worktreePath = nodePath.join(
-        os.tmpdir(),
+        fs.realpathSync(os.tmpdir()),
         `dix-base-${sanitizeBranchName(baseRef)}-${runId}`,
       );
 

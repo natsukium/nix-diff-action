@@ -1,5 +1,6 @@
 import { createRequire } from "node:module";
 import * as os from "os";
+import * as fs from "fs";
 import * as nodePath from "path";
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -188,14 +189,14 @@ var require_file_command = /* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.issueFileCommand = issueFileCommand;
 	exports.prepareKeyValueMessage = prepareKeyValueMessage;
 	var crypto = __importStar(__require("crypto"));
-	var fs$1 = __importStar(__require("fs"));
+	var fs$2 = __importStar(__require("fs"));
 	var os$3 = __importStar(__require("os"));
 	var utils_1 = require_utils$1();
 	function issueFileCommand(command, message) {
 		const filePath = process.env[`GITHUB_${command}`];
 		if (!filePath) throw new Error(`Unable to find environment variable for file command ${command}`);
-		if (!fs$1.existsSync(filePath)) throw new Error(`Missing file at path: ${filePath}`);
-		fs$1.appendFileSync(filePath, `${(0, utils_1.toCommandValue)(message)}${os$3.EOL}`, { encoding: "utf8" });
+		if (!fs$2.existsSync(filePath)) throw new Error(`Missing file at path: ${filePath}`);
+		fs$2.appendFileSync(filePath, `${(0, utils_1.toCommandValue)(message)}${os$3.EOL}`, { encoding: "utf8" });
 	}
 	function prepareKeyValueMessage(key, value$2) {
 		const delimiter = `ghadelimiter_${crypto.randomUUID()}`;
@@ -14414,19 +14415,19 @@ var require_io_util = /* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.isRooted = isRooted;
 	exports.tryGetExecutablePath = tryGetExecutablePath;
 	exports.getCmdPath = getCmdPath;
-	var fs = __importStar(__require("fs"));
+	var fs$1 = __importStar(__require("fs"));
 	var path$3 = __importStar(__require("path"));
-	_a = fs.promises, exports.chmod = _a.chmod, exports.copyFile = _a.copyFile, exports.lstat = _a.lstat, exports.mkdir = _a.mkdir, exports.open = _a.open, exports.readdir = _a.readdir, exports.rename = _a.rename, exports.rm = _a.rm, exports.rmdir = _a.rmdir, exports.stat = _a.stat, exports.symlink = _a.symlink, exports.unlink = _a.unlink;
+	_a = fs$1.promises, exports.chmod = _a.chmod, exports.copyFile = _a.copyFile, exports.lstat = _a.lstat, exports.mkdir = _a.mkdir, exports.open = _a.open, exports.readdir = _a.readdir, exports.rename = _a.rename, exports.rm = _a.rm, exports.rmdir = _a.rmdir, exports.stat = _a.stat, exports.symlink = _a.symlink, exports.unlink = _a.unlink;
 	exports.IS_WINDOWS = process.platform === "win32";
 	function readlink(fsPath) {
 		return __awaiter(this, void 0, void 0, function* () {
-			const result = yield fs.promises.readlink(fsPath);
+			const result = yield fs$1.promises.readlink(fsPath);
 			if (exports.IS_WINDOWS && !result.endsWith("\\")) return `${result}\\`;
 			return result;
 		});
 	}
 	exports.UV_FS_O_EXLOCK = 268435456;
-	exports.READONLY = fs.constants.O_RDONLY;
+	exports.READONLY = fs$1.constants.O_RDONLY;
 	function exists(fsPath) {
 		return __awaiter(this, void 0, void 0, function* () {
 			try {
@@ -27328,7 +27329,7 @@ var addWorktree = (worktreePath, baseRef) => tryPromise({
 	})
 });
 var GitService = class extends Service()("GitService", { succeed: { createWorktree: (baseRef, runId) => {
-	const worktreePath = nodePath.join(os.tmpdir(), `dix-base-${sanitizeBranchName(baseRef)}-${runId}`);
+	const worktreePath = nodePath.join(fs.realpathSync(os.tmpdir()), `dix-base-${sanitizeBranchName(baseRef)}-${runId}`);
 	return acquireRelease(gen(function* () {
 		yield* removeWorktree(worktreePath);
 		yield* fetchRef(baseRef);
@@ -27343,4 +27344,4 @@ var GitService = class extends Service()("GitService", { succeed: { createWorktr
 } } }) {};
 export { MemoMapTypeId as $, fromNullable$2 as $n, succeed$5 as $t, catchAll as A, fromJson as An, launch as At, map$3 as B, unnested as Bn, mock as Bt, option as C, spanTag as Cn, fresh as Ct, Service as D, constantCase as Dn, fromFunction as Dt, isConfigError as E, configProviderTag as En, fromEffectDiscard as Et, forEach as F, makeFlat as Fn, match$1 as Ft, scoped as G, Interruption as Gn, provide$1 as Gt, orElseSucceed as H, within as Hn, orElse$4 as Ht, gen as I, mapInputPath as In, matchCause$1 as It, tapError as J, WindDown as Jn, scope$1 as Jt, succeed$3 as K, OpSupervision as Kn, provideMerge as Kt, logError as L, nested$2 as Ln, memoize as Lt, catchTags as M, kebabCase as Mn, makeMemoMap as Mt, fail$3 as N, lowerCase as Nn, map$5 as Nt, all$2 as O, fromEnv as On, isFresh as Ot, flatMap$1 as P, make$25 as Pn, mapError$2 as Pt, LayerTypeId as Q, flatMap$13 as Qn, service as Qt, logInfo as R, orElse$7 as Rn, merge$1 as Rt, boolean as S, addSpanStackTrace as Sn, flatten$1 as St, string as T, FlatConfigProviderTypeId as Tn, fromEffectContext as Tt, provide as U, tap$2 as Un, passthrough$1 as Ut, mapError$1 as V, upperCase as Vn, orDie$1 as Vt, runPromise as W, CooperativeYielding as Wn, project as Wt, try_ as X, enable$2 as Xn, scopedContext as Xt, tryPromise as Y, disable$2 as Yn, scoped$1 as Yt, CurrentMemoMap as Z, make$43 as Zn, scopedDiscard as Zt, Struct as _, withRuntimeFlagsScoped as _n, __require as _r, fiberRefLocally as _t, GitHubApiError as a, tapError$1 as an, none$7 as ar, catchAll$1 as at, pattern as b, make$18 as bn, fiberRefLocallyWith as bt, MissingAttributesError as c, toRuntimeWithMemoMap as cn, require_core as cr, die$1 as ct, NixPathInfoError as d, withParentSpan$1 as dn, require_lib as dr, empty as dt, succeedContext as en, getOrElse$5 as er, annotateLogs$1 as et, NotPullRequestContextError as f, withSpan$1 as fn, require_undici as fr, extendScope as ft, NonEmptyString as g, withConfigProviderScoped$1 as gn, __export as gr, failSync$1 as gt, Literal as h, makeSpanScoped$1 as hn, __esmMin as hr, failCauseSync$1 as ht, AttributeParseError as i, tap$1 as in, match$13 as ir, buildWithScope as it, catchIf as j, fromMap as jn, locallyEffect as jt, as as k, fromFlat as kn, isLayer as kt, NixBuildError as l, unwrapEffect as ln, require_exec as lr, dieSync$1 as lt, Config as m, addFinalizer$2 as mn, __commonJSMin as mr, failCause$2 as mt, removeWorktree as n, sync$3 as nn, isSome as nr, build as nt, InvalidCommentStrategyError as o, tapErrorCause$1 as on, some$4 as or, catchAllCause$1 as ot, Array$ as p, zipWith$3 as pn, require_tunnel as pr, fail$5 as pt, sync$2 as q, RuntimeMetrics as qn, retry$1 as qt, ArtifactError as r, syncContext as rn, map$19 as rr, buildWithMemoMap as rt, InvalidDirectoryError as s, toRuntime as sn, pipe as sr, context$1 as st, GitService as t, suspend$3 as tn, isNone$2 as tr, annotateSpans$1 as tt, NixDixError as u, unwrapScoped as un, require_auth as ur, discard as ut, decodeUnknown as v, withTracerScoped$1 as vn, __toCommonJS as vr, fiberRefLocallyScoped as vt, redacted as w, ConfigProviderTypeId as wn, fromEffect as wt, value as x, set as xn, flatMap$2 as xt, filter as y, get as yn, __toESM as yr, fiberRefLocallyScopedWith as yt, logWarning as z, snakeCase as zn, mergeAll$1 as zt };
 
-//# sourceMappingURL=git-DEENAt5m.js.map
+//# sourceMappingURL=git-D6XTKqCz.js.map
