@@ -137,11 +137,7 @@ describe("formatAggregatedComment", () => {
     // Single attribute uses displayName-specific marker
     expect(comment).toContain("<!-- nix-diff-action:host1 -->");
     expect(comment).toContain("## Nix Diff");
-    expect(comment).toContain("### host1");
-    expect(comment).toContain(
-      "**Attribute**: `nixosConfigurations.host1.config.system.build.toplevel`",
-    );
-    expect(comment).toContain("`github:owner/repo...."); // baseRef...prRef
+    expect(comment).toContain("<summary>host1</summary>");
     expect(comment).toContain("some diff output");
     expect(comment).toContain("<!-- nix-diff-action-footer sha=abc123def456 -->");
     expect(comment).toContain("[nix-diff-action](https://github.com/natsukium/nix-diff-action)");
@@ -170,8 +166,8 @@ describe("formatAggregatedComment", () => {
     // Multiple attributes use generic marker
     expect(comment).toContain("<!-- nix-diff-action -->");
     expect(comment).not.toContain("<!-- nix-diff-action:host1 -->");
-    expect(comment).toContain("### host1");
-    expect(comment).toContain("### host2");
+    expect(comment).toContain("<summary>host1</summary>");
+    expect(comment).toContain("<summary>host2</summary>");
     expect(comment).toContain("diff1");
     expect(comment).toContain("diff2");
   });
