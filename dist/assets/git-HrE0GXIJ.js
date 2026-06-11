@@ -5410,23 +5410,47 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 					currentBufferRef = null;
 				}
 				const offset = llhttp.llhttp_get_error_pos(this.ptr) - currentBufferPtr;
-				if (ret === constants.ERROR.PAUSED_UPGRADE) this.onUpgrade(data.slice(offset));
-				else if (ret === constants.ERROR.PAUSED) {
-					this.paused = true;
-					socket.unshift(data.slice(offset));
-				} else if (ret !== constants.ERROR.OK) {
-					const ptr = llhttp.llhttp_get_error_reason(this.ptr);
-					let message = "";
-					/* istanbul ignore else: difficult to make a test case for */
-					if (ptr) {
-						const len = new Uint8Array(llhttp.memory.buffer, ptr).indexOf(0);
-						message = "Response does not match the HTTP/1.1 protocol (" + Buffer.from(llhttp.memory.buffer, ptr, len).toString() + ")";
-					}
-					throw new HTTPParserError(message, constants.ERROR[ret], data.slice(offset));
+				if (ret !== constants.ERROR.OK) {
+					const body = data.subarray(offset);
+					if (ret === constants.ERROR.PAUSED_UPGRADE) this.onUpgrade(body);
+					else if (ret === constants.ERROR.PAUSED) {
+						this.paused = true;
+						socket.unshift(body);
+					} else throw this.createError(ret, body);
 				}
 			} catch (err) {
 				util.destroy(socket, err);
 			}
+		}
+		finish() {
+			assert$19(currentParser === null);
+			assert$19(this.ptr != null);
+			assert$19(!this.paused);
+			const { llhttp } = this;
+			let ret;
+			try {
+				currentParser = this;
+				ret = llhttp.llhttp_finish(this.ptr);
+			} finally {
+				currentParser = null;
+			}
+			if (ret === constants.ERROR.OK) return null;
+			if (ret === constants.ERROR.PAUSED || ret === constants.ERROR.PAUSED_UPGRADE) {
+				this.paused = true;
+				return null;
+			}
+			return this.createError(ret, EMPTY_BUF);
+		}
+		createError(ret, data) {
+			const { llhttp, contentLength, bytesRead } = this;
+			if (contentLength && bytesRead !== parseInt(contentLength, 10)) return new ResponseContentLengthMismatchError();
+			const ptr = llhttp.llhttp_get_error_reason(this.ptr);
+			let message = "";
+			if (ptr) {
+				const len = new Uint8Array(llhttp.memory.buffer, ptr).indexOf(0);
+				message = "Response does not match the HTTP/1.1 protocol (" + Buffer.from(llhttp.memory.buffer, ptr, len).toString() + ")";
+			}
+			return new HTTPParserError(message, constants.ERROR[ret], data);
 		}
 		destroy() {
 			assert$19(this.ptr != null);
@@ -5650,7 +5674,11 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			assert$19(err.code !== "ERR_TLS_CERT_ALTNAME_INVALID");
 			const parser = this[kParser];
 			if (err.code === "ECONNRESET" && parser.statusCode && !parser.shouldKeepAlive) {
-				parser.onMessageComplete();
+				const parserErr = parser.finish();
+				if (parserErr) {
+					this[kError] = parserErr;
+					this[kClient][kOnError](parserErr);
+				}
 				return;
 			}
 			this[kError] = err;
@@ -5663,7 +5691,8 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		addListener(socket, "end", function() {
 			const parser = this[kParser];
 			if (parser.statusCode && !parser.shouldKeepAlive) {
-				parser.onMessageComplete();
+				const parserErr = parser.finish();
+				if (parserErr) util.destroy(this, parserErr);
 				return;
 			}
 			util.destroy(this, new SocketError("other side closed", util.getSocketInfo(this)));
@@ -5672,7 +5701,7 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			const client = this[kClient];
 			const parser = this[kParser];
 			if (parser) {
-				if (!this[kError] && parser.statusCode && !parser.shouldKeepAlive) parser.onMessageComplete();
+				if (!this[kError] && parser.statusCode && !parser.shouldKeepAlive) this[kError] = parser.finish() || this[kError];
 				this[kParser].destroy();
 				this[kParser] = null;
 			}
@@ -18708,7 +18737,7 @@ var OP_YIELD = "Yield";
 var OP_REVERT_FLAGS = "RevertFlags";
 //#endregion
 //#region node_modules/effect/dist/esm/internal/version.js
-var moduleVersion = "3.21.4";
+var moduleVersion = "3.21.3";
 var getCurrentVersion = () => moduleVersion;
 //#endregion
 //#region node_modules/effect/dist/esm/internal/effectable.js
@@ -39479,4 +39508,4 @@ var GitService = class extends Service()("GitService", { succeed: { createWorktr
 //#endregion
 export { runPromise as $, Service as A, warning as At, fail$1 as B, __require as Bt, option as C, error as Ct, merge as D, setFailed as Dt, isConfigError as E, info as Et, catchAll as F, require_undici as Ft, logInfo as G, forEach as H, __toESM as Ht, catchAllCause as I, require_tunnel as It, mapError$1 as J, logWarning as K, catchIf as L, __commonJSMin as Lt, all as M, BearerCredentialHandler as Mt, andThen as N, HttpClient as Nt, mergeAll as O, setOutput as Ot, as as P, HttpCodes as Pt, provide as Q, catchTag as R, __esmMin as Rt, boolean as S, debug as St, string as T, getState as Tt, gen as U, flatMap$1 as V, __toCommonJS as Vt, logError as W, orElseSucceed as X, option$2 as Y, promise as Z, Struct as _, getOrUndefined as _t, GitHubApiError as a, try_ as at, pattern as b, match$4 as bt, MissingAttributesError as c, get as ct, NixPathInfoError as d, fromEnv as dt, scoped as et, NotPullRequestContextError as f, fromMap as ft, NonEmptyString as g, getOrElse as gt, Literal as h, fromNullable as ht, AttributeParseError as i, tryPromise as it, acquireRelease as j, exec as jt, setConfigProvider as k, setSecret as kt, NixBuildError as l, make$8 as lt, Config as m, flatMap$5 as mt, removeWorktree as n, sync as nt, InvalidCommentStrategyError as o, TaggedError$1 as ot, Array$ as p, orElse$1 as pt, map$2 as q, ArtifactError as r, tapError as rt, InvalidDirectoryError as s, pretty as st, GitService as t, succeed$2 as tt, NixDixError as u, set as ut, decodeUnknown as v, isNone as vt, redacted as w, getInput as wt, value as x, pipe as xt, filter as y, map$7 as yt, catchTags as z, __exportAll as zt };
 
-//# sourceMappingURL=git-CoDzrX7j.js.map
+//# sourceMappingURL=git-HrE0GXIJ.js.map
