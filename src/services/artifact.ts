@@ -270,9 +270,14 @@ export class ArtifactService extends Effect.Service<ArtifactService>()("Artifact
 
         const diffArtifacts = artifacts.artifacts.filter((a) => a.name.startsWith("diff-result-"));
 
+        // Each artifact archive contains a file named "result.json"; extracting
+        // them concurrently into a shared directory makes the legs clobber each
+        // other (#51). Give every artifact its own subdirectory keyed by its
+        // unique id so parallel downloads stay isolated.
         const nestedResults = yield* Effect.forEach(
           diffArtifacts,
-          (art) => downloadAndParseArtifact(art, downloadPath, findBy),
+          (art) =>
+            downloadAndParseArtifact(art, nodePath.join(downloadPath, String(art.id)), findBy),
           { concurrency: "unbounded" },
         );
 

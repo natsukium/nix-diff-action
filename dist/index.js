@@ -70132,7 +70132,7 @@ var ArtifactService = class extends Service()("ArtifactService", { succeed: {
 					name: "list",
 					message: `Failed to list artifacts: ${e}`
 				})
-			})).artifacts.filter((a) => a.name.startsWith("diff-result-")), (art) => downloadAndParseArtifact(art, downloadPath, findBy), { concurrency: "unbounded" })).flat();
+			})).artifacts.filter((a) => a.name.startsWith("diff-result-")), (art) => downloadAndParseArtifact(art, path$2.join(downloadPath, String(art.id)), findBy), { concurrency: "unbounded" })).flat();
 		});
 	}
 } }) {};
