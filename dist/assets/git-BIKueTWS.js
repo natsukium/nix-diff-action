@@ -18,7 +18,14 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __esmMin = (fn, res) => () => (fn && (res = fn(fn = 0)), res);
+var __esmMin = (fn, res, err) => () => {
+	if (err) throw err[0];
+	try {
+		return fn && (res = fn(fn = 0)), res;
+	} catch (e) {
+		throw err = [e], e;
+	}
+};
 var __commonJSMin = (cb, mod) => () => (mod || (cb((mod = { exports: {} }).exports, mod), cb = null), mod.exports);
 var __exportAll = (all, no_symbols) => {
 	let target = {};
@@ -44,7 +51,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 	enumerable: true
 }) : target, mod));
 var __toCommonJS = (mod) => __hasOwnProp.call(mod, "module.exports") ? mod["module.exports"] : __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var __require = /* @__PURE__ */ createRequire(import.meta.url);
+var __require = /* #__PURE__ */ (() => createRequire(import.meta.url))();
 //#endregion
 //#region node_modules/@actions/core/lib/utils.js
 /**
@@ -2037,7 +2044,7 @@ var require_timers = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	* @type {number}
 	* @default 499
 	*/
-	var TICK_MS = (RESOLUTION_MS >> 1) - 1;
+	var TICK_MS = 499;
 	/**
 	* fastNowTimeout is a Node.js timer used to manage and process
 	* the FastTimers stored in the `fastTimers` array.
@@ -5316,11 +5323,10 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	var currentBufferRef = null;
 	var currentBufferSize = 0;
 	var currentBufferPtr = null;
-	var USE_NATIVE_TIMER = 0;
 	var USE_FAST_TIMER = 1;
-	var TIMEOUT_HEADERS = 2 | USE_FAST_TIMER;
-	var TIMEOUT_BODY = 4 | USE_FAST_TIMER;
-	var TIMEOUT_KEEP_ALIVE = 8 | USE_NATIVE_TIMER;
+	var TIMEOUT_HEADERS = 3;
+	var TIMEOUT_BODY = 5;
+	var TIMEOUT_KEEP_ALIVE = 8;
 	var Parser = class {
 		constructor(client, socket, { exports: exports$1 }) {
 			assert$19(Number.isFinite(client[kMaxHeadersSize]) && client[kMaxHeadersSize] > 0);
@@ -5410,47 +5416,23 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 					currentBufferRef = null;
 				}
 				const offset = llhttp.llhttp_get_error_pos(this.ptr) - currentBufferPtr;
-				if (ret !== constants.ERROR.OK) {
-					const body = data.subarray(offset);
-					if (ret === constants.ERROR.PAUSED_UPGRADE) this.onUpgrade(body);
-					else if (ret === constants.ERROR.PAUSED) {
-						this.paused = true;
-						socket.unshift(body);
-					} else throw this.createError(ret, body);
+				if (ret === constants.ERROR.PAUSED_UPGRADE) this.onUpgrade(data.slice(offset));
+				else if (ret === constants.ERROR.PAUSED) {
+					this.paused = true;
+					socket.unshift(data.slice(offset));
+				} else if (ret !== constants.ERROR.OK) {
+					const ptr = llhttp.llhttp_get_error_reason(this.ptr);
+					let message = "";
+					/* istanbul ignore else: difficult to make a test case for */
+					if (ptr) {
+						const len = new Uint8Array(llhttp.memory.buffer, ptr).indexOf(0);
+						message = "Response does not match the HTTP/1.1 protocol (" + Buffer.from(llhttp.memory.buffer, ptr, len).toString() + ")";
+					}
+					throw new HTTPParserError(message, constants.ERROR[ret], data.slice(offset));
 				}
 			} catch (err) {
 				util.destroy(socket, err);
 			}
-		}
-		finish() {
-			assert$19(currentParser === null);
-			assert$19(this.ptr != null);
-			assert$19(!this.paused);
-			const { llhttp } = this;
-			let ret;
-			try {
-				currentParser = this;
-				ret = llhttp.llhttp_finish(this.ptr);
-			} finally {
-				currentParser = null;
-			}
-			if (ret === constants.ERROR.OK) return null;
-			if (ret === constants.ERROR.PAUSED || ret === constants.ERROR.PAUSED_UPGRADE) {
-				this.paused = true;
-				return null;
-			}
-			return this.createError(ret, EMPTY_BUF);
-		}
-		createError(ret, data) {
-			const { llhttp, contentLength, bytesRead } = this;
-			if (contentLength && bytesRead !== parseInt(contentLength, 10)) return new ResponseContentLengthMismatchError();
-			const ptr = llhttp.llhttp_get_error_reason(this.ptr);
-			let message = "";
-			if (ptr) {
-				const len = new Uint8Array(llhttp.memory.buffer, ptr).indexOf(0);
-				message = "Response does not match the HTTP/1.1 protocol (" + Buffer.from(llhttp.memory.buffer, ptr, len).toString() + ")";
-			}
-			return new HTTPParserError(message, constants.ERROR[ret], data);
 		}
 		destroy() {
 			assert$19(this.ptr != null);
@@ -5674,11 +5656,7 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			assert$19(err.code !== "ERR_TLS_CERT_ALTNAME_INVALID");
 			const parser = this[kParser];
 			if (err.code === "ECONNRESET" && parser.statusCode && !parser.shouldKeepAlive) {
-				const parserErr = parser.finish();
-				if (parserErr) {
-					this[kError] = parserErr;
-					this[kClient][kOnError](parserErr);
-				}
+				parser.onMessageComplete();
 				return;
 			}
 			this[kError] = err;
@@ -5691,8 +5669,7 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		addListener(socket, "end", function() {
 			const parser = this[kParser];
 			if (parser.statusCode && !parser.shouldKeepAlive) {
-				const parserErr = parser.finish();
-				if (parserErr) util.destroy(this, parserErr);
+				parser.onMessageComplete();
 				return;
 			}
 			util.destroy(this, new SocketError("other side closed", util.getSocketInfo(this)));
@@ -5701,7 +5678,7 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			const client = this[kClient];
 			const parser = this[kParser];
 			if (parser) {
-				if (!this[kError] && parser.statusCode && !parser.shouldKeepAlive) this[kError] = parser.finish() || this[kError];
+				if (!this[kError] && parser.statusCode && !parser.shouldKeepAlive) parser.onMessageComplete();
 				this[kParser].destroy();
 				this[kParser] = null;
 			}
@@ -8118,7 +8095,7 @@ var require_readable = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	* @returns {Uint8Array}
 	*/
 	function chunksConcat(chunks, length) {
-		if (chunks.length === 0 || length === 0) return new Uint8Array(0);
+		if (chunks.length === 0 || length === 0) return /* @__PURE__ */ new Uint8Array(0);
 		if (chunks.length === 1) return new Uint8Array(chunks[0]);
 		const buffer = new Uint8Array(Buffer.allocUnsafeSlow(length).buffer);
 		let offset = 0;
@@ -11554,7 +11531,6 @@ var require_fetch = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		let httpFetchParams = null;
 		let httpRequest = null;
 		let response = null;
-		const httpCache = null;
 		if (request.window === "no-window" && request.redirect === "error") {
 			httpFetchParams = fetchParams;
 			httpRequest = request;
@@ -11585,7 +11561,7 @@ var require_fetch = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		else httpRequest.headersList.append("accept-encoding", "gzip, deflate", true);
 		httpRequest.headersList.delete("host", true);
 		if (includeCredentials) {}
-		if (httpCache == null) httpRequest.cache = "no-store";
+		httpRequest.cache = "no-store";
 		if (httpRequest.cache !== "no-store" && httpRequest.cache !== "reload") {}
 		if (response == null) {
 			if (httpRequest.cache === "only-if-cached") return makeNetworkError("only if cached");
@@ -17549,7 +17525,7 @@ var constant = (value) => () => value;
 *
 * @since 2.0.0
 */
-var constTrue = /* @__PURE__ */ constant(true);
+var constTrue = /*#__PURE__*/ constant(true);
 /**
 * A thunk that returns always `false`.
 *
@@ -17563,7 +17539,7 @@ var constTrue = /* @__PURE__ */ constant(true);
 *
 * @since 2.0.0
 */
-var constFalse = /* @__PURE__ */ constant(false);
+var constFalse = /*#__PURE__*/ constant(false);
 /**
 * A thunk that returns always `undefined`.
 *
@@ -17577,7 +17553,7 @@ var constFalse = /* @__PURE__ */ constant(false);
 *
 * @since 2.0.0
 */
-var constUndefined = /* @__PURE__ */ constant(void 0);
+var constUndefined = /*#__PURE__*/ constant(void 0);
 /**
 * A thunk that returns always `void`.
 *
@@ -17636,17 +17612,17 @@ var strict = () => isStrictEquivalent;
 * @category instances
 * @since 2.0.0
 */
-var number$2 = /* @__PURE__ */ strict();
+var number$2 = /*#__PURE__*/ strict();
 /**
 * @category mapping
 * @since 2.0.0
 */
-var mapInput$1 = /* @__PURE__ */ dual(2, (self, f) => make$29((x, y) => self(f(x), f(y))));
+var mapInput$1 = /*#__PURE__*/ dual(2, (self, f) => make$29((x, y) => self(f(x), f(y))));
 /**
 * @category instances
 * @since 2.0.0
 */
-var Date$1 = /* @__PURE__ */ mapInput$1(number$2, (date) => date.getTime());
+var Date$1 = /*#__PURE__*/ mapInput$1(number$2, (date) => date.getTime());
 /**
 * Creates a new `Equivalence` for an array of values based on a given `Equivalence` for the elements of the array.
 *
@@ -17945,7 +17921,7 @@ var isObject = (input) => isRecordOrArray(input) || isFunction(input);
 * @category guards
 * @since 2.0.0
 */
-var hasProperty = /* @__PURE__ */ dual(2, (self, property) => isObject(self) && property in self);
+var hasProperty = /*#__PURE__*/ dual(2, (self, property) => isObject(self) && property in self);
 /**
 * A refinement that checks if a value is an object with a `_tag` property
 * that matches the given tag. This is a powerful tool for working with
@@ -17975,7 +17951,7 @@ var hasProperty = /* @__PURE__ */ dual(2, (self, property) => isObject(self) && 
 * @category guards
 * @since 2.0.0
 */
-var isTagged = /* @__PURE__ */ dual(2, (self, tag) => hasProperty(self, "_tag") && self["_tag"] === tag);
+var isTagged = /*#__PURE__*/ dual(2, (self, tag) => hasProperty(self, "_tag") && self["_tag"] === tag);
 /**
 * A refinement that checks if a value is either `null` or `undefined`.
 *
@@ -18301,7 +18277,7 @@ function add64(out, aHi, aLo, bHi, bLo) {
 /**
 * @since 3.0.6
 */
-var YieldWrapTypeId = /* @__PURE__ */ Symbol.for("effect/Utils/YieldWrap");
+var YieldWrapTypeId = /*#__PURE__*/ Symbol.for("effect/Utils/YieldWrap");
 /**
 * @since 3.0.6
 */
@@ -18334,7 +18310,7 @@ function yieldWrapGet(self) {
 * @status experimental
 * @category modifiers
 */
-var structuralRegionState = /* @__PURE__ */ globalValue("effect/Utils/isStructuralRegion", () => ({
+var structuralRegionState = /*#__PURE__*/ globalValue("effect/Utils/isStructuralRegion", () => ({
 	enabled: false,
 	tester: void 0
 }));
@@ -18346,7 +18322,7 @@ var standard = { effect_internal_function: (body) => {
 * @status experimental
 * @category tracing
 */
-var internalCall = /* @__PURE__ */ standard.effect_internal_function(() => (/* @__PURE__ */ new Error()).stack)?.includes("effect_internal_function") === true ? standard.effect_internal_function : { effect_internal_function: (body) => {
+var internalCall = /*#__PURE__*/ standard.effect_internal_function(() => (/* @__PURE__ */ new Error()).stack)?.includes("effect_internal_function") === true ? standard.effect_internal_function : { effect_internal_function: (body) => {
 	try {
 		return body();
 	} finally {}
@@ -18358,12 +18334,12 @@ var internalCall = /* @__PURE__ */ standard.effect_internal_function(() => (/* @
 * @since 2.0.0
 */
 /** @internal */
-var randomHashCache = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/Hash/randomHashCache"), () => /* @__PURE__ */ new WeakMap());
+var randomHashCache = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/Hash/randomHashCache"), () => /* @__PURE__ */ new WeakMap());
 /**
 * @since 2.0.0
 * @category symbols
 */
-var symbol$1 = /* @__PURE__ */ Symbol.for("effect/Hash");
+var symbol$1 = /*#__PURE__*/ Symbol.for("effect/Hash");
 /**
 * @since 2.0.0
 * @category hashing
@@ -18487,7 +18463,7 @@ var cached = function() {
 * @since 2.0.0
 * @category symbols
 */
-var symbol = /* @__PURE__ */ Symbol.for("effect/Equal");
+var symbol = /*#__PURE__*/ Symbol.for("effect/Equal");
 function equals$2() {
 	if (arguments.length === 1) return (self) => compareBoth(self, arguments[0]);
 	return compareBoth(arguments[0], arguments[1]);
@@ -18538,7 +18514,7 @@ var equivalence = () => equals$2;
 * @since 2.0.0
 * @category symbols
 */
-var NodeInspectSymbol = /* @__PURE__ */ Symbol.for("nodejs.util.inspect.custom");
+var NodeInspectSymbol = /*#__PURE__*/ Symbol.for("nodejs.util.inspect.custom");
 /**
 * @since 2.0.0
 */
@@ -18650,13 +18626,13 @@ var stringifyCircular = (obj, whitespace) => {
 * @since 3.10.0
 * @category redactable
 */
-var symbolRedactable = /* @__PURE__ */ Symbol.for("effect/Inspectable/Redactable");
+var symbolRedactable = /*#__PURE__*/ Symbol.for("effect/Inspectable/Redactable");
 /**
 * @since 3.10.0
 * @category redactable
 */
 var isRedactable = (u) => typeof u === "object" && u !== null && symbolRedactable in u;
-var redactableState = /* @__PURE__ */ globalValue("effect/Inspectable/redactableState", () => ({ fiberRefs: void 0 }));
+var redactableState = /*#__PURE__*/ globalValue("effect/Inspectable/redactableState", () => ({ fiberRefs: void 0 }));
 /**
 * @since 3.10.0
 * @category redactable
@@ -18737,18 +18713,18 @@ var OP_YIELD = "Yield";
 var OP_REVERT_FLAGS = "RevertFlags";
 //#endregion
 //#region node_modules/effect/dist/esm/internal/version.js
-var moduleVersion = "3.21.3";
+var moduleVersion = "3.21.2";
 var getCurrentVersion = () => moduleVersion;
 //#endregion
 //#region node_modules/effect/dist/esm/internal/effectable.js
 /** @internal */
-var EffectTypeId$1 = /* @__PURE__ */ Symbol.for("effect/Effect");
+var EffectTypeId$1 = /*#__PURE__*/ Symbol.for("effect/Effect");
 /** @internal */
-var StreamTypeId = /* @__PURE__ */ Symbol.for("effect/Stream");
+var StreamTypeId = /*#__PURE__*/ Symbol.for("effect/Stream");
 /** @internal */
-var SinkTypeId = /* @__PURE__ */ Symbol.for("effect/Sink");
+var SinkTypeId = /*#__PURE__*/ Symbol.for("effect/Sink");
 /** @internal */
-var ChannelTypeId = /* @__PURE__ */ Symbol.for("effect/Channel");
+var ChannelTypeId = /*#__PURE__*/ Symbol.for("effect/Channel");
 /** @internal */
 var effectVariance = {
 	/* c8 ignore next */
@@ -18757,7 +18733,7 @@ var effectVariance = {
 	_E: (_) => _,
 	/* c8 ignore next */
 	_A: (_) => _,
-	_V: /* @__PURE__ */ getCurrentVersion()
+	_V: /*#__PURE__*/ getCurrentVersion()
 };
 var sinkVariance = {
 	/* c8 ignore next */
@@ -18830,7 +18806,7 @@ var StructuralCommitPrototype = {
 	...StructuralPrototype
 };
 /** @internal */
-var Base$1 = /* @__PURE__ */ function() {
+var Base$1 = /*#__PURE__*/ function() {
 	function Base() {}
 	Base.prototype = CommitPrototype;
 	return Base;
@@ -18840,7 +18816,7 @@ var Base$1 = /* @__PURE__ */ function() {
 /**
 * @since 2.0.0
 */
-var TypeId$14 = /* @__PURE__ */ Symbol.for("effect/Option");
+var TypeId$14 = /*#__PURE__*/ Symbol.for("effect/Option");
 var CommonProto$1 = {
 	...EffectPrototype$1,
 	[TypeId$14]: { _A: (_) => _ },
@@ -18851,7 +18827,7 @@ var CommonProto$1 = {
 		return format$4(this.toJSON());
 	}
 };
-var SomeProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(CommonProto$1), {
+var SomeProto = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(CommonProto$1), {
 	_tag: "Some",
 	_op: "Some",
 	[symbol](that) {
@@ -18868,8 +18844,8 @@ var SomeProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(Comm
 		};
 	}
 });
-var NoneHash = /* @__PURE__ */ hash("None");
-var NoneProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(CommonProto$1), {
+var NoneHash = /*#__PURE__*/ hash("None");
+var NoneProto = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(CommonProto$1), {
 	_tag: "None",
 	_op: "None",
 	[symbol](that) {
@@ -18892,7 +18868,7 @@ var isNone$1 = (fa) => fa._tag === "None";
 /** @internal */
 var isSome$1 = (fa) => fa._tag === "Some";
 /** @internal */
-var none$5 = /* @__PURE__ */ Object.create(NoneProto);
+var none$5 = /*#__PURE__*/ Object.create(NoneProto);
 /** @internal */
 var some$1 = (value) => {
 	const a = Object.create(SomeProto);
@@ -18907,7 +18883,7 @@ var some$1 = (value) => {
 /**
 * @internal
 */
-var TypeId$13 = /* @__PURE__ */ Symbol.for("effect/Either");
+var TypeId$13 = /*#__PURE__*/ Symbol.for("effect/Either");
 var CommonProto = {
 	...EffectPrototype$1,
 	[TypeId$13]: { _R: (_) => _ },
@@ -18918,7 +18894,7 @@ var CommonProto = {
 		return format$4(this.toJSON());
 	}
 };
-var RightProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(CommonProto), {
+var RightProto = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(CommonProto), {
 	_tag: "Right",
 	_op: "Right",
 	[symbol](that) {
@@ -18935,7 +18911,7 @@ var RightProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(Com
 		};
 	}
 });
-var LeftProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(CommonProto), {
+var LeftProto = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(CommonProto), {
 	_tag: "Left",
 	_op: "Left",
 	[symbol](that) {
@@ -18971,7 +18947,7 @@ var right$1 = (right) => {
 	return a;
 };
 /** @internal */
-var fromOption$2 = /* @__PURE__ */ dual(2, (self, onNone) => isNone$1(self) ? left$1(onNone()) : right$1(self.value));
+var fromOption$2 = /*#__PURE__*/ dual(2, (self, onNone) => isNone$1(self) ? left$1(onNone()) : right$1(self.value));
 //#endregion
 //#region node_modules/effect/dist/esm/Either.js
 /**
@@ -19069,21 +19045,21 @@ var isRight = isRight$1;
 * @category mapping
 * @since 2.0.0
 */
-var mapBoth$3 = /* @__PURE__ */ dual(2, (self, { onLeft, onRight }) => isLeft(self) ? left(onLeft(self.left)) : right(onRight(self.right)));
+var mapBoth$3 = /*#__PURE__*/ dual(2, (self, { onLeft, onRight }) => isLeft(self) ? left(onLeft(self.left)) : right(onRight(self.right)));
 /**
 * Maps the `Left` side of an `Either` value to a new `Either` value.
 *
 * @category mapping
 * @since 2.0.0
 */
-var mapLeft = /* @__PURE__ */ dual(2, (self, f) => isLeft(self) ? left(f(self.left)) : right(self.right));
+var mapLeft = /*#__PURE__*/ dual(2, (self, f) => isLeft(self) ? left(f(self.left)) : right(self.right));
 /**
 * Maps the `Right` side of an `Either` value to a new `Either` value.
 *
 * @category mapping
 * @since 2.0.0
 */
-var map$8 = /* @__PURE__ */ dual(2, (self, f) => isRight(self) ? right(f(self.right)) : left(self.left));
+var map$8 = /*#__PURE__*/ dual(2, (self, f) => isRight(self) ? right(f(self.right)) : left(self.left));
 /**
 * Takes two functions and an `Either` value, if the value is a `Left` the inner value is applied to the `onLeft function,
 * if the value is a `Right` the inner value is applied to the `onRight` function.
@@ -19107,12 +19083,12 @@ var map$8 = /* @__PURE__ */ dual(2, (self, f) => isRight(self) ? right(f(self.ri
 * @category pattern matching
 * @since 2.0.0
 */
-var match$5 = /* @__PURE__ */ dual(2, (self, { onLeft, onRight }) => isLeft(self) ? onLeft(self.left) : onRight(self.right));
+var match$5 = /*#__PURE__*/ dual(2, (self, { onLeft, onRight }) => isLeft(self) ? onLeft(self.left) : onRight(self.right));
 /**
 * @category getters
 * @since 2.0.0
 */
-var merge$5 = /* @__PURE__ */ match$5({
+var merge$5 = /*#__PURE__*/ match$5({
 	onLeft: identity,
 	onRight: identity
 });
@@ -19136,7 +19112,7 @@ var merge$5 = /* @__PURE__ */ match$5({
 * @category getters
 * @since 2.0.0
 */
-var getOrThrowWith$1 = /* @__PURE__ */ dual(2, (self, onLeft) => {
+var getOrThrowWith$1 = /*#__PURE__*/ dual(2, (self, onLeft) => {
 	if (isRight(self)) return self.right;
 	throw onLeft(self.left);
 });
@@ -19159,7 +19135,7 @@ var getOrThrowWith$1 = /* @__PURE__ */ dual(2, (self, onLeft) => {
 * @category getters
 * @since 2.0.0
 */
-var getOrThrow$1 = /* @__PURE__ */ getOrThrowWith$1(() => /* @__PURE__ */ new Error("getOrThrow called on a Left"));
+var getOrThrow$1 = /*#__PURE__*/ getOrThrowWith$1(() => /* @__PURE__ */ new Error("getOrThrow called on a Left"));
 //#endregion
 //#region node_modules/effect/dist/esm/internal/array.js
 /**
@@ -19196,12 +19172,12 @@ var make$28 = (compare) => (self, that) => self === that ? 0 : compare(self, tha
 * @category instances
 * @since 2.0.0
 */
-var number = /* @__PURE__ */ make$28((self, that) => self < that ? -1 : 1);
+var number = /*#__PURE__*/ make$28((self, that) => self < that ? -1 : 1);
 /**
 * @category mapping
 * @since 2.0.0
 */
-var mapInput = /* @__PURE__ */ dual(2, (self, f) => make$28((b1, b2) => self(f(b1), f(b2))));
+var mapInput = /*#__PURE__*/ dual(2, (self, f) => make$28((b1, b2) => self(f(b1), f(b2))));
 /**
 * Test whether one value is _strictly greater than_ another.
 *
@@ -19369,7 +19345,7 @@ var isSome = isSome$1;
 * @category Pattern matching
 * @since 2.0.0
 */
-var match$4 = /* @__PURE__ */ dual(2, (self, { onNone, onSome }) => isNone(self) ? onNone() : onSome(self.value));
+var match$4 = /*#__PURE__*/ dual(2, (self, { onNone, onSome }) => isNone(self) ? onNone() : onSome(self.value));
 /**
 * Returns the value contained in the `Option` if it is `Some`, otherwise
 * evaluates and returns the result of `onNone`.
@@ -19403,7 +19379,7 @@ var match$4 = /* @__PURE__ */ dual(2, (self, { onNone, onSome }) => isNone(self)
 * @category Getters
 * @since 2.0.0
 */
-var getOrElse = /* @__PURE__ */ dual(2, (self, onNone) => isNone(self) ? onNone() : self.value);
+var getOrElse = /*#__PURE__*/ dual(2, (self, onNone) => isNone(self) ? onNone() : self.value);
 /**
 * Returns the provided `Option` `that` if the current `Option` (`self`) is
 * `None`; otherwise, it returns `self`.
@@ -19440,7 +19416,7 @@ var getOrElse = /* @__PURE__ */ dual(2, (self, onNone) => isNone(self) ? onNone(
 * @category Error handling
 * @since 2.0.0
 */
-var orElse$3 = /* @__PURE__ */ dual(2, (self, that) => isNone(self) ? that() : self);
+var orElse$3 = /*#__PURE__*/ dual(2, (self, that) => isNone(self) ? that() : self);
 /**
 * Returns the provided default value wrapped in `Some` if the current `Option`
 * (`self`) is `None`; otherwise, returns `self`.
@@ -19470,7 +19446,7 @@ var orElse$3 = /* @__PURE__ */ dual(2, (self, that) => isNone(self) ? that() : s
 * @category Error handling
 * @since 2.0.0
 */
-var orElseSome = /* @__PURE__ */ dual(2, (self, onNone) => isNone(self) ? some(onNone()) : self);
+var orElseSome = /*#__PURE__*/ dual(2, (self, onNone) => isNone(self) ? some(onNone()) : self);
 /**
 * Converts a nullable value into an `Option`. Returns `None` if the value is
 * `null` or `undefined`, otherwise wraps the value in a `Some`.
@@ -19520,7 +19496,7 @@ var fromNullable = (nullableValue) => nullableValue == null ? none$4() : some(nu
 * @category Getters
 * @since 2.0.0
 */
-var getOrUndefined = /* @__PURE__ */ getOrElse(constUndefined);
+var getOrUndefined = /*#__PURE__*/ getOrElse(constUndefined);
 /**
 * Lifts a function that throws exceptions into a function that returns an
 * `Option`.
@@ -19585,7 +19561,7 @@ var liftThrowable = (f) => (...a) => {
 * @category Conversions
 * @since 2.0.0
 */
-var getOrThrowWith = /* @__PURE__ */ dual(2, (self, onNone) => {
+var getOrThrowWith = /*#__PURE__*/ dual(2, (self, onNone) => {
 	if (isSome(self)) return self.value;
 	throw onNone();
 });
@@ -19614,7 +19590,7 @@ var getOrThrowWith = /* @__PURE__ */ dual(2, (self, onNone) => {
 * @category Conversions
 * @since 2.0.0
 */
-var getOrThrow = /* @__PURE__ */ getOrThrowWith(() => /* @__PURE__ */ new Error("getOrThrow called on a None"));
+var getOrThrow = /*#__PURE__*/ getOrThrowWith(() => /* @__PURE__ */ new Error("getOrThrow called on a None"));
 /**
 * Transforms the value inside a `Some` to a new value using the provided
 * function, while leaving `None` unchanged.
@@ -19649,7 +19625,7 @@ var getOrThrow = /* @__PURE__ */ getOrThrowWith(() => /* @__PURE__ */ new Error(
 * @category Mapping
 * @since 2.0.0
 */
-var map$7 = /* @__PURE__ */ dual(2, (self, f) => isNone(self) ? none$4() : some(f(self.value)));
+var map$7 = /*#__PURE__*/ dual(2, (self, f) => isNone(self) ? none$4() : some(f(self.value)));
 /**
 * Applies a function to the value of a `Some` and flattens the resulting
 * `Option`. If the input is `None`, it remains `None`.
@@ -19703,7 +19679,7 @@ var map$7 = /* @__PURE__ */ dual(2, (self, f) => isNone(self) ? none$4() : some(
 * @category Sequencing
 * @since 2.0.0
 */
-var flatMap$5 = /* @__PURE__ */ dual(2, (self, f) => isNone(self) ? none$4() : f(self.value));
+var flatMap$5 = /*#__PURE__*/ dual(2, (self, f) => isNone(self) ? none$4() : f(self.value));
 /**
 * Combines `flatMap` and `fromNullable`, transforming the value inside a `Some`
 * using a function that may return `null` or `undefined`.
@@ -19756,7 +19732,7 @@ var flatMap$5 = /* @__PURE__ */ dual(2, (self, f) => isNone(self) ? none$4() : f
 * @category Sequencing
 * @since 2.0.0
 */
-var flatMapNullable = /* @__PURE__ */ dual(2, (self, f) => isNone(self) ? none$4() : fromNullable(f(self.value)));
+var flatMapNullable = /*#__PURE__*/ dual(2, (self, f) => isNone(self) ? none$4() : fromNullable(f(self.value)));
 /**
 * Combines a structure of `Option`s into a single `Option` containing the
 * values with the same structure.
@@ -19868,7 +19844,7 @@ var filterMap$1 = flatMap$5;
 * @category Filtering
 * @since 2.0.0
 */
-var filter$1 = /* @__PURE__ */ dual(2, (self, predicate) => filterMap$1(self, (b) => predicate(b) ? some$1(b) : none$5));
+var filter$1 = /*#__PURE__*/ dual(2, (self, predicate) => filterMap$1(self, (b) => predicate(b) ? some$1(b) : none$5));
 /**
 * Creates an `Equivalence` instance for comparing `Option` values, using a
 * provided `Equivalence` for the inner type.
@@ -19976,7 +19952,7 @@ var containsWith = (isEquivalent) => dual(2, (self, a) => isNone(self) ? false :
 * @category Elements
 * @since 2.0.0
 */
-var contains = /* @__PURE__ */ containsWith(/* @__PURE__ */ equivalence());
+var contains = /*#__PURE__*/ containsWith(/* @__PURE__ */ equivalence());
 /**
 * Checks if a value in an `Option` satisfies a given predicate or refinement.
 *
@@ -20009,7 +19985,7 @@ var contains = /* @__PURE__ */ containsWith(/* @__PURE__ */ equivalence());
 * @category Elements
 * @since 2.0.0
 */
-var exists = /* @__PURE__ */ dual(2, (self, refinement) => isNone(self) ? false : refinement(self.value));
+var exists = /*#__PURE__*/ dual(2, (self, refinement) => isNone(self) ? false : refinement(self.value));
 /**
 * Merges two optional values, applying a function if both exist.
 * Unlike {@link zipWith}, this function returns `None` only if both inputs are `None`.
@@ -20089,7 +20065,7 @@ var allocate = (n) => new Array(n);
 * @category constructors
 * @since 2.0.0
 */
-var makeBy = /* @__PURE__ */ dual(2, (n, f) => {
+var makeBy = /*#__PURE__*/ dual(2, (n, f) => {
 	const max = Math.max(1, Math.floor(n));
 	const out = new Array(max);
 	for (let i = 0; i < max; i++) out[i] = f(i);
@@ -20149,7 +20125,7 @@ var ensure = (self) => Array.isArray(self) ? self : [self];
 * @category pattern matching
 * @since 2.0.0
 */
-var matchLeft = /* @__PURE__ */ dual(2, (self, { onEmpty, onNonEmpty }) => isNonEmptyReadonlyArray(self) ? onNonEmpty(headNonEmpty$1(self), tailNonEmpty$1(self)) : onEmpty());
+var matchLeft = /*#__PURE__*/ dual(2, (self, { onEmpty, onNonEmpty }) => isNonEmptyReadonlyArray(self) ? onNonEmpty(headNonEmpty$1(self), tailNonEmpty$1(self)) : onEmpty());
 /**
 * Prepend an element to the front of an `Iterable`, creating a new `NonEmptyArray`.
 *
@@ -20165,7 +20141,7 @@ var matchLeft = /* @__PURE__ */ dual(2, (self, { onEmpty, onNonEmpty }) => isNon
 * @category concatenating
 * @since 2.0.0
 */
-var prepend$2 = /* @__PURE__ */ dual(2, (self, head) => [head, ...self]);
+var prepend$2 = /*#__PURE__*/ dual(2, (self, head) => [head, ...self]);
 /**
 * Append an element to the end of an `Iterable`, creating a new `NonEmptyArray`.
 *
@@ -20181,7 +20157,7 @@ var prepend$2 = /* @__PURE__ */ dual(2, (self, head) => [head, ...self]);
 * @category concatenating
 * @since 2.0.0
 */
-var append$1 = /* @__PURE__ */ dual(2, (self, last) => [...self, last]);
+var append$1 = /*#__PURE__*/ dual(2, (self, last) => [...self, last]);
 /**
 * Concatenates two arrays (or iterables), combining their elements.
 * If either array is non-empty, the result is also a non-empty array.
@@ -20189,7 +20165,7 @@ var append$1 = /* @__PURE__ */ dual(2, (self, last) => [...self, last]);
 * @category concatenating
 * @since 2.0.0
 */
-var appendAll$2 = /* @__PURE__ */ dual(2, (self, that) => fromIterable$6(self).concat(fromIterable$6(that)));
+var appendAll$2 = /*#__PURE__*/ dual(2, (self, that) => fromIterable$6(self).concat(fromIterable$6(that)));
 /**
 * Determine if `unknown` is an Array.
 *
@@ -20282,7 +20258,7 @@ var clamp = (i, as) => Math.floor(Math.min(Math.max(0, i), as.length));
 * @category getters
 * @since 2.0.0
 */
-var get$9 = /* @__PURE__ */ dual(2, (self, index) => {
+var get$9 = /*#__PURE__*/ dual(2, (self, index) => {
 	const i = Math.floor(index);
 	return isOutOfBounds(i, self) ? none$4() : some(self[i]);
 });
@@ -20292,7 +20268,7 @@ var get$9 = /* @__PURE__ */ dual(2, (self, index) => {
 * @since 2.0.0
 * @category unsafe
 */
-var unsafeGet$3 = /* @__PURE__ */ dual(2, (self, index) => {
+var unsafeGet$3 = /*#__PURE__*/ dual(2, (self, index) => {
 	const i = Math.floor(index);
 	if (isOutOfBounds(i, self)) throw new Error(`Index ${i} out of bounds`);
 	return self[i];
@@ -20303,7 +20279,7 @@ var unsafeGet$3 = /* @__PURE__ */ dual(2, (self, index) => {
 * @category getters
 * @since 2.0.0
 */
-var head = /* @__PURE__ */ get$9(0);
+var head = /*#__PURE__*/ get$9(0);
 /**
 * Get the first element of a non empty array.
 *
@@ -20319,7 +20295,7 @@ var head = /* @__PURE__ */ get$9(0);
 * @category getters
 * @since 2.0.0
 */
-var headNonEmpty$1 = /* @__PURE__ */ unsafeGet$3(0);
+var headNonEmpty$1 = /*#__PURE__*/ unsafeGet$3(0);
 /**
 * Get the last element in a `ReadonlyArray`, or `None` if the `ReadonlyArray` is empty.
 *
@@ -20376,7 +20352,7 @@ var spanIndex = (self, predicate) => {
 * @category splitting
 * @since 2.0.0
 */
-var span = /* @__PURE__ */ dual(2, (self, predicate) => splitAt(self, spanIndex(self, predicate)));
+var span = /*#__PURE__*/ dual(2, (self, predicate) => splitAt(self, spanIndex(self, predicate)));
 /**
 * Drop a max number of elements from the start of an `Iterable`, creating a new `Array`.
 *
@@ -20394,7 +20370,7 @@ var span = /* @__PURE__ */ dual(2, (self, predicate) => splitAt(self, spanIndex(
 * @category getters
 * @since 2.0.0
 */
-var drop$1 = /* @__PURE__ */ dual(2, (self, n) => {
+var drop$1 = /*#__PURE__*/ dual(2, (self, n) => {
 	const input = fromIterable$6(self);
 	return input.slice(clamp(n, input), input.length);
 });
@@ -20421,7 +20397,7 @@ var reverse$2 = (self) => Array.from(self).reverse();
 * @category sorting
 * @since 2.0.0
 */
-var sort = /* @__PURE__ */ dual(2, (self, O) => {
+var sort = /*#__PURE__*/ dual(2, (self, O) => {
 	const out = Array.from(self);
 	out.sort(O);
 	return out;
@@ -20443,7 +20419,7 @@ var sort = /* @__PURE__ */ dual(2, (self, O) => {
 * @category zipping
 * @since 2.0.0
 */
-var zip$1 = /* @__PURE__ */ dual(2, (self, that) => zipWith$2(self, that, make$27));
+var zip$1 = /*#__PURE__*/ dual(2, (self, that) => zipWith$2(self, that, make$27));
 /**
 * Apply a function to pairs of elements at the same index in two `Iterable`s, collecting the results in a new `Array`. If one
 * input `Iterable` is short, excess elements of the longer `Iterable` are discarded.
@@ -20460,7 +20436,7 @@ var zip$1 = /* @__PURE__ */ dual(2, (self, that) => zipWith$2(self, that, make$2
 * @category zipping
 * @since 2.0.0
 */
-var zipWith$2 = /* @__PURE__ */ dual(3, (self, that, f) => {
+var zipWith$2 = /*#__PURE__*/ dual(3, (self, that, f) => {
 	const as = fromIterable$6(self);
 	const bs = fromIterable$6(that);
 	if (isNonEmptyReadonlyArray(as) && isNonEmptyReadonlyArray(bs)) {
@@ -20471,7 +20447,7 @@ var zipWith$2 = /* @__PURE__ */ dual(3, (self, that, f) => {
 	}
 	return [];
 });
-var _equivalence$2 = /* @__PURE__ */ equivalence();
+var _equivalence$2 = /*#__PURE__*/ equivalence();
 /**
 * Splits an `Iterable` into two segments, with the first segment containing a maximum of `n` elements.
 * The value of `n` can be `0`.
@@ -20488,7 +20464,7 @@ var _equivalence$2 = /* @__PURE__ */ equivalence();
 * @category splitting
 * @since 2.0.0
 */
-var splitAt = /* @__PURE__ */ dual(2, (self, n) => {
+var splitAt = /*#__PURE__*/ dual(2, (self, n) => {
 	const input = Array.from(self);
 	const _n = Math.floor(n);
 	if (isNonEmptyReadonlyArray(input)) {
@@ -20513,7 +20489,7 @@ var splitAt = /* @__PURE__ */ dual(2, (self, n) => {
 * @category splitting
 * @since 2.0.0
 */
-var splitNonEmptyAt = /* @__PURE__ */ dual(2, (self, n) => {
+var splitNonEmptyAt = /*#__PURE__*/ dual(2, (self, n) => {
 	const _n = Math.max(1, Math.floor(n));
 	return _n >= self.length ? [copy$1(self), []] : [prepend$2(self.slice(1, _n), headNonEmpty$1(self)), self.slice(_n)];
 });
@@ -20546,7 +20522,7 @@ var copy$1 = (self) => self.slice();
 *
 * @since 2.0.0
 */
-var unionWith = /* @__PURE__ */ dual(3, (self, that, isEquivalent) => {
+var unionWith = /*#__PURE__*/ dual(3, (self, that, isEquivalent) => {
 	const a = fromIterable$6(self);
 	const b = fromIterable$6(that);
 	if (isNonEmptyReadonlyArray(a)) {
@@ -20569,7 +20545,7 @@ var unionWith = /* @__PURE__ */ dual(3, (self, that, isEquivalent) => {
 *
 * @since 2.0.0
 */
-var union$2 = /* @__PURE__ */ dual(2, (self, that) => unionWith(self, that, _equivalence$2));
+var union$2 = /*#__PURE__*/ dual(2, (self, that) => unionWith(self, that, _equivalence$2));
 /**
 * @category constructors
 * @since 2.0.0
@@ -20586,14 +20562,14 @@ var of$2 = (a) => [a];
 * @category mapping
 * @since 2.0.0
 */
-var map$6 = /* @__PURE__ */ dual(2, (self, f) => self.map(f));
+var map$6 = /*#__PURE__*/ dual(2, (self, f) => self.map(f));
 /**
 * Applies a function to each element in an array and returns a new array containing the concatenated mapped elements.
 *
 * @category sequencing
 * @since 2.0.0
 */
-var flatMap$4 = /* @__PURE__ */ dual(2, (self, f) => {
+var flatMap$4 = /*#__PURE__*/ dual(2, (self, f) => {
 	if (isEmptyReadonlyArray(self)) return [];
 	const out = [];
 	for (let i = 0; i < self.length; i++) {
@@ -20619,7 +20595,7 @@ var flatMap$4 = /* @__PURE__ */ dual(2, (self, f) => {
 * @category sequencing
 * @since 2.0.0
 */
-var flatten$3 = /* @__PURE__ */ flatMap$4(identity);
+var flatten$3 = /*#__PURE__*/ flatMap$4(identity);
 /**
 * Applies a function to each element of the `Iterable` and filters based on the result, keeping the transformed values where the function returns `Some`.
 * This method combines filtering and mapping functionalities, allowing transformations and filtering of elements based on a single function pass.
@@ -20638,7 +20614,7 @@ var flatten$3 = /* @__PURE__ */ flatMap$4(identity);
 * @category filtering
 * @since 2.0.0
 */
-var filterMap = /* @__PURE__ */ dual(2, (self, f) => {
+var filterMap = /*#__PURE__*/ dual(2, (self, f) => {
 	const as = fromIterable$6(self);
 	const out = [];
 	for (let i = 0; i < as.length; i++) {
@@ -20662,7 +20638,7 @@ var filterMap = /* @__PURE__ */ dual(2, (self, f) => {
 * @category folding
 * @since 2.0.0
 */
-var reduce$6 = /* @__PURE__ */ dual(3, (self, b, f) => fromIterable$6(self).reduce((b, a, i) => f(b, a, i), b));
+var reduce$6 = /*#__PURE__*/ dual(3, (self, b, f) => fromIterable$6(self).reduce((b, a, i) => f(b, a, i), b));
 /**
 * @category constructors
 * @since 2.0.0
@@ -20709,7 +20685,7 @@ var getEquivalence$2 = array$1;
 *
 * @since 2.0.0
 */
-var dedupeWith = /* @__PURE__ */ dual(2, (self, isEquivalent) => {
+var dedupeWith = /*#__PURE__*/ dual(2, (self, isEquivalent) => {
 	const input = fromIterable$6(self);
 	if (isNonEmptyReadonlyArray(input)) {
 		const out = [headNonEmpty$1(input)];
@@ -20742,2602 +20718,13 @@ var dedupe = (self) => dedupeWith(self, equivalence());
 * @since 2.0.0
 * @category folding
 */
-var join$1 = /* @__PURE__ */ dual(2, (self, sep) => fromIterable$6(self).join(sep));
-//#endregion
-//#region node_modules/effect/dist/esm/internal/schema/util.js
-/** @internal */
-var getKeysForIndexSignature = (input, parameter) => {
-	switch (parameter._tag) {
-		case "StringKeyword":
-		case "TemplateLiteral": return Object.keys(input);
-		case "SymbolKeyword": return Object.getOwnPropertySymbols(input);
-		case "Refinement": return getKeysForIndexSignature(input, parameter.from);
-	}
-};
-/** @internal */
-var memoizeThunk = (f) => {
-	let done = false;
-	let a;
-	return () => {
-		if (done) return a;
-		a = f();
-		done = true;
-		return a;
-	};
-};
-/** @internal */
-var isNonEmpty$2 = (x) => Array.isArray(x);
-/** @internal */
-var isSingle = (x) => !Array.isArray(x);
-/** @internal */
-var formatPathKey = (key) => `[${formatPropertyKey$1(key)}]`;
-/** @internal */
-var formatPath = (path) => isNonEmpty$2(path) ? path.map(formatPathKey).join("") : formatPathKey(path);
-//#endregion
-//#region node_modules/effect/dist/esm/internal/schema/errors.js
-var getErrorMessage$1 = (reason, details, path, ast) => {
-	let out = reason;
-	if (path && isNonEmptyReadonlyArray(path)) out += `\nat path: ${formatPath(path)}`;
-	if (details !== void 0) out += `\ndetails: ${details}`;
-	if (ast) out += `\nschema (${ast._tag}): ${ast}`;
-	return out;
-};
-/** @internal */
-var getSchemaExtendErrorMessage = (x, y, path) => getErrorMessage$1("Unsupported schema or overlapping types", `cannot extend ${x} with ${y}`, path);
-/** @internal */
-var getASTUnsupportedKeySchemaErrorMessage = (ast) => getErrorMessage$1("Unsupported key schema", void 0, void 0, ast);
-/** @internal */
-var getASTUnsupportedLiteralErrorMessage = (literal) => getErrorMessage$1("Unsupported literal", `literal value: ${formatUnknown(literal)}`);
-/** @internal */
-var getASTDuplicateIndexSignatureErrorMessage = (type) => getErrorMessage$1("Duplicate index signature", `${type} index signature`);
-/** @internal */
-var getASTIndexSignatureParameterErrorMessage = /* @__PURE__ */ getErrorMessage$1("Unsupported index signature parameter", "An index signature parameter type must be `string`, `symbol`, a template literal type or a refinement of the previous types");
-/** @internal */
-var getASTRequiredElementFollowinAnOptionalElementErrorMessage = /* @__PURE__ */ getErrorMessage$1("Invalid element", "A required element cannot follow an optional element. ts(1257)");
-/** @internal */
-var getASTDuplicatePropertySignatureTransformationErrorMessage = (key) => getErrorMessage$1("Duplicate property signature transformation", `Duplicate key ${formatUnknown(key)}`);
-/** @internal */
-var getASTDuplicatePropertySignatureErrorMessage = (key) => getErrorMessage$1("Duplicate property signature", `Duplicate key ${formatUnknown(key)}`);
-//#endregion
-//#region node_modules/effect/dist/esm/internal/schema/schemaId.js
-/** @internal */
-var DateFromSelfSchemaId$1 = /* @__PURE__ */ Symbol.for("effect/SchemaId/DateFromSelf");
-/** @internal */
-var GreaterThanSchemaId$1 = /* @__PURE__ */ Symbol.for("effect/SchemaId/GreaterThan");
-/** @internal */
-var GreaterThanOrEqualToSchemaId$1 = /* @__PURE__ */ Symbol.for("effect/SchemaId/GreaterThanOrEqualTo");
-/** @internal */
-var LessThanSchemaId$1 = /* @__PURE__ */ Symbol.for("effect/SchemaId/LessThan");
-/** @internal */
-var LessThanOrEqualToSchemaId$1 = /* @__PURE__ */ Symbol.for("effect/SchemaId/LessThanOrEqualTo");
-/** @internal */
-var IntSchemaId$1 = /* @__PURE__ */ Symbol.for("effect/SchemaId/Int");
-/** @internal */
-var NonNaNSchemaId$1 = /* @__PURE__ */ Symbol.for("effect/SchemaId/NonNaN");
-/** @internal */
-var FiniteSchemaId$1 = /* @__PURE__ */ Symbol.for("effect/SchemaId/Finite");
-/** @internal */
-var JsonNumberSchemaId$1 = /* @__PURE__ */ Symbol.for("effect/SchemaId/JsonNumber");
-/** @internal */
-var BetweenSchemaId$1 = /* @__PURE__ */ Symbol.for("effect/SchemaId/Between");
-/** @internal */
-var GreaterThanOrEqualToBigIntSchemaId$1 = /* @__PURE__ */ Symbol.for("effect/SchemaId/GreaterThanOrEqualToBigint");
-/** @internal */
-var BetweenBigintSchemaId = /* @__PURE__ */ Symbol.for("effect/SchemaId/BetweenBigint");
-/** @internal */
-var MinLengthSchemaId$1 = /* @__PURE__ */ Symbol.for("effect/SchemaId/MinLength");
-/** @internal */
-var LengthSchemaId$1 = /* @__PURE__ */ Symbol.for("effect/SchemaId/Length");
-//#endregion
-//#region node_modules/effect/dist/esm/Number.js
-/**
-* @memberof Number
-* @since 2.0.0
-* @category instances
-*/
-var Order$1 = number;
-/**
-* Tries to parse a `number` from a `string` using the `Number()` function. The
-* following special string values are supported: "NaN", "Infinity",
-* "-Infinity".
-*
-* @memberof Number
-* @since 2.0.0
-* @category constructors
-*/
-var parse = (s) => {
-	if (s === "NaN") return some$1(NaN);
-	if (s === "Infinity") return some$1(Infinity);
-	if (s === "-Infinity") return some$1(-Infinity);
-	if (s.trim() === "") return none$5;
-	const n = Number(s);
-	return Number.isNaN(n) ? none$5 : some$1(n);
-};
-//#endregion
-//#region node_modules/effect/dist/esm/RegExp.js
-/**
-* Escapes special characters in a regular expression pattern.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { RegExp } from "effect"
-*
-* assert.deepStrictEqual(RegExp.escape("a*b"), "a\\*b")
-* ```
-*
-* @since 2.0.0
-*/
-var escape = (string) => string.replace(/[/\\^$*+?.()|[\]{}]/g, "\\$&");
-//#endregion
-//#region node_modules/effect/dist/esm/SchemaAST.js
-/**
-* @since 3.10.0
-*/
-/**
-* @category annotations
-* @since 3.19.0
-* @experimental
-*/
-var TypeConstructorAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/TypeConstructor");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var BrandAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/Brand");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var SchemaIdAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/SchemaId");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var MessageAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/Message");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var MissingMessageAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/MissingMessage");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var IdentifierAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/Identifier");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var TitleAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/Title");
-/** @internal */
-var AutoTitleAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/AutoTitle");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var DescriptionAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/Description");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var ExamplesAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/Examples");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var DefaultAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/Default");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var JSONSchemaAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/JSONSchema");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var ArbitraryAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/Arbitrary");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var PrettyAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/Pretty");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var EquivalenceAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/Equivalence");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var DocumentationAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/Documentation");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var ConcurrencyAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/Concurrency");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var BatchingAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/Batching");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var ParseIssueTitleAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/ParseIssueTitle");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var ParseOptionsAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/ParseOptions");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var DecodingFallbackAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/DecodingFallback");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var SurrogateAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/Surrogate");
-/** @internal */
-var StableFilterAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/StableFilter");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getAnnotation = /* @__PURE__ */ dual(2, (annotated, key) => Object.prototype.hasOwnProperty.call(annotated.annotations, key) ? some(annotated.annotations[key]) : none$4());
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getBrandAnnotation = /* @__PURE__ */ getAnnotation(BrandAnnotationId);
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getMessageAnnotation = /* @__PURE__ */ getAnnotation(MessageAnnotationId);
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getMissingMessageAnnotation = /* @__PURE__ */ getAnnotation(MissingMessageAnnotationId);
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getTitleAnnotation = /* @__PURE__ */ getAnnotation(TitleAnnotationId);
-/** @internal */
-var getAutoTitleAnnotation = /* @__PURE__ */ getAnnotation(AutoTitleAnnotationId);
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getIdentifierAnnotation = /* @__PURE__ */ getAnnotation(IdentifierAnnotationId);
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getDescriptionAnnotation = /* @__PURE__ */ getAnnotation(DescriptionAnnotationId);
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getConcurrencyAnnotation = /* @__PURE__ */ getAnnotation(ConcurrencyAnnotationId);
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getBatchingAnnotation = /* @__PURE__ */ getAnnotation(BatchingAnnotationId);
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getParseIssueTitleAnnotation$1 = /* @__PURE__ */ getAnnotation(ParseIssueTitleAnnotationId);
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getParseOptionsAnnotation = /* @__PURE__ */ getAnnotation(ParseOptionsAnnotationId);
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getDecodingFallbackAnnotation = /* @__PURE__ */ getAnnotation(DecodingFallbackAnnotationId);
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getSurrogateAnnotation = /* @__PURE__ */ getAnnotation(SurrogateAnnotationId);
-var getStableFilterAnnotation = /* @__PURE__ */ getAnnotation(StableFilterAnnotationId);
-/** @internal */
-var hasStableFilter = (annotated) => exists(getStableFilterAnnotation(annotated), (b) => b === true);
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var JSONIdentifierAnnotationId = /* @__PURE__ */ Symbol.for("effect/annotation/JSONIdentifier");
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getJSONIdentifierAnnotation = /* @__PURE__ */ getAnnotation(JSONIdentifierAnnotationId);
-/**
-* @category annotations
-* @since 3.10.0
-*/
-var getJSONIdentifier = (annotated) => orElse$3(getJSONIdentifierAnnotation(annotated), () => getIdentifierAnnotation(annotated));
-/**
-* @category model
-* @since 3.10.0
-*/
-var Declaration = class {
-	typeParameters;
-	decodeUnknown;
-	encodeUnknown;
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "Declaration";
-	constructor(typeParameters, decodeUnknown, encodeUnknown, annotations = {}) {
-		this.typeParameters = typeParameters;
-		this.decodeUnknown = decodeUnknown;
-		this.encodeUnknown = encodeUnknown;
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return getOrElse(getExpected(this), () => "<declaration schema>");
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			typeParameters: this.typeParameters.map((ast) => ast.toJSON()),
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-var createASTGuard = (tag) => (ast) => ast._tag === tag;
-/**
-* @category model
-* @since 3.10.0
-*/
-var Literal$1 = class {
-	literal;
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "Literal";
-	constructor(literal, annotations = {}) {
-		this.literal = literal;
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return getOrElse(getExpected(this), () => formatUnknown(this.literal));
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			literal: isBigInt(this.literal) ? String(this.literal) : this.literal,
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-/**
-* @category guards
-* @since 3.10.0
-*/
-var isLiteral = /* @__PURE__ */ createASTGuard("Literal");
-/**
-* @category model
-* @since 3.10.0
-*/
-var UniqueSymbol = class {
-	symbol;
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "UniqueSymbol";
-	constructor(symbol, annotations = {}) {
-		this.symbol = symbol;
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return getOrElse(getExpected(this), () => formatUnknown(this.symbol));
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			symbol: String(this.symbol),
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-/**
-* @category model
-* @since 3.10.0
-*/
-var NeverKeyword = class {
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "NeverKeyword";
-	constructor(annotations = {}) {
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return formatKeyword(this);
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-/**
-* @category constructors
-* @since 3.10.0
-*/
-var neverKeyword = /* @__PURE__ */ new NeverKeyword({ [TitleAnnotationId]: "never" });
-/**
-* @category model
-* @since 3.10.0
-*/
-var UnknownKeyword = class {
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "UnknownKeyword";
-	constructor(annotations = {}) {
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return formatKeyword(this);
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-/**
-* @category constructors
-* @since 3.10.0
-*/
-var unknownKeyword = /* @__PURE__ */ new UnknownKeyword({ [TitleAnnotationId]: "unknown" });
-/**
-* @category model
-* @since 3.10.0
-*/
-var AnyKeyword = class {
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "AnyKeyword";
-	constructor(annotations = {}) {
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return formatKeyword(this);
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-/**
-* @category constructors
-* @since 3.10.0
-*/
-var anyKeyword = /* @__PURE__ */ new AnyKeyword({ [TitleAnnotationId]: "any" });
-/**
-* @category model
-* @since 3.10.0
-*/
-var StringKeyword = class {
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "StringKeyword";
-	constructor(annotations = {}) {
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return formatKeyword(this);
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-/**
-* @category constructors
-* @since 3.10.0
-*/
-var stringKeyword = /* @__PURE__ */ new StringKeyword({
-	[TitleAnnotationId]: "string",
-	[DescriptionAnnotationId]: "a string"
-});
-/**
-* @category guards
-* @since 3.10.0
-*/
-var isStringKeyword = /* @__PURE__ */ createASTGuard("StringKeyword");
-/**
-* @category model
-* @since 3.10.0
-*/
-var NumberKeyword = class {
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "NumberKeyword";
-	constructor(annotations = {}) {
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return formatKeyword(this);
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-/**
-* @category constructors
-* @since 3.10.0
-*/
-var numberKeyword = /* @__PURE__ */ new NumberKeyword({
-	[TitleAnnotationId]: "number",
-	[DescriptionAnnotationId]: "a number"
-});
-/**
-* @category guards
-* @since 3.10.0
-*/
-var isNumberKeyword = /* @__PURE__ */ createASTGuard("NumberKeyword");
-/**
-* @category model
-* @since 3.10.0
-*/
-var BooleanKeyword = class {
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "BooleanKeyword";
-	constructor(annotations = {}) {
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return formatKeyword(this);
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-/**
-* @category constructors
-* @since 3.10.0
-*/
-var booleanKeyword = /* @__PURE__ */ new BooleanKeyword({
-	[TitleAnnotationId]: "boolean",
-	[DescriptionAnnotationId]: "a boolean"
-});
-/**
-* @category guards
-* @since 3.10.0
-*/
-var isBooleanKeyword = /* @__PURE__ */ createASTGuard("BooleanKeyword");
-/**
-* @category model
-* @since 3.10.0
-*/
-var BigIntKeyword = class {
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "BigIntKeyword";
-	constructor(annotations = {}) {
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return formatKeyword(this);
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-/**
-* @category constructors
-* @since 3.10.0
-*/
-var bigIntKeyword = /* @__PURE__ */ new BigIntKeyword({
-	[TitleAnnotationId]: "bigint",
-	[DescriptionAnnotationId]: "a bigint"
-});
-/**
-* @category model
-* @since 3.10.0
-*/
-var SymbolKeyword = class {
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "SymbolKeyword";
-	constructor(annotations = {}) {
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return formatKeyword(this);
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-/**
-* @category constructors
-* @since 3.10.0
-*/
-var symbolKeyword = /* @__PURE__ */ new SymbolKeyword({
-	[TitleAnnotationId]: "symbol",
-	[DescriptionAnnotationId]: "a symbol"
-});
-/**
-* @category guards
-* @since 3.10.0
-*/
-var isSymbolKeyword = /* @__PURE__ */ createASTGuard("SymbolKeyword");
-/**
-* @category model
-* @since 3.10.0
-*/
-var Type$1 = class {
-	type;
-	annotations;
-	constructor(type, annotations = {}) {
-		this.type = type;
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			type: this.type.toJSON(),
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return String(this.type);
-	}
-};
-/**
-* @category model
-* @since 3.10.0
-*/
-var OptionalType = class extends Type$1 {
-	isOptional;
-	constructor(type, isOptional, annotations = {}) {
-		super(type, annotations);
-		this.isOptional = isOptional;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			type: this.type.toJSON(),
-			isOptional: this.isOptional,
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return String(this.type) + (this.isOptional ? "?" : "");
-	}
-};
-var getRestASTs = (rest) => rest.map((annotatedAST) => annotatedAST.type);
-/**
-* @category model
-* @since 3.10.0
-*/
-var TupleType = class {
-	elements;
-	rest;
-	isReadonly;
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "TupleType";
-	constructor(elements, rest, isReadonly, annotations = {}) {
-		this.elements = elements;
-		this.rest = rest;
-		this.isReadonly = isReadonly;
-		this.annotations = annotations;
-		let hasOptionalElement = false;
-		let hasIllegalRequiredElement = false;
-		for (const e of elements) if (e.isOptional) hasOptionalElement = true;
-		else if (hasOptionalElement) {
-			hasIllegalRequiredElement = true;
-			break;
-		}
-		if (hasIllegalRequiredElement || hasOptionalElement && rest.length > 1) throw new Error(getASTRequiredElementFollowinAnOptionalElementErrorMessage);
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return getOrElse(getExpected(this), () => formatTuple(this));
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			elements: this.elements.map((e) => e.toJSON()),
-			rest: this.rest.map((ast) => ast.toJSON()),
-			isReadonly: this.isReadonly,
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-var formatTuple = (ast) => {
-	const formattedElements = ast.elements.map(String).join(", ");
-	return matchLeft(ast.rest, {
-		onEmpty: () => `readonly [${formattedElements}]`,
-		onNonEmpty: (head, tail) => {
-			const formattedHead = String(head);
-			const wrappedHead = formattedHead.includes(" | ") ? `(${formattedHead})` : formattedHead;
-			if (tail.length > 0) {
-				const formattedTail = tail.map(String).join(", ");
-				if (ast.elements.length > 0) return `readonly [${formattedElements}, ...${wrappedHead}[], ${formattedTail}]`;
-				else return `readonly [...${wrappedHead}[], ${formattedTail}]`;
-			} else if (ast.elements.length > 0) return `readonly [${formattedElements}, ...${wrappedHead}[]]`;
-			else return `ReadonlyArray<${formattedHead}>`;
-		}
-	});
-};
-/**
-* @category model
-* @since 3.10.0
-*/
-var PropertySignature = class extends OptionalType {
-	name;
-	isReadonly;
-	constructor(name, type, isOptional, isReadonly, annotations) {
-		super(type, isOptional, annotations);
-		this.name = name;
-		this.isReadonly = isReadonly;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return (this.isReadonly ? "readonly " : "") + String(this.name) + (this.isOptional ? "?" : "") + ": " + this.type;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			name: String(this.name),
-			type: this.type.toJSON(),
-			isOptional: this.isOptional,
-			isReadonly: this.isReadonly,
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-/**
-* @since 3.10.0
-*/
-var isParameter = (ast) => {
-	switch (ast._tag) {
-		case "StringKeyword":
-		case "SymbolKeyword":
-		case "TemplateLiteral": return true;
-		case "Refinement": return isParameter(ast.from);
-	}
-	return false;
-};
-/**
-* @category model
-* @since 3.10.0
-*/
-var IndexSignature = class {
-	type;
-	isReadonly;
-	/**
-	* @since 3.10.0
-	*/
-	parameter;
-	constructor(parameter, type, isReadonly) {
-		this.type = type;
-		this.isReadonly = isReadonly;
-		if (isParameter(parameter)) this.parameter = parameter;
-		else throw new Error(getASTIndexSignatureParameterErrorMessage);
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return (this.isReadonly ? "readonly " : "") + `[x: ${this.parameter}]: ${this.type}`;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			parameter: this.parameter.toJSON(),
-			type: this.type.toJSON(),
-			isReadonly: this.isReadonly
-		};
-	}
-};
-/**
-* @category model
-* @since 3.10.0
-*/
-var TypeLiteral = class {
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "TypeLiteral";
-	/**
-	* @since 3.10.0
-	*/
-	propertySignatures;
-	/**
-	* @since 3.10.0
-	*/
-	indexSignatures;
-	constructor(propertySignatures, indexSignatures, annotations = {}) {
-		this.annotations = annotations;
-		const keys = {};
-		for (let i = 0; i < propertySignatures.length; i++) {
-			const name = propertySignatures[i].name;
-			if (Object.prototype.hasOwnProperty.call(keys, name)) throw new Error(getASTDuplicatePropertySignatureErrorMessage(name));
-			keys[name] = null;
-		}
-		const parameters = {
-			string: false,
-			symbol: false
-		};
-		for (let i = 0; i < indexSignatures.length; i++) {
-			const encodedParameter = getEncodedParameter(indexSignatures[i].parameter);
-			if (isStringKeyword(encodedParameter)) {
-				if (parameters.string) throw new Error(getASTDuplicateIndexSignatureErrorMessage("string"));
-				parameters.string = true;
-			} else if (isSymbolKeyword(encodedParameter)) {
-				if (parameters.symbol) throw new Error(getASTDuplicateIndexSignatureErrorMessage("symbol"));
-				parameters.symbol = true;
-			}
-		}
-		this.propertySignatures = propertySignatures;
-		this.indexSignatures = indexSignatures;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return getOrElse(getExpected(this), () => formatTypeLiteral(this));
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			propertySignatures: this.propertySignatures.map((ps) => ps.toJSON()),
-			indexSignatures: this.indexSignatures.map((ps) => ps.toJSON()),
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-var formatIndexSignatures = (iss) => iss.map(String).join("; ");
-var formatTypeLiteral = (ast) => {
-	if (ast.propertySignatures.length > 0) {
-		const pss = ast.propertySignatures.map(String).join("; ");
-		if (ast.indexSignatures.length > 0) return `{ ${pss}; ${formatIndexSignatures(ast.indexSignatures)} }`;
-		else return `{ ${pss} }`;
-	} else if (ast.indexSignatures.length > 0) return `{ ${formatIndexSignatures(ast.indexSignatures)} }`;
-	else return "{}";
-};
-/**
-* @category guards
-* @since 3.10.0
-*/
-var isTypeLiteral = /* @__PURE__ */ createASTGuard("TypeLiteral");
-var sortCandidates = /* @__PURE__ */ sort(/* @__PURE__ */ mapInput(Order$1, (ast) => {
-	switch (ast._tag) {
-		case "AnyKeyword": return 0;
-		case "UnknownKeyword": return 1;
-		case "ObjectKeyword": return 2;
-		case "StringKeyword":
-		case "NumberKeyword":
-		case "BooleanKeyword":
-		case "BigIntKeyword":
-		case "SymbolKeyword": return 3;
-	}
-	return 4;
-}));
-var literalMap = {
-	string: "StringKeyword",
-	number: "NumberKeyword",
-	boolean: "BooleanKeyword",
-	bigint: "BigIntKeyword"
-};
-/** @internal */
-var flatten$2 = (candidates) => flatMap$4(candidates, (ast) => isUnion(ast) ? flatten$2(ast.types) : [ast]);
-/** @internal */
-var unify = (candidates) => {
-	const cs = sortCandidates(candidates);
-	const out = [];
-	const uniques = {};
-	const literals = [];
-	for (const ast of cs) switch (ast._tag) {
-		case "NeverKeyword": break;
-		case "AnyKeyword": return [anyKeyword];
-		case "UnknownKeyword": return [unknownKeyword];
-		case "ObjectKeyword":
-		case "UndefinedKeyword":
-		case "VoidKeyword":
-		case "StringKeyword":
-		case "NumberKeyword":
-		case "BooleanKeyword":
-		case "BigIntKeyword":
-		case "SymbolKeyword":
-			if (!uniques[ast._tag]) {
-				uniques[ast._tag] = ast;
-				out.push(ast);
-			}
-			break;
-		case "Literal": {
-			const type = typeof ast.literal;
-			switch (type) {
-				case "string":
-				case "number":
-				case "bigint":
-				case "boolean":
-					if (!uniques[literalMap[type]] && !literals.includes(ast.literal)) {
-						literals.push(ast.literal);
-						out.push(ast);
-					}
-					break;
-				case "object":
-					if (!literals.includes(ast.literal)) {
-						literals.push(ast.literal);
-						out.push(ast);
-					}
-					break;
-			}
-			break;
-		}
-		case "UniqueSymbol":
-			if (!uniques["SymbolKeyword"] && !literals.includes(ast.symbol)) {
-				literals.push(ast.symbol);
-				out.push(ast);
-			}
-			break;
-		case "TupleType":
-			if (!uniques["ObjectKeyword"]) out.push(ast);
-			break;
-		case "TypeLiteral":
-			if (ast.propertySignatures.length === 0 && ast.indexSignatures.length === 0) {
-				if (!uniques["{}"]) {
-					uniques["{}"] = ast;
-					out.push(ast);
-				}
-			} else if (!uniques["ObjectKeyword"]) out.push(ast);
-			break;
-		default: out.push(ast);
-	}
-	return out;
-};
-/**
-* @category model
-* @since 3.10.0
-*/
-var Union$1 = class Union$1 {
-	types;
-	annotations;
-	static make = (types, annotations) => {
-		return isMembers(types) ? new Union$1(types, annotations) : types.length === 1 ? types[0] : neverKeyword;
-	};
-	/** @internal */
-	static unify = (candidates, annotations) => {
-		return Union$1.make(unify(flatten$2(candidates)), annotations);
-	};
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "Union";
-	constructor(types, annotations = {}) {
-		this.types = types;
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return getOrElse(getExpected(this), () => this.types.map(String).join(" | "));
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			types: this.types.map((ast) => ast.toJSON()),
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-/** @internal */
-var mapMembers = (members, f) => members.map(f);
-/** @internal */
-var isMembers = (as) => as.length > 1;
-/**
-* @category guards
-* @since 3.10.0
-*/
-var isUnion = /* @__PURE__ */ createASTGuard("Union");
-var toJSONMemoMap = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/Schema/AST/toJSONMemoMap"), () => /* @__PURE__ */ new WeakMap());
-/**
-* @category model
-* @since 3.10.0
-*/
-var Suspend = class {
-	f;
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "Suspend";
-	constructor(f, annotations = {}) {
-		this.f = f;
-		this.annotations = annotations;
-		this.f = memoizeThunk(f);
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return getExpected(this).pipe(orElse$3(() => flatMap$5(liftThrowable(this.f)(), (ast) => getExpected(ast))), getOrElse(() => "<suspended schema>"));
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		const ast = this.f();
-		let out = toJSONMemoMap.get(ast);
-		if (out) return out;
-		toJSONMemoMap.set(ast, { _tag: this._tag });
-		out = {
-			_tag: this._tag,
-			ast: ast.toJSON(),
-			annotations: toJSONAnnotations(this.annotations)
-		};
-		toJSONMemoMap.set(ast, out);
-		return out;
-	}
-};
-/**
-* @category model
-* @since 3.10.0
-*/
-var Refinement$1 = class {
-	from;
-	filter;
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "Refinement";
-	constructor(from, filter, annotations = {}) {
-		this.from = from;
-		this.filter = filter;
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return getIdentifierAnnotation(this).pipe(getOrElse(() => match$4(getOrElseExpected(this), {
-			onNone: () => `{ ${this.from} | filter }`,
-			onSome: (expected) => isRefinement$1(this.from) ? String(this.from) + " & " + expected : expected
-		})));
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			from: this.from.toJSON(),
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-/**
-* @category guards
-* @since 3.10.0
-*/
-var isRefinement$1 = /* @__PURE__ */ createASTGuard("Refinement");
-/**
-* @since 3.10.0
-*/
-var defaultParseOption = {};
-/**
-* @category model
-* @since 3.10.0
-*/
-var Transformation$1 = class {
-	from;
-	to;
-	transformation;
-	annotations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "Transformation";
-	constructor(from, to, transformation, annotations = {}) {
-		this.from = from;
-		this.to = to;
-		this.transformation = transformation;
-		this.annotations = annotations;
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toString() {
-		return getOrElse(getExpected(this), () => `(${String(this.from)} <-> ${String(this.to)})`);
-	}
-	/**
-	* @since 3.10.0
-	*/
-	toJSON() {
-		return {
-			_tag: this._tag,
-			from: this.from.toJSON(),
-			to: this.to.toJSON(),
-			annotations: toJSONAnnotations(this.annotations)
-		};
-	}
-};
-/**
-* @category guards
-* @since 3.10.0
-*/
-var isTransformation$1 = /* @__PURE__ */ createASTGuard("Transformation");
-/**
-* @category model
-* @since 3.10.0
-*/
-var FinalTransformation = class {
-	decode;
-	encode;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "FinalTransformation";
-	constructor(decode, encode) {
-		this.decode = decode;
-		this.encode = encode;
-	}
-};
-var createTransformationGuard = (tag) => (ast) => ast._tag === tag;
-/**
-* @category model
-* @since 3.10.0
-*/
-var ComposeTransformation = class {
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "ComposeTransformation";
-};
-/**
-* @category constructors
-* @since 3.10.0
-*/
-var composeTransformation = /* @__PURE__ */ new ComposeTransformation();
-/**
-* Represents a `PropertySignature -> PropertySignature` transformation
-*
-* The semantic of `decode` is:
-* - `none()` represents the absence of the key/value pair
-* - `some(value)` represents the presence of the key/value pair
-*
-* The semantic of `encode` is:
-* - `none()` you don't want to output the key/value pair
-* - `some(value)` you want to output the key/value pair
-*
-* @category model
-* @since 3.10.0
-*/
-var PropertySignatureTransformation$1 = class {
-	from;
-	to;
-	decode;
-	encode;
-	constructor(from, to, decode, encode) {
-		this.from = from;
-		this.to = to;
-		this.decode = decode;
-		this.encode = encode;
-	}
-};
-/**
-* @category model
-* @since 3.10.0
-*/
-var TypeLiteralTransformation = class {
-	propertySignatureTransformations;
-	/**
-	* @since 3.10.0
-	*/
-	_tag = "TypeLiteralTransformation";
-	constructor(propertySignatureTransformations) {
-		this.propertySignatureTransformations = propertySignatureTransformations;
-		const fromKeys = {};
-		const toKeys = {};
-		for (const pst of propertySignatureTransformations) {
-			const from = pst.from;
-			if (fromKeys[from]) throw new Error(getASTDuplicatePropertySignatureTransformationErrorMessage(from));
-			fromKeys[from] = true;
-			const to = pst.to;
-			if (toKeys[to]) throw new Error(getASTDuplicatePropertySignatureTransformationErrorMessage(to));
-			toKeys[to] = true;
-		}
-	}
-};
-/**
-* @category guards
-* @since 3.10.0
-*/
-var isTypeLiteralTransformation = /* @__PURE__ */ createTransformationGuard("TypeLiteralTransformation");
-/**
-* Merges a set of new annotations with existing ones, potentially overwriting
-* any duplicates.
-*
-* Any previously existing identifier annotations are deleted.
-*
-* @since 3.10.0
-*/
-var annotations = (ast, overrides) => {
-	const d = Object.getOwnPropertyDescriptors(ast);
-	const base = { ...ast.annotations };
-	delete base[IdentifierAnnotationId];
-	const value = {
-		...base,
-		...overrides
-	};
-	const surrogate = getSurrogateAnnotation(ast);
-	if (isSome(surrogate)) value[SurrogateAnnotationId] = annotations(surrogate.value, overrides);
-	d.annotations.value = value;
-	return Object.create(Object.getPrototypeOf(ast), d);
-};
-var STRING_KEYWORD_PATTERN = "[\\s\\S]*?";
-var NUMBER_KEYWORD_PATTERN = "[+-]?\\d*\\.?\\d+(?:[Ee][+-]?\\d+)?";
-var getTemplateLiteralSpanTypePattern = (type, capture) => {
-	switch (type._tag) {
-		case "Literal": return escape(String(type.literal));
-		case "StringKeyword": return STRING_KEYWORD_PATTERN;
-		case "NumberKeyword": return NUMBER_KEYWORD_PATTERN;
-		case "TemplateLiteral": return getTemplateLiteralPattern(type, capture, false);
-		case "Union": return type.types.map((type) => getTemplateLiteralSpanTypePattern(type, capture)).join("|");
-	}
-};
-var handleTemplateLiteralSpanTypeParens = (type, s, capture, top) => {
-	if (isUnion(type)) {
-		if (capture && !top) return `(?:${s})`;
-	} else if (!capture || !top) return s;
-	return `(${s})`;
-};
-var getTemplateLiteralPattern = (ast, capture, top) => {
-	let pattern = ``;
-	if (ast.head !== "") {
-		const head = escape(ast.head);
-		pattern += capture && top ? `(${head})` : head;
-	}
-	for (const span of ast.spans) {
-		const spanPattern = getTemplateLiteralSpanTypePattern(span.type, capture);
-		pattern += handleTemplateLiteralSpanTypeParens(span.type, spanPattern, capture, top);
-		if (span.literal !== "") {
-			const literal = escape(span.literal);
-			pattern += capture && top ? `(${literal})` : literal;
-		}
-	}
-	return pattern;
-};
-/**
-* Generates a regular expression from a `TemplateLiteral` AST node.
-*
-* @see {@link getTemplateLiteralCapturingRegExp} for a variant that captures the pattern.
-*
-* @since 3.10.0
-*/
-var getTemplateLiteralRegExp = (ast) => new RegExp(`^${getTemplateLiteralPattern(ast, false, true)}$`);
-/** @internal */
-var record = (key, value) => {
-	const propertySignatures = [];
-	const indexSignatures = [];
-	const go = (key) => {
-		switch (key._tag) {
-			case "NeverKeyword": break;
-			case "StringKeyword":
-			case "SymbolKeyword":
-			case "TemplateLiteral":
-			case "Refinement":
-				indexSignatures.push(new IndexSignature(key, value, true));
-				break;
-			case "Literal":
-				if (isString(key.literal) || isNumber(key.literal)) propertySignatures.push(new PropertySignature(key.literal, value, false, true));
-				else throw new Error(getASTUnsupportedLiteralErrorMessage(key.literal));
-				break;
-			case "Enums":
-				for (const [_, name] of key.enums) propertySignatures.push(new PropertySignature(name, value, false, true));
-				break;
-			case "UniqueSymbol":
-				propertySignatures.push(new PropertySignature(key.symbol, value, false, true));
-				break;
-			case "Union":
-				key.types.forEach(go);
-				break;
-			default: throw new Error(getASTUnsupportedKeySchemaErrorMessage(key));
-		}
-	};
-	go(key);
-	return {
-		propertySignatures,
-		indexSignatures
-	};
-};
-/** @internal */
-var pickAnnotations = (annotationIds) => (annotated) => {
-	let out = void 0;
-	for (const id of annotationIds) if (Object.prototype.hasOwnProperty.call(annotated.annotations, id)) {
-		if (out === void 0) out = {};
-		out[id] = annotated.annotations[id];
-	}
-	return out;
-};
-/** @internal */
-var omitAnnotations = (annotationIds) => (annotated) => {
-	const out = { ...annotated.annotations };
-	for (const id of annotationIds) delete out[id];
-	return out;
-};
-var preserveTransformationAnnotations = /* @__PURE__ */ pickAnnotations([
-	ExamplesAnnotationId,
-	DefaultAnnotationId,
-	JSONSchemaAnnotationId,
-	ArbitraryAnnotationId,
-	PrettyAnnotationId,
-	EquivalenceAnnotationId
-]);
-/**
-* @since 3.10.0
-*/
-var typeAST = (ast) => {
-	switch (ast._tag) {
-		case "Declaration": {
-			const typeParameters = changeMap(ast.typeParameters, typeAST);
-			return typeParameters === ast.typeParameters ? ast : new Declaration(typeParameters, ast.decodeUnknown, ast.encodeUnknown, ast.annotations);
-		}
-		case "TupleType": {
-			const elements = changeMap(ast.elements, (e) => {
-				const type = typeAST(e.type);
-				return type === e.type ? e : new OptionalType(type, e.isOptional);
-			});
-			const restASTs = getRestASTs(ast.rest);
-			const rest = changeMap(restASTs, typeAST);
-			return elements === ast.elements && rest === restASTs ? ast : new TupleType(elements, rest.map((type) => new Type$1(type)), ast.isReadonly, ast.annotations);
-		}
-		case "TypeLiteral": {
-			const propertySignatures = changeMap(ast.propertySignatures, (p) => {
-				const type = typeAST(p.type);
-				return type === p.type ? p : new PropertySignature(p.name, type, p.isOptional, p.isReadonly);
-			});
-			const indexSignatures = changeMap(ast.indexSignatures, (is) => {
-				const type = typeAST(is.type);
-				return type === is.type ? is : new IndexSignature(is.parameter, type, is.isReadonly);
-			});
-			return propertySignatures === ast.propertySignatures && indexSignatures === ast.indexSignatures ? ast : new TypeLiteral(propertySignatures, indexSignatures, ast.annotations);
-		}
-		case "Union": {
-			const types = changeMap(ast.types, typeAST);
-			return types === ast.types ? ast : Union$1.make(types, ast.annotations);
-		}
-		case "Suspend": return new Suspend(() => typeAST(ast.f()), ast.annotations);
-		case "Refinement": {
-			const from = typeAST(ast.from);
-			return from === ast.from ? ast : new Refinement$1(from, ast.filter, ast.annotations);
-		}
-		case "Transformation": {
-			const preserve = preserveTransformationAnnotations(ast);
-			return typeAST(preserve !== void 0 ? annotations(ast.to, preserve) : ast.to);
-		}
-	}
-	return ast;
-};
-function changeMap(as, f) {
-	let changed = false;
-	const out = allocate(as.length);
-	for (let i = 0; i < as.length; i++) {
-		const a = as[i];
-		const fa = f(a);
-		if (fa !== a) changed = true;
-		out[i] = fa;
-	}
-	return changed ? out : as;
-}
-/**
-* Returns the from part of a transformation if it exists
-*
-* @internal
-*/
-var getTransformationFrom = (ast) => {
-	switch (ast._tag) {
-		case "Transformation": return ast.from;
-		case "Refinement": return getTransformationFrom(ast.from);
-		case "Suspend": return getTransformationFrom(ast.f());
-	}
-};
-var encodedAST_ = (ast, isBound) => {
-	switch (ast._tag) {
-		case "Declaration": {
-			const typeParameters = changeMap(ast.typeParameters, (ast) => encodedAST_(ast, isBound));
-			return typeParameters === ast.typeParameters ? ast : new Declaration(typeParameters, ast.decodeUnknown, ast.encodeUnknown);
-		}
-		case "TupleType": {
-			const elements = changeMap(ast.elements, (e) => {
-				const type = encodedAST_(e.type, isBound);
-				return type === e.type ? e : new OptionalType(type, e.isOptional);
-			});
-			const restASTs = getRestASTs(ast.rest);
-			const rest = changeMap(restASTs, (ast) => encodedAST_(ast, isBound));
-			return elements === ast.elements && rest === restASTs ? ast : new TupleType(elements, rest.map((ast) => new Type$1(ast)), ast.isReadonly);
-		}
-		case "TypeLiteral": {
-			const propertySignatures = changeMap(ast.propertySignatures, (ps) => {
-				const type = encodedAST_(ps.type, isBound);
-				return type === ps.type ? ps : new PropertySignature(ps.name, type, ps.isOptional, ps.isReadonly);
-			});
-			const indexSignatures = changeMap(ast.indexSignatures, (is) => {
-				const type = encodedAST_(is.type, isBound);
-				return type === is.type ? is : new IndexSignature(is.parameter, type, is.isReadonly);
-			});
-			return propertySignatures === ast.propertySignatures && indexSignatures === ast.indexSignatures ? ast : new TypeLiteral(propertySignatures, indexSignatures);
-		}
-		case "Union": {
-			const types = changeMap(ast.types, (ast) => encodedAST_(ast, isBound));
-			return types === ast.types ? ast : Union$1.make(types);
-		}
-		case "Suspend": {
-			let borrowedAnnotations = void 0;
-			const identifier = getJSONIdentifier(ast);
-			if (isSome(identifier)) {
-				const suffix = isBound ? "Bound" : "";
-				borrowedAnnotations = { [JSONIdentifierAnnotationId]: `${identifier.value}Encoded${suffix}` };
-			}
-			return new Suspend(() => encodedAST_(ast.f(), isBound), borrowedAnnotations);
-		}
-		case "Refinement": {
-			const from = encodedAST_(ast.from, isBound);
-			if (isBound) {
-				if (from === ast.from) return ast;
-				if (getTransformationFrom(ast.from) === void 0 && hasStableFilter(ast)) return new Refinement$1(from, ast.filter, ast.annotations);
-				return from;
-			} else return from;
-		}
-		case "Transformation": return encodedAST_(ast.from, isBound);
-	}
-	return ast;
-};
-/**
-* @since 3.10.0
-*/
-var encodedAST = (ast) => encodedAST_(ast, false);
-var toJSONAnnotations = (annotations) => {
-	const out = {};
-	for (const k of Object.getOwnPropertySymbols(annotations)) out[String(k)] = annotations[k];
-	return out;
-};
-/** @internal */
-var getEncodedParameter = (ast) => {
-	switch (ast._tag) {
-		case "StringKeyword":
-		case "SymbolKeyword":
-		case "TemplateLiteral": return ast;
-		case "Refinement": return getEncodedParameter(ast.from);
-	}
-};
-var formatKeyword = (ast) => getOrElse(getExpected(ast), () => ast._tag);
-function getBrands(ast) {
-	return match$4(getBrandAnnotation(ast), {
-		onNone: () => "",
-		onSome: (brands) => brands.map((brand) => ` & Brand<${formatUnknown(brand)}>`).join("")
-	});
-}
-var getOrElseExpected = (ast) => getTitleAnnotation(ast).pipe(orElse$3(() => getDescriptionAnnotation(ast)), orElse$3(() => getAutoTitleAnnotation(ast)), map$7((s) => s + getBrands(ast)));
-var getExpected = (ast) => orElse$3(getIdentifierAnnotation(ast), () => getOrElseExpected(ast));
-//#endregion
-//#region node_modules/effect/dist/esm/BigDecimal.js
-/**
-* This module provides utility functions and type class instances for working with the `BigDecimal` type in TypeScript.
-* It includes functions for basic arithmetic operations, as well as type class instances for `Equivalence` and `Order`.
-*
-* A `BigDecimal` allows storing any real number to arbitrary precision; which avoids common floating point errors
-* (such as 0.1 + 0.2 ≠ 0.3) at the cost of complexity.
-*
-* Internally, `BigDecimal` uses a `BigInt` object, paired with a 64-bit integer which determines the position of the
-* decimal point. Therefore, the precision *is not* actually arbitrary, but limited to 2<sup>63</sup> decimal places.
-*
-* It is not recommended to convert a floating point number to a decimal directly, as the floating point representation
-* may be unexpected.
-*
-* @module BigDecimal
-* @since 2.0.0
-* @see {@link module:BigInt} for more similar operations on `bigint` types
-* @see {@link module:Number} for more similar operations on `number` types
-*/
-var FINITE_INT_REGEX = /^[+-]?\d+$/;
-/**
-* @since 2.0.0
-* @category symbols
-*/
-var TypeId$12 = /* @__PURE__ */ Symbol.for("effect/BigDecimal");
-var BigDecimalProto = {
-	[TypeId$12]: TypeId$12,
-	[symbol$1]() {
-		const normalized = normalize$1(this);
-		return pipe(hash(normalized.value), combine$5(number$1(normalized.scale)), cached(this));
-	},
-	[symbol](that) {
-		return isBigDecimal(that) && equals$1(this, that);
-	},
-	toString() {
-		return `BigDecimal(${format$3(this)})`;
-	},
-	toJSON() {
-		return {
-			_id: "BigDecimal",
-			value: String(this.value),
-			scale: this.scale
-		};
-	},
-	[NodeInspectSymbol]() {
-		return this.toJSON();
-	},
-	pipe() {
-		return pipeArguments(this, arguments);
-	}
-};
-/**
-* Checks if a given value is a `BigDecimal`.
-*
-* @since 2.0.0
-* @category guards
-*/
-var isBigDecimal = (u) => hasProperty(u, TypeId$12);
-/**
-* Creates a `BigDecimal` from a `bigint` value and a scale.
-*
-* @since 2.0.0
-* @category constructors
-*/
-var make$25 = (value, scale) => {
-	const o = Object.create(BigDecimalProto);
-	o.value = value;
-	o.scale = scale;
-	return o;
-};
-/**
-* Internal function used to create pre-normalized `BigDecimal`s.
-*
-* @internal
-*/
-var unsafeMakeNormalized = (value, scale) => {
-	if (value !== bigint0$2 && value % bigint10 === bigint0$2) throw new RangeError("Value must be normalized");
-	const o = make$25(value, scale);
-	o.normalized = o;
-	return o;
-};
-var bigint0$2 = /* @__PURE__ */ BigInt(0);
-var bigint10 = /* @__PURE__ */ BigInt(10);
-var zero$1 = /* @__PURE__ */ unsafeMakeNormalized(bigint0$2, 0);
-/**
-* Normalizes a given `BigDecimal` by removing trailing zeros.
-*
-* **Example**
-*
-* ```ts
-* import * as assert from "node:assert"
-* import { normalize, make, unsafeFromString } from "effect/BigDecimal"
-*
-* assert.deepStrictEqual(normalize(unsafeFromString("123.00000")), normalize(make(123n, 0)))
-* assert.deepStrictEqual(normalize(unsafeFromString("12300000")), normalize(make(123n, -5)))
-* ```
-*
-* @since 2.0.0
-* @category scaling
-*/
-var normalize$1 = (self) => {
-	if (self.normalized === void 0) if (self.value === bigint0$2) self.normalized = zero$1;
-	else {
-		const digits = `${self.value}`;
-		let trail = 0;
-		for (let i = digits.length - 1; i >= 0; i--) if (digits[i] === "0") trail++;
-		else break;
-		if (trail === 0) self.normalized = self;
-		self.normalized = unsafeMakeNormalized(BigInt(digits.substring(0, digits.length - trail)), self.scale - trail);
-	}
-	return self.normalized;
-};
-/**
-* Scales a given `BigDecimal` to the specified scale.
-*
-* If the given scale is smaller than the current scale, the value will be rounded down to
-* the nearest integer.
-*
-* @since 2.0.0
-* @category scaling
-*/
-var scale = /* @__PURE__ */ dual(2, (self, scale) => {
-	if (scale > self.scale) return make$25(self.value * bigint10 ** BigInt(scale - self.scale), scale);
-	if (scale < self.scale) return make$25(self.value / bigint10 ** BigInt(self.scale - scale), scale);
-	return self;
-});
-/**
-* Determines the absolute value of a given `BigDecimal`.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { abs, unsafeFromString } from "effect/BigDecimal"
-*
-* assert.deepStrictEqual(abs(unsafeFromString("-5")), unsafeFromString("5"))
-* assert.deepStrictEqual(abs(unsafeFromString("0")), unsafeFromString("0"))
-* assert.deepStrictEqual(abs(unsafeFromString("5")), unsafeFromString("5"))
-* ```
-*
-* @since 2.0.0
-* @category math
-*/
-var abs = (n) => n.value < bigint0$2 ? make$25(-n.value, n.scale) : n;
-/**
-* @category instances
-* @since 2.0.0
-*/
-var Equivalence$3 = /* @__PURE__ */ make$29((self, that) => {
-	if (self.scale > that.scale) return scale(that, self.scale).value === self.value;
-	if (self.scale < that.scale) return scale(self, that.scale).value === that.value;
-	return self.value === that.value;
-});
-/**
-* Checks if two `BigDecimal`s are equal.
-*
-* @since 2.0.0
-* @category predicates
-*/
-var equals$1 = /* @__PURE__ */ dual(2, (self, that) => Equivalence$3(self, that));
-/**
-* Creates a `BigDecimal` from a `number` value.
-*
-* It is not recommended to convert a floating point number to a decimal directly,
-* as the floating point representation may be unexpected.
-*
-* Throws a `RangeError` if the number is not finite (`NaN`, `+Infinity` or `-Infinity`).
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { unsafeFromNumber, make } from "effect/BigDecimal"
-*
-* assert.deepStrictEqual(unsafeFromNumber(123), make(123n, 0))
-* assert.deepStrictEqual(unsafeFromNumber(123.456), make(123456n, 3))
-* ```
-*
-* @since 3.11.0
-* @category constructors
-*/
-var unsafeFromNumber = (n) => getOrThrowWith(safeFromNumber(n), () => /* @__PURE__ */ new RangeError(`Number must be finite, got ${n}`));
-/**
-* Creates a `BigDecimal` from a `number` value.
-*
-* It is not recommended to convert a floating point number to a decimal directly,
-* as the floating point representation may be unexpected.
-*
-* Returns `None` if the number is not finite (`NaN`, `+Infinity` or `-Infinity`).
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { BigDecimal, Option } from "effect"
-*
-* assert.deepStrictEqual(BigDecimal.safeFromNumber(123), Option.some(BigDecimal.make(123n, 0)))
-* assert.deepStrictEqual(BigDecimal.safeFromNumber(123.456), Option.some(BigDecimal.make(123456n, 3)))
-* assert.deepStrictEqual(BigDecimal.safeFromNumber(Infinity), Option.none())
-* ```
-*
-* @since 3.11.0
-* @category constructors
-*/
-var safeFromNumber = (n) => {
-	if (!Number.isFinite(n)) return none$4();
-	const string = `${n}`;
-	if (string.includes("e")) return fromString$1(string);
-	const [lead, trail = ""] = string.split(".");
-	return some(make$25(BigInt(`${lead}${trail}`), trail.length));
-};
-/**
-* Parses a numerical `string` into a `BigDecimal`.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { BigDecimal, Option } from "effect"
-*
-* assert.deepStrictEqual(BigDecimal.fromString("123"), Option.some(BigDecimal.make(123n, 0)))
-* assert.deepStrictEqual(BigDecimal.fromString("123.456"), Option.some(BigDecimal.make(123456n, 3)))
-* assert.deepStrictEqual(BigDecimal.fromString("123.abc"), Option.none())
-* ```
-*
-* @since 2.0.0
-* @category constructors
-*/
-var fromString$1 = (s) => {
-	if (s === "") return some(zero$1);
-	let base;
-	let exp;
-	const seperator = s.search(/[eE]/);
-	if (seperator !== -1) {
-		const trail = s.slice(seperator + 1);
-		base = s.slice(0, seperator);
-		exp = Number(trail);
-		if (base === "" || !Number.isSafeInteger(exp) || !FINITE_INT_REGEX.test(trail)) return none$4();
-	} else {
-		base = s;
-		exp = 0;
-	}
-	let digits;
-	let offset;
-	const dot = base.search(/\./);
-	if (dot !== -1) {
-		const lead = base.slice(0, dot);
-		const trail = base.slice(dot + 1);
-		digits = `${lead}${trail}`;
-		offset = trail.length;
-	} else {
-		digits = base;
-		offset = 0;
-	}
-	if (!FINITE_INT_REGEX.test(digits)) return none$4();
-	const scale = offset - exp;
-	if (!Number.isSafeInteger(scale)) return none$4();
-	return some(make$25(BigInt(digits), scale));
-};
-/**
-* Formats a given `BigDecimal` as a `string`.
-*
-* If the scale of the `BigDecimal` is greater than or equal to 16, the `BigDecimal` will
-* be formatted in scientific notation.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { format, unsafeFromString } from "effect/BigDecimal"
-*
-* assert.deepStrictEqual(format(unsafeFromString("-5")), "-5")
-* assert.deepStrictEqual(format(unsafeFromString("123.456")), "123.456")
-* assert.deepStrictEqual(format(unsafeFromString("-0.00000123")), "-0.00000123")
-* ```
-*
-* @since 2.0.0
-* @category conversions
-*/
-var format$3 = (n) => {
-	const normalized = normalize$1(n);
-	if (Math.abs(normalized.scale) >= 16) return toExponential(normalized);
-	const negative = normalized.value < bigint0$2;
-	const absolute = negative ? `${normalized.value}`.substring(1) : `${normalized.value}`;
-	let before;
-	let after;
-	if (normalized.scale >= absolute.length) {
-		before = "0";
-		after = "0".repeat(normalized.scale - absolute.length) + absolute;
-	} else {
-		const location = absolute.length - normalized.scale;
-		if (location > absolute.length) {
-			const zeros = location - absolute.length;
-			before = `${absolute}${"0".repeat(zeros)}`;
-			after = "";
-		} else {
-			after = absolute.slice(location);
-			before = absolute.slice(0, location);
-		}
-	}
-	const complete = after === "" ? before : `${before}.${after}`;
-	return negative ? `-${complete}` : complete;
-};
-/**
-* Formats a given `BigDecimal` as a `string` in scientific notation.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { toExponential, make } from "effect/BigDecimal"
-*
-* assert.deepStrictEqual(toExponential(make(123456n, -5)), "1.23456e+10")
-* ```
-*
-* @since 3.11.0
-* @category conversions
-*/
-var toExponential = (n) => {
-	if (isZero$1(n)) return "0e+0";
-	const normalized = normalize$1(n);
-	const digits = `${abs(normalized).value}`;
-	const head = digits.slice(0, 1);
-	const tail = digits.slice(1);
-	let output = `${isNegative(normalized) ? "-" : ""}${head}`;
-	if (tail !== "") output += `.${tail}`;
-	const exp = tail.length - normalized.scale;
-	return `${output}e${exp >= 0 ? "+" : ""}${exp}`;
-};
-/**
-* Converts a `BigDecimal` to a `number`.
-*
-* This function will produce incorrect results if the `BigDecimal` exceeds the 64-bit range of a `number`.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { unsafeToNumber, unsafeFromString } from "effect/BigDecimal"
-*
-* assert.deepStrictEqual(unsafeToNumber(unsafeFromString("123.456")), 123.456)
-* ```
-*
-* @since 2.0.0
-* @category conversions
-*/
-var unsafeToNumber = (n) => Number(format$3(n));
-/**
-* Checks if a given `BigDecimal` is `0`.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { isZero, unsafeFromString } from "effect/BigDecimal"
-*
-* assert.deepStrictEqual(isZero(unsafeFromString("0")), true)
-* assert.deepStrictEqual(isZero(unsafeFromString("1")), false)
-* ```
-*
-* @since 2.0.0
-* @category predicates
-*/
-var isZero$1 = (n) => n.value === bigint0$2;
-/**
-* Checks if a given `BigDecimal` is negative.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { isNegative, unsafeFromString } from "effect/BigDecimal"
-*
-* assert.deepStrictEqual(isNegative(unsafeFromString("-1")), true)
-* assert.deepStrictEqual(isNegative(unsafeFromString("0")), false)
-* assert.deepStrictEqual(isNegative(unsafeFromString("1")), false)
-* ```
-*
-* @since 2.0.0
-* @category predicates
-*/
-var isNegative = (n) => n.value < bigint0$2;
-//#endregion
-//#region node_modules/effect/dist/esm/BigInt.js
-/**
-* Takes a `bigint` and returns an `Option` of `number`.
-*
-* If the `bigint` is outside the safe integer range for JavaScript (`Number.MAX_SAFE_INTEGER`
-* and `Number.MIN_SAFE_INTEGER`), it returns `Option.none()`. Otherwise, it converts the `bigint`
-* to a number and returns `Option.some(number)`.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { BigInt as BI, Option } from "effect"
-*
-* assert.deepStrictEqual(BI.toNumber(BigInt(42)), Option.some(42))
-* assert.deepStrictEqual(BI.toNumber(BigInt(Number.MAX_SAFE_INTEGER) + BigInt(1)), Option.none())
-* assert.deepStrictEqual(BI.toNumber(BigInt(Number.MIN_SAFE_INTEGER) - BigInt(1)), Option.none())
-* ```
-*
-* @category conversions
-* @since 2.0.0
-*/
-var toNumber = (b) => {
-	if (b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)) return none$4();
-	return some(Number(b));
-};
-/**
-* Takes a string and returns an `Option` of `bigint`.
-*
-* If the string is empty or contains characters that cannot be converted into a `bigint`,
-* it returns `Option.none()`, otherwise, it returns `Option.some(bigint)`.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { BigInt as BI, Option } from "effect"
-*
-* assert.deepStrictEqual(BI.fromString("42"), Option.some(BigInt(42)))
-* assert.deepStrictEqual(BI.fromString(" "), Option.none())
-* assert.deepStrictEqual(BI.fromString("a"), Option.none())
-* ```
-*
-* @category conversions
-* @since 2.4.12
-*/
-var fromString = (s) => {
-	try {
-		return s.trim() === "" ? none$4() : some(BigInt(s));
-	} catch {
-		return none$4();
-	}
-};
-/**
-* Takes a number and returns an `Option` of `bigint`.
-*
-* If the number is outside the safe integer range for JavaScript (`Number.MAX_SAFE_INTEGER`
-* and `Number.MIN_SAFE_INTEGER`), it returns `Option.none()`. Otherwise, it attempts to
-* convert the number to a `bigint` and returns `Option.some(bigint)`.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { BigInt as BI, Option } from "effect"
-*
-* assert.deepStrictEqual(BI.fromNumber(42), Option.some(BigInt(42)))
-* assert.deepStrictEqual(BI.fromNumber(Number.MAX_SAFE_INTEGER + 1), Option.none())
-* assert.deepStrictEqual(BI.fromNumber(Number.MIN_SAFE_INTEGER - 1), Option.none())
-* ```
-*
-* @category conversions
-* @since 2.4.12
-*/
-var fromNumber = (n) => {
-	if (n > Number.MAX_SAFE_INTEGER || n < Number.MIN_SAFE_INTEGER) return none$4();
-	try {
-		return some(BigInt(n));
-	} catch {
-		return none$4();
-	}
-};
-//#endregion
-//#region node_modules/effect/dist/esm/Boolean.js
-/**
-* Negates the given boolean: `!self`
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { not } from "effect/Boolean"
-*
-* assert.deepStrictEqual(not(true), false)
-* assert.deepStrictEqual(not(false), true)
-* ```
-*
-* @category combinators
-* @since 2.0.0
-*/
-var not = (self) => !self;
-//#endregion
-//#region node_modules/effect/dist/esm/internal/context.js
-/** @internal */
-var TagTypeId = /* @__PURE__ */ Symbol.for("effect/Context/Tag");
-/** @internal */
-var ReferenceTypeId = /* @__PURE__ */ Symbol.for("effect/Context/Reference");
-/** @internal */
-var STMTypeId = /* @__PURE__ */ Symbol.for("effect/STM");
-/** @internal */
-var TagProto = {
-	...EffectPrototype$1,
-	_op: "Tag",
-	[STMTypeId]: effectVariance,
-	[TagTypeId]: {
-		_Service: (_) => _,
-		_Identifier: (_) => _
-	},
-	toString() {
-		return format$4(this.toJSON());
-	},
-	toJSON() {
-		return {
-			_id: "Tag",
-			key: this.key,
-			stack: this.stack
-		};
-	},
-	[NodeInspectSymbol]() {
-		return this.toJSON();
-	},
-	of(self) {
-		return self;
-	},
-	context(self) {
-		return make$24(this, self);
-	}
-};
-var ReferenceProto = {
-	...TagProto,
-	[ReferenceTypeId]: ReferenceTypeId
-};
-/** @internal */
-var makeGenericTag = (key) => {
-	const limit = Error.stackTraceLimit;
-	Error.stackTraceLimit = 2;
-	const creationError = /* @__PURE__ */ new Error();
-	Error.stackTraceLimit = limit;
-	const tag = Object.create(TagProto);
-	Object.defineProperty(tag, "stack", { get() {
-		return creationError.stack;
-	} });
-	tag.key = key;
-	return tag;
-};
-/** @internal */
-var Tag$1 = (id) => () => {
-	const limit = Error.stackTraceLimit;
-	Error.stackTraceLimit = 2;
-	const creationError = /* @__PURE__ */ new Error();
-	Error.stackTraceLimit = limit;
-	function TagClass() {}
-	Object.setPrototypeOf(TagClass, TagProto);
-	TagClass.key = id;
-	Object.defineProperty(TagClass, "stack", { get() {
-		return creationError.stack;
-	} });
-	return TagClass;
-};
-/** @internal */
-var Reference$1 = () => (id, options) => {
-	const limit = Error.stackTraceLimit;
-	Error.stackTraceLimit = 2;
-	const creationError = /* @__PURE__ */ new Error();
-	Error.stackTraceLimit = limit;
-	function ReferenceClass() {}
-	Object.setPrototypeOf(ReferenceClass, ReferenceProto);
-	ReferenceClass.key = id;
-	ReferenceClass.defaultValue = options.defaultValue;
-	Object.defineProperty(ReferenceClass, "stack", { get() {
-		return creationError.stack;
-	} });
-	return ReferenceClass;
-};
-/** @internal */
-var TypeId$11 = /* @__PURE__ */ Symbol.for("effect/Context");
-/** @internal */
-var ContextProto = {
-	[TypeId$11]: { _Services: (_) => _ },
-	[symbol](that) {
-		if (isContext$1(that)) {
-			if (this.unsafeMap.size === that.unsafeMap.size) {
-				for (const k of this.unsafeMap.keys()) if (!that.unsafeMap.has(k) || !equals$2(this.unsafeMap.get(k), that.unsafeMap.get(k))) return false;
-				return true;
-			}
-		}
-		return false;
-	},
-	[symbol$1]() {
-		return cached(this, number$1(this.unsafeMap.size));
-	},
-	pipe() {
-		return pipeArguments(this, arguments);
-	},
-	toString() {
-		return format$4(this.toJSON());
-	},
-	toJSON() {
-		return {
-			_id: "Context",
-			services: Array.from(this.unsafeMap).map(toJSON)
-		};
-	},
-	[NodeInspectSymbol]() {
-		return this.toJSON();
-	}
-};
-/** @internal */
-var makeContext = (unsafeMap) => {
-	const context = Object.create(ContextProto);
-	context.unsafeMap = unsafeMap;
-	return context;
-};
-var serviceNotFoundError = (tag) => {
-	const error = /* @__PURE__ */ new Error(`Service not found${tag.key ? `: ${String(tag.key)}` : ""}`);
-	if (tag.stack) {
-		const lines = tag.stack.split("\n");
-		if (lines.length > 2) {
-			const afterAt = lines[2].match(/at (.*)/);
-			if (afterAt) error.message = error.message + ` (defined at ${afterAt[1]})`;
-		}
-	}
-	if (error.stack) {
-		const lines = error.stack.split("\n");
-		lines.splice(1, 3);
-		error.stack = lines.join("\n");
-	}
-	return error;
-};
-/** @internal */
-var isContext$1 = (u) => hasProperty(u, TypeId$11);
-/** @internal */
-var isTag$1 = (u) => hasProperty(u, TagTypeId);
-/** @internal */
-var isReference = (u) => hasProperty(u, ReferenceTypeId);
-var _empty$6 = /* @__PURE__ */ makeContext(/* @__PURE__ */ new Map());
-/** @internal */
-var empty$18 = () => _empty$6;
-/** @internal */
-var make$24 = (tag, service) => makeContext(new Map([[tag.key, service]]));
-/** @internal */
-var add$3 = /* @__PURE__ */ dual(3, (self, tag, service) => {
-	const map = new Map(self.unsafeMap);
-	map.set(tag.key, service);
-	return makeContext(map);
-});
-var defaultValueCache = /* @__PURE__ */ globalValue("effect/Context/defaultValueCache", () => /* @__PURE__ */ new Map());
-var getDefaultValue = (tag) => {
-	if (defaultValueCache.has(tag.key)) return defaultValueCache.get(tag.key);
-	const value = tag.defaultValue();
-	defaultValueCache.set(tag.key, value);
-	return value;
-};
-/** @internal */
-var unsafeGetReference = (self, tag) => {
-	return self.unsafeMap.has(tag.key) ? self.unsafeMap.get(tag.key) : getDefaultValue(tag);
-};
-/** @internal */
-var unsafeGet$2 = /* @__PURE__ */ dual(2, (self, tag) => {
-	if (!self.unsafeMap.has(tag.key)) {
-		if (ReferenceTypeId in tag) return getDefaultValue(tag);
-		throw serviceNotFoundError(tag);
-	}
-	return self.unsafeMap.get(tag.key);
-});
-/** @internal */
-var get$8 = unsafeGet$2;
-/** @internal */
-var getOption$1 = /* @__PURE__ */ dual(2, (self, tag) => {
-	if (!self.unsafeMap.has(tag.key)) return isReference(tag) ? some$1(getDefaultValue(tag)) : none$5;
-	return some$1(self.unsafeMap.get(tag.key));
-});
-/** @internal */
-var merge$4 = /* @__PURE__ */ dual(2, (self, that) => {
-	const map = new Map(self.unsafeMap);
-	for (const [tag, s] of that.unsafeMap) map.set(tag, s);
-	return makeContext(map);
-});
-/** @internal */
-var mergeAll$3 = (...ctxs) => {
-	const map = /* @__PURE__ */ new Map();
-	for (let i = 0; i < ctxs.length; i++) ctxs[i].unsafeMap.forEach((value, key) => {
-		map.set(key, value);
-	});
-	return makeContext(map);
-};
-//#endregion
-//#region node_modules/effect/dist/esm/Context.js
-/**
-* Creates a new `Tag` instance with an optional key parameter.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { Context } from "effect"
-*
-* assert.strictEqual(Context.GenericTag("PORT").key === Context.GenericTag("PORT").key, true)
-* ```
-*
-* @since 2.0.0
-* @category constructors
-*/
-var GenericTag = makeGenericTag;
-/**
-* Checks if the provided argument is a `Context`.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { Context } from "effect"
-*
-* assert.strictEqual(Context.isContext(Context.empty()), true)
-* ```
-*
-* @since 2.0.0
-* @category guards
-*/
-var isContext = isContext$1;
-/**
-* Checks if the provided argument is a `Tag`.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { Context } from "effect"
-*
-* assert.strictEqual(Context.isTag(Context.GenericTag("Tag")), true)
-* ```
-*
-* @since 2.0.0
-* @category guards
-*/
-var isTag = isTag$1;
-/**
-* Returns an empty `Context`.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { Context } from "effect"
-*
-* assert.strictEqual(Context.isContext(Context.empty()), true)
-* ```
-*
-* @since 2.0.0
-* @category constructors
-*/
-var empty$17 = empty$18;
-/**
-* Creates a new `Context` with a single service associated to the tag.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { Context } from "effect"
-*
-* const Port = Context.GenericTag<{ PORT: number }>("Port")
-*
-* const Services = Context.make(Port, { PORT: 8080 })
-*
-* assert.deepStrictEqual(Context.get(Services, Port), { PORT: 8080 })
-* ```
-*
-* @since 2.0.0
-* @category constructors
-*/
-var make$23 = make$24;
-/**
-* Adds a service to a given `Context`.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { Context, pipe } from "effect"
-*
-* const Port = Context.GenericTag<{ PORT: number }>("Port")
-* const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
-*
-* const someContext = Context.make(Port, { PORT: 8080 })
-*
-* const Services = pipe(
-*   someContext,
-*   Context.add(Timeout, { TIMEOUT: 5000 })
-* )
-*
-* assert.deepStrictEqual(Context.get(Services, Port), { PORT: 8080 })
-* assert.deepStrictEqual(Context.get(Services, Timeout), { TIMEOUT: 5000 })
-* ```
-*
-* @since 2.0.0
-*/
-var add$2 = add$3;
-/**
-* Get a service from the context that corresponds to the given tag.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { pipe, Context } from "effect"
-*
-* const Port = Context.GenericTag<{ PORT: number }>("Port")
-* const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
-*
-* const Services = pipe(
-*   Context.make(Port, { PORT: 8080 }),
-*   Context.add(Timeout, { TIMEOUT: 5000 })
-* )
-*
-* assert.deepStrictEqual(Context.get(Services, Timeout), { TIMEOUT: 5000 })
-* ```
-*
-* @since 2.0.0
-* @category getters
-*/
-var get$7 = get$8;
-/**
-* Get a service from the context that corresponds to the given tag.
-* This function is unsafe because if the tag is not present in the context, a runtime error will be thrown.
-*
-* For a safer version see {@link getOption}.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { Context } from "effect"
-*
-* const Port = Context.GenericTag<{ PORT: number }>("Port")
-* const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
-*
-* const Services = Context.make(Port, { PORT: 8080 })
-*
-* assert.deepStrictEqual(Context.unsafeGet(Services, Port), { PORT: 8080 })
-* assert.throws(() => Context.unsafeGet(Services, Timeout))
-* ```
-*
-* @since 2.0.0
-* @category unsafe
-*/
-var unsafeGet$1 = unsafeGet$2;
-/**
-* Get the value associated with the specified tag from the context wrapped in an `Option` object. If the tag is not
-* found, the `Option` object will be `None`.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { Context, Option } from "effect"
-*
-* const Port = Context.GenericTag<{ PORT: number }>("Port")
-* const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
-*
-* const Services = Context.make(Port, { PORT: 8080 })
-*
-* assert.deepStrictEqual(Context.getOption(Services, Port), Option.some({ PORT: 8080 }))
-* assert.deepStrictEqual(Context.getOption(Services, Timeout), Option.none())
-* ```
-*
-* @since 2.0.0
-* @category getters
-*/
-var getOption = getOption$1;
-/**
-* Merges two `Context`s, returning a new `Context` containing the services of both.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { Context } from "effect"
-*
-* const Port = Context.GenericTag<{ PORT: number }>("Port")
-* const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
-*
-* const firstContext = Context.make(Port, { PORT: 8080 })
-* const secondContext = Context.make(Timeout, { TIMEOUT: 5000 })
-*
-* const Services = Context.merge(firstContext, secondContext)
-*
-* assert.deepStrictEqual(Context.get(Services, Port), { PORT: 8080 })
-* assert.deepStrictEqual(Context.get(Services, Timeout), { TIMEOUT: 5000 })
-* ```
-*
-* @since 2.0.0
-*/
-var merge$3 = merge$4;
-/**
-* Merges any number of `Context`s, returning a new `Context` containing the services of all.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { Context } from "effect"
-*
-* const Port = Context.GenericTag<{ PORT: number }>("Port")
-* const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
-* const Host = Context.GenericTag<{ HOST: string }>("Host")
-*
-* const firstContext = Context.make(Port, { PORT: 8080 })
-* const secondContext = Context.make(Timeout, { TIMEOUT: 5000 })
-* const thirdContext = Context.make(Host, { HOST: "localhost" })
-*
-* const Services = Context.mergeAll(firstContext, secondContext, thirdContext)
-*
-* assert.deepStrictEqual(Context.get(Services, Port), { PORT: 8080 })
-* assert.deepStrictEqual(Context.get(Services, Timeout), { TIMEOUT: 5000 })
-* assert.deepStrictEqual(Context.get(Services, Host), { HOST: "localhost" })
-* ```
-*
-* @since 3.12.0
-*/
-var mergeAll$2 = mergeAll$3;
-/**
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { Context, Layer } from "effect"
-*
-* class MyTag extends Context.Tag("MyTag")<
-*  MyTag,
-*  { readonly myNum: number }
-* >() {
-*  static Live = Layer.succeed(this, { myNum: 108 })
-* }
-* ```
-*
-* @since 2.0.0
-* @category constructors
-*/
-var Tag = Tag$1;
-/**
-* Creates a context tag with a default value.
-*
-* **Details**
-*
-* `Context.Reference` allows you to create a tag that can hold a value. You can
-* provide a default value for the service, which will automatically be used
-* when the context is accessed, or override it with a custom implementation
-* when needed.
-*
-* **Example** (Declaring a Tag with a default value)
-*
-* ```ts
-* import * as assert from "node:assert"
-* import { Context, Effect } from "effect"
-*
-* class SpecialNumber extends Context.Reference<SpecialNumber>()(
-*   "SpecialNumber",
-*   { defaultValue: () => 2048 }
-* ) {}
-*
-* //      ┌─── Effect<void, never, never>
-* //      ▼
-* const program = Effect.gen(function* () {
-*   const specialNumber = yield* SpecialNumber
-*   console.log(`The special number is ${specialNumber}`)
-* })
-*
-* // No need to provide the SpecialNumber implementation
-* Effect.runPromise(program)
-* // Output: The special number is 2048
-* ```
-*
-* **Example** (Overriding the default value)
-*
-* ```ts
-* import { Context, Effect } from "effect"
-*
-* class SpecialNumber extends Context.Reference<SpecialNumber>()(
-*   "SpecialNumber",
-*   { defaultValue: () => 2048 }
-* ) {}
-*
-* const program = Effect.gen(function* () {
-*   const specialNumber = yield* SpecialNumber
-*   console.log(`The special number is ${specialNumber}`)
-* })
-*
-* Effect.runPromise(program.pipe(Effect.provideService(SpecialNumber, -1)))
-* // Output: The special number is -1
-* ```
-*
-* @since 3.11.0
-* @category constructors
-* @experimental
-*/
-var Reference = Reference$1;
+var join$1 = /*#__PURE__*/ dual(2, (self, sep) => fromIterable$6(self).join(sep));
 //#endregion
 //#region node_modules/effect/dist/esm/Chunk.js
 /**
 * @since 2.0.0
 */
-var TypeId$10 = /* @__PURE__ */ Symbol.for("effect/Chunk");
+var TypeId$12 = /*#__PURE__*/ Symbol.for("effect/Chunk");
 function copy(src, srcPos, dest, destPos, len) {
 	for (let i = srcPos; i < Math.min(src.length, srcPos + len); i++) dest[destPos + i - srcPos] = src[i];
 	return dest;
@@ -23349,10 +20736,10 @@ var emptyArray = [];
 * @category equivalence
 * @since 2.0.0
 */
-var getEquivalence$1 = (isEquivalent) => make$29((self, that) => self.length === that.length && toReadonlyArray(self).every((value, i) => isEquivalent(value, unsafeGet(that, i))));
-var _equivalence$1 = /* @__PURE__ */ getEquivalence$1(equals$2);
+var getEquivalence$1 = (isEquivalent) => make$29((self, that) => self.length === that.length && toReadonlyArray(self).every((value, i) => isEquivalent(value, unsafeGet$2(that, i))));
+var _equivalence$1 = /*#__PURE__*/ getEquivalence$1(equals$2);
 var ChunkProto = {
-	[TypeId$10]: { _A: (_) => _ },
+	[TypeId$12]: { _A: (_) => _ },
 	toString() {
 		return format$4(this.toJSON());
 	},
@@ -23401,20 +20788,20 @@ var makeChunk = (backing) => {
 		case "IArray":
 			chunk.length = backing.array.length;
 			chunk.depth = 0;
-			chunk.left = _empty$5;
-			chunk.right = _empty$5;
+			chunk.left = _empty$6;
+			chunk.right = _empty$6;
 			break;
 		case "ISingleton":
 			chunk.length = 1;
 			chunk.depth = 0;
-			chunk.left = _empty$5;
-			chunk.right = _empty$5;
+			chunk.left = _empty$6;
+			chunk.right = _empty$6;
 			break;
 		case "ISlice":
 			chunk.length = backing.length;
 			chunk.depth = backing.chunk.depth + 1;
-			chunk.left = _empty$5;
-			chunk.right = _empty$5;
+			chunk.left = _empty$6;
+			chunk.right = _empty$6;
 			break;
 	}
 	return chunk;
@@ -23425,20 +20812,20 @@ var makeChunk = (backing) => {
 * @category constructors
 * @since 2.0.0
 */
-var isChunk = (u) => hasProperty(u, TypeId$10);
-var _empty$5 = /* @__PURE__ */ makeChunk({ _tag: "IEmpty" });
+var isChunk = (u) => hasProperty(u, TypeId$12);
+var _empty$6 = /*#__PURE__*/ makeChunk({ _tag: "IEmpty" });
 /**
 * @category constructors
 * @since 2.0.0
 */
-var empty$16 = () => _empty$5;
+var empty$18 = () => _empty$6;
 /**
 * Builds a `NonEmptyChunk` from an non-empty collection of elements.
 *
 * @category constructors
 * @since 2.0.0
 */
-var make$22 = (...as) => unsafeFromNonEmptyArray(as);
+var make$25 = (...as) => unsafeFromNonEmptyArray(as);
 /**
 * Builds a `NonEmptyChunk` from a single element.
 *
@@ -23472,7 +20859,7 @@ var copyToArray = (self, array, initial) => {
 			let i = 0;
 			let j = initial;
 			while (i < self.length) {
-				array[j] = unsafeGet(self, i);
+				array[j] = unsafeGet$2(self, i);
 				i += 1;
 				j += 1;
 			}
@@ -23491,8 +20878,8 @@ var toReadonlyArray_ = (self) => {
 				_tag: "IArray",
 				array: arr
 			};
-			self.left = _empty$5;
-			self.right = _empty$5;
+			self.left = _empty$6;
+			self.right = _empty$6;
 			self.depth = 0;
 			return arr;
 		}
@@ -23549,7 +20936,7 @@ var reverse$1 = reverseChunk;
 * @since 2.0.0
 * @category unsafe
 */
-var unsafeFromArray = (self) => self.length === 0 ? empty$16() : self.length === 1 ? of$1(self[0]) : makeChunk({
+var unsafeFromArray = (self) => self.length === 0 ? empty$18() : self.length === 1 ? of$1(self[0]) : makeChunk({
 	_tag: "IArray",
 	array: self
 });
@@ -23566,7 +20953,7 @@ var unsafeFromNonEmptyArray = (self) => unsafeFromArray(self);
 * @since 2.0.0
 * @category unsafe
 */
-var unsafeGet = /* @__PURE__ */ dual(2, (self, index) => {
+var unsafeGet$2 = /*#__PURE__*/ dual(2, (self, index) => {
 	switch (self.backing._tag) {
 		case "IEmpty": throw new Error(`Index out of bounds`);
 		case "ISingleton":
@@ -23575,8 +20962,8 @@ var unsafeGet = /* @__PURE__ */ dual(2, (self, index) => {
 		case "IArray":
 			if (index >= self.length || index < 0) throw new Error(`Index out of bounds`);
 			return self.backing.array[index];
-		case "IConcat": return index < self.left.length ? unsafeGet(self.left, index) : unsafeGet(self.right, index - self.left.length);
-		case "ISlice": return unsafeGet(self.backing.chunk, index + self.backing.offset);
+		case "IConcat": return index < self.left.length ? unsafeGet$2(self.left, index) : unsafeGet$2(self.right, index - self.left.length);
+		case "ISlice": return unsafeGet$2(self.backing.chunk, index + self.backing.offset);
 	}
 });
 /**
@@ -23585,22 +20972,22 @@ var unsafeGet = /* @__PURE__ */ dual(2, (self, index) => {
 * @category concatenating
 * @since 2.0.0
 */
-var append = /* @__PURE__ */ dual(2, (self, a) => appendAll$1(self, of$1(a)));
+var append = /*#__PURE__*/ dual(2, (self, a) => appendAll$1(self, of$1(a)));
 /**
 * Prepend an element to the front of a `Chunk`, creating a new `NonEmptyChunk`.
 *
 * @category concatenating
 * @since 2.0.0
 */
-var prepend$1 = /* @__PURE__ */ dual(2, (self, elem) => appendAll$1(of$1(elem), self));
+var prepend$1 = /*#__PURE__*/ dual(2, (self, elem) => appendAll$1(of$1(elem), self));
 /**
 * Drops the first up to `n` elements from the chunk
 *
 * @since 2.0.0
 */
-var drop = /* @__PURE__ */ dual(2, (self, n) => {
+var drop = /*#__PURE__*/ dual(2, (self, n) => {
 	if (n <= 0) return self;
-	else if (n >= self.length) return _empty$5;
+	else if (n >= self.length) return _empty$6;
 	else switch (self.backing._tag) {
 		case "ISlice": return makeChunk({
 			_tag: "ISlice",
@@ -23641,7 +21028,7 @@ var drop = /* @__PURE__ */ dual(2, (self, n) => {
 * @category concatenating
 * @since 2.0.0
 */
-var appendAll$1 = /* @__PURE__ */ dual(2, (self, that) => {
+var appendAll$1 = /*#__PURE__*/ dual(2, (self, that) => {
 	if (self.backing._tag === "IEmpty") return that;
 	if (that.backing._tag === "IEmpty") return self;
 	const diff = that.depth - self.depth;
@@ -23720,7 +21107,7 @@ var isEmpty$3 = (self) => self.length === 0;
 * @since 2.0.0
 * @category elements
 */
-var isNonEmpty$1 = (self) => self.length > 0;
+var isNonEmpty$2 = (self) => self.length > 0;
 /**
 * Returns the first element of this chunk.
 *
@@ -23729,7 +21116,7 @@ var isNonEmpty$1 = (self) => self.length > 0;
 * @since 2.0.0
 * @category unsafe
 */
-var unsafeHead = (self) => unsafeGet(self, 0);
+var unsafeHead = (self) => unsafeGet$2(self, 0);
 /**
 * Returns the first element of this non empty chunk.
 *
@@ -23744,356 +21131,8 @@ var headNonEmpty = unsafeHead;
 * @category elements
 */
 var tailNonEmpty = (self) => drop(self, 1);
-//#endregion
-//#region node_modules/effect/dist/esm/Duration.js
-/**
-* @since 2.0.0
-*/
-var TypeId$9 = /* @__PURE__ */ Symbol.for("effect/Duration");
-var bigint0$1 = /* @__PURE__ */ BigInt(0);
-var bigint24 = /* @__PURE__ */ BigInt(24);
-var bigint60 = /* @__PURE__ */ BigInt(60);
-var bigint1e3 = /* @__PURE__ */ BigInt(1e3);
-var bigint1e6 = /* @__PURE__ */ BigInt(1e6);
-var bigint1e9 = /* @__PURE__ */ BigInt(1e9);
-var DURATION_REGEX = /^(-?\d+(?:\.\d+)?)\s+(nanos?|micros?|millis?|seconds?|minutes?|hours?|days?|weeks?)$/;
-/**
-* @since 2.0.0
-*/
-var decode = (input) => {
-	if (isDuration(input)) return input;
-	else if (isNumber(input)) return millis(input);
-	else if (isBigInt(input)) return nanos(input);
-	else if (Array.isArray(input) && input.length === 2 && input.every(isNumber)) {
-		if (input[0] === -Infinity || input[1] === -Infinity || Number.isNaN(input[0]) || Number.isNaN(input[1])) return zero;
-		if (input[0] === Infinity || input[1] === Infinity) return infinity;
-		return nanos(BigInt(Math.round(input[0] * 1e9)) + BigInt(Math.round(input[1])));
-	} else if (isString(input)) {
-		const match = DURATION_REGEX.exec(input);
-		if (match) {
-			const [_, valueStr, unit] = match;
-			const value = Number(valueStr);
-			switch (unit) {
-				case "nano":
-				case "nanos": return nanos(BigInt(valueStr));
-				case "micro":
-				case "micros": return micros(BigInt(valueStr));
-				case "milli":
-				case "millis": return millis(value);
-				case "second":
-				case "seconds": return seconds(value);
-				case "minute":
-				case "minutes": return minutes(value);
-				case "hour":
-				case "hours": return hours(value);
-				case "day":
-				case "days": return days(value);
-				case "week":
-				case "weeks": return weeks(value);
-			}
-		}
-	}
-	throw new Error("Invalid DurationInput");
-};
-var zeroValue = {
-	_tag: "Millis",
-	millis: 0
-};
-var infinityValue = { _tag: "Infinity" };
-var DurationProto = {
-	[TypeId$9]: TypeId$9,
-	[symbol$1]() {
-		return cached(this, structure(this.value));
-	},
-	[symbol](that) {
-		return isDuration(that) && equals(this, that);
-	},
-	toString() {
-		return `Duration(${format$2(this)})`;
-	},
-	toJSON() {
-		switch (this.value._tag) {
-			case "Millis": return {
-				_id: "Duration",
-				_tag: "Millis",
-				millis: this.value.millis
-			};
-			case "Nanos": return {
-				_id: "Duration",
-				_tag: "Nanos",
-				hrtime: toHrTime(this)
-			};
-			case "Infinity": return {
-				_id: "Duration",
-				_tag: "Infinity"
-			};
-		}
-	},
-	[NodeInspectSymbol]() {
-		return this.toJSON();
-	},
-	pipe() {
-		return pipeArguments(this, arguments);
-	}
-};
-var make$21 = (input) => {
-	const duration = Object.create(DurationProto);
-	if (isNumber(input)) if (isNaN(input) || input <= 0) duration.value = zeroValue;
-	else if (!Number.isFinite(input)) duration.value = infinityValue;
-	else if (!Number.isInteger(input)) duration.value = {
-		_tag: "Nanos",
-		nanos: BigInt(Math.round(input * 1e6))
-	};
-	else duration.value = {
-		_tag: "Millis",
-		millis: input
-	};
-	else if (input <= bigint0$1) duration.value = zeroValue;
-	else duration.value = {
-		_tag: "Nanos",
-		nanos: input
-	};
-	return duration;
-};
-/**
-* @since 2.0.0
-* @category guards
-*/
-var isDuration = (u) => hasProperty(u, TypeId$9);
-/**
-* @since 2.0.0
-* @category guards
-*/
-var isFinite = (self) => self.value._tag !== "Infinity";
-/**
-* @since 3.5.0
-* @category guards
-*/
-var isZero = (self) => {
-	switch (self.value._tag) {
-		case "Millis": return self.value.millis === 0;
-		case "Nanos": return self.value.nanos === bigint0$1;
-		case "Infinity": return false;
-	}
-};
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var zero = /* @__PURE__ */ make$21(0);
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var infinity = /* @__PURE__ */ make$21(Infinity);
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var nanos = (nanos) => make$21(nanos);
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var micros = (micros) => make$21(micros * bigint1e3);
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var millis = (millis) => make$21(millis);
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var seconds = (seconds) => make$21(seconds * 1e3);
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var minutes = (minutes) => make$21(minutes * 6e4);
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var hours = (hours) => make$21(hours * 36e5);
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var days = (days) => make$21(days * 864e5);
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var weeks = (weeks) => make$21(weeks * 6048e5);
-/**
-* @since 2.0.0
-* @category getters
-*/
-var toMillis = (self) => match$3(self, {
-	onMillis: (millis) => millis,
-	onNanos: (nanos) => Number(nanos) / 1e6
-});
-/**
-* Get the duration in nanoseconds as a bigint.
-*
-* If the duration is infinite, returns `Option.none()`
-*
-* @since 2.0.0
-* @category getters
-*/
-var toNanos = (self) => {
-	const _self = decode(self);
-	switch (_self.value._tag) {
-		case "Infinity": return none$4();
-		case "Nanos": return some(_self.value.nanos);
-		case "Millis": return some(BigInt(Math.round(_self.value.millis * 1e6)));
-	}
-};
-/**
-* Get the duration in nanoseconds as a bigint.
-*
-* If the duration is infinite, it throws an error.
-*
-* @since 2.0.0
-* @category getters
-*/
-var unsafeToNanos = (self) => {
-	const _self = decode(self);
-	switch (_self.value._tag) {
-		case "Infinity": throw new Error("Cannot convert infinite duration to nanos");
-		case "Nanos": return _self.value.nanos;
-		case "Millis": return BigInt(Math.round(_self.value.millis * 1e6));
-	}
-};
-/**
-* @since 2.0.0
-* @category getters
-*/
-var toHrTime = (self) => {
-	const _self = decode(self);
-	switch (_self.value._tag) {
-		case "Infinity": return [Infinity, 0];
-		case "Nanos": return [Number(_self.value.nanos / bigint1e9), Number(_self.value.nanos % bigint1e9)];
-		case "Millis": return [Math.floor(_self.value.millis / 1e3), Math.round(_self.value.millis % 1e3 * 1e6)];
-	}
-};
-/**
-* @since 2.0.0
-* @category pattern matching
-*/
-var match$3 = /* @__PURE__ */ dual(2, (self, options) => {
-	const _self = decode(self);
-	switch (_self.value._tag) {
-		case "Nanos": return options.onNanos(_self.value.nanos);
-		case "Infinity": return options.onMillis(Infinity);
-		case "Millis": return options.onMillis(_self.value.millis);
-	}
-});
-/**
-* @since 2.0.0
-* @category pattern matching
-*/
-var matchWith = /* @__PURE__ */ dual(3, (self, that, options) => {
-	const _self = decode(self);
-	const _that = decode(that);
-	if (_self.value._tag === "Infinity" || _that.value._tag === "Infinity") return options.onMillis(toMillis(_self), toMillis(_that));
-	else if (_self.value._tag === "Nanos" || _that.value._tag === "Nanos") {
-		const selfNanos = _self.value._tag === "Nanos" ? _self.value.nanos : BigInt(Math.round(_self.value.millis * 1e6));
-		const thatNanos = _that.value._tag === "Nanos" ? _that.value.nanos : BigInt(Math.round(_that.value.millis * 1e6));
-		return options.onNanos(selfNanos, thatNanos);
-	}
-	return options.onMillis(_self.value.millis, _that.value.millis);
-});
-/**
-* @category instances
-* @since 2.0.0
-*/
-var Equivalence$2 = (self, that) => matchWith(self, that, {
-	onMillis: (self, that) => self === that,
-	onNanos: (self, that) => self === that
-});
-/**
-* @since 2.0.0
-* @category predicates
-*/
-var lessThanOrEqualTo$1 = /* @__PURE__ */ dual(2, (self, that) => matchWith(self, that, {
-	onMillis: (self, that) => self <= that,
-	onNanos: (self, that) => self <= that
-}));
-/**
-* @since 2.0.0
-* @category predicates
-*/
-var greaterThanOrEqualTo$1 = /* @__PURE__ */ dual(2, (self, that) => matchWith(self, that, {
-	onMillis: (self, that) => self >= that,
-	onNanos: (self, that) => self >= that
-}));
-/**
-* @since 2.0.0
-* @category predicates
-*/
-var equals = /* @__PURE__ */ dual(2, (self, that) => Equivalence$2(decode(self), decode(that)));
-/**
-* Converts a `Duration` to its parts.
-*
-* @since 3.8.0
-* @category conversions
-*/
-var parts = (self) => {
-	const duration = decode(self);
-	if (duration.value._tag === "Infinity") return {
-		days: Infinity,
-		hours: Infinity,
-		minutes: Infinity,
-		seconds: Infinity,
-		millis: Infinity,
-		nanos: Infinity
-	};
-	const nanos = unsafeToNanos(duration);
-	const ms = nanos / bigint1e6;
-	const sec = ms / bigint1e3;
-	const min = sec / bigint60;
-	const hr = min / bigint60;
-	const days = hr / bigint24;
-	return {
-		days: Number(days),
-		hours: Number(hr % bigint24),
-		minutes: Number(min % bigint60),
-		seconds: Number(sec % bigint60),
-		millis: Number(ms % bigint1e3),
-		nanos: Number(nanos % bigint1e6)
-	};
-};
-/**
-* Converts a `Duration` to a human readable string.
-*
-* @since 2.0.0
-* @category conversions
-* @example
-* ```ts
-* import { Duration } from "effect"
-*
-* Duration.format(Duration.millis(1000)) // "1s"
-* Duration.format(Duration.millis(1001)) // "1s 1ms"
-* ```
-*/
-var format$2 = (self) => {
-	const duration = decode(self);
-	if (duration.value._tag === "Infinity") return "Infinity";
-	if (isZero(duration)) return "0";
-	const fragments = parts(duration);
-	const pieces = [];
-	if (fragments.days !== 0) pieces.push(`${fragments.days}d`);
-	if (fragments.hours !== 0) pieces.push(`${fragments.hours}h`);
-	if (fragments.minutes !== 0) pieces.push(`${fragments.minutes}m`);
-	if (fragments.seconds !== 0) pieces.push(`${fragments.seconds}s`);
-	if (fragments.millis !== 0) pieces.push(`${fragments.millis}ms`);
-	if (fragments.nanos !== 0) pieces.push(`${fragments.nanos}ns`);
-	return pieces.join(" ");
-};
 /** @internal */
-var BUCKET_SIZE = /* @__PURE__ */ Math.pow(2, 5);
+var BUCKET_SIZE = /*#__PURE__*/ Math.pow(2, 5);
 /** @internal */
 var MASK = BUCKET_SIZE - 1;
 /** @internal */
@@ -24131,7 +21170,7 @@ function fromBitmap(bitmap, bit) {
 }
 //#endregion
 //#region node_modules/effect/dist/esm/internal/stack.js
-var make$20 = (value, previous) => ({
+var make$24 = (value, previous) => ({
 	value,
 	previous
 });
@@ -24400,7 +21439,7 @@ function mergeLeaves(edit, shift, h1, n1, h2, n2) {
 	while (true) {
 		const res = mergeLeavesInner(edit, currentShift, h1, n1, h2, n2);
 		if (typeof res === "function") {
-			stack = make$20(res, stack);
+			stack = make$24(res, stack);
 			currentShift = currentShift + 5;
 		} else {
 			let final = res;
@@ -24416,7 +21455,7 @@ function mergeLeaves(edit, shift, h1, n1, h2, n2) {
 //#region node_modules/effect/dist/esm/internal/hashMap.js
 var HashMapSymbolKey = "effect/HashMap";
 /** @internal */
-var HashMapTypeId = /* @__PURE__ */ Symbol.for(HashMapSymbolKey);
+var HashMapTypeId = /*#__PURE__*/ Symbol.for(HashMapSymbolKey);
 var HashMapProto = {
 	[HashMapTypeId]: HashMapTypeId,
 	[Symbol.iterator]() {
@@ -24519,12 +21558,12 @@ var visitLazyChildren = (len, children, i, f, cont) => {
 	}
 	return applyCont(cont);
 };
-var _empty$4 = /* @__PURE__ */ makeImpl$1(false, 0, /* @__PURE__ */ new EmptyNode(), 0);
+var _empty$5 = /*#__PURE__*/ makeImpl$1(false, 0, /*#__PURE__*/ new EmptyNode(), 0);
 /** @internal */
-var empty$15 = () => _empty$4;
+var empty$17 = () => _empty$5;
 /** @internal */
 var fromIterable$4 = (entries) => {
-	const map = beginMutation$1(empty$15());
+	const map = beginMutation$1(empty$17());
 	for (const entry of entries) set$5(map, entry[0], entry[1]);
 	return endMutation$1(map);
 };
@@ -24533,9 +21572,9 @@ var isHashMap = (u) => hasProperty(u, HashMapTypeId);
 /** @internal */
 var isEmpty$2 = (self) => self && isEmptyNode(self._root);
 /** @internal */
-var get$6 = /* @__PURE__ */ dual(2, (self, key) => getHash(self, key, hash(key)));
+var get$8 = /*#__PURE__*/ dual(2, (self, key) => getHash(self, key, hash(key)));
 /** @internal */
-var getHash = /* @__PURE__ */ dual(3, (self, key, hash) => {
+var getHash = /*#__PURE__*/ dual(3, (self, key, hash) => {
 	let node = self._root;
 	let shift = 0;
 	while (true) switch (node._tag) {
@@ -24569,11 +21608,11 @@ var getHash = /* @__PURE__ */ dual(3, (self, key, hash) => {
 	}
 });
 /** @internal */
-var has$3 = /* @__PURE__ */ dual(2, (self, key) => isSome(getHash(self, key, hash(key))));
+var has$3 = /*#__PURE__*/ dual(2, (self, key) => isSome(getHash(self, key, hash(key))));
 /** @internal */
-var set$5 = /* @__PURE__ */ dual(3, (self, key, value) => modifyAt$1(self, key, () => some(value)));
+var set$5 = /*#__PURE__*/ dual(3, (self, key, value) => modifyAt$1(self, key, () => some(value)));
 /** @internal */
-var setTree = /* @__PURE__ */ dual(3, (self, newRoot, newSize) => {
+var setTree = /*#__PURE__*/ dual(3, (self, newRoot, newSize) => {
 	if (self._editable) {
 		self._root = newRoot;
 		self._size = newSize;
@@ -24593,25 +21632,25 @@ var endMutation$1 = (self) => {
 	return self;
 };
 /** @internal */
-var modifyAt$1 = /* @__PURE__ */ dual(3, (self, key, f) => modifyHash(self, key, hash(key), f));
+var modifyAt$1 = /*#__PURE__*/ dual(3, (self, key, f) => modifyHash(self, key, hash(key), f));
 /** @internal */
-var modifyHash = /* @__PURE__ */ dual(4, (self, key, hash, f) => {
+var modifyHash = /*#__PURE__*/ dual(4, (self, key, hash, f) => {
 	const size = { value: self._size };
 	return pipe(self, setTree(self._root.modify(self._editable ? self._edit : NaN, 0, f, hash, key, size), size.value));
 });
 /** @internal */
-var remove$2 = /* @__PURE__ */ dual(2, (self, key) => modifyAt$1(self, key, none$4));
+var remove$2 = /*#__PURE__*/ dual(2, (self, key) => modifyAt$1(self, key, none$4));
 /**
 * Maps over the entries of the `HashMap` using the specified function.
 *
 * @since 2.0.0
 * @category mapping
 */
-var map$5 = /* @__PURE__ */ dual(2, (self, f) => reduce$5(self, empty$15(), (map, value, key) => set$5(map, key, f(value, key))));
+var map$5 = /*#__PURE__*/ dual(2, (self, f) => reduce$5(self, empty$17(), (map, value, key) => set$5(map, key, f(value, key))));
 /** @internal */
-var forEach$3 = /* @__PURE__ */ dual(2, (self, f) => reduce$5(self, void 0, (_, value, key) => f(value, key)));
+var forEach$3 = /*#__PURE__*/ dual(2, (self, f) => reduce$5(self, void 0, (_, value, key) => f(value, key)));
 /** @internal */
-var reduce$5 = /* @__PURE__ */ dual(3, (self, zero, f) => {
+var reduce$5 = /*#__PURE__*/ dual(3, (self, zero, f) => {
 	const root = self._root;
 	if (root._tag === "LeafNode") return isSome(root.value) ? f(zero, root.value.value, root.key) : zero;
 	if (root._tag === "EmptyNode") return zero;
@@ -24629,7 +21668,7 @@ var reduce$5 = /* @__PURE__ */ dual(3, (self, zero, f) => {
 //#region node_modules/effect/dist/esm/internal/hashSet.js
 var HashSetSymbolKey = "effect/HashSet";
 /** @internal */
-var HashSetTypeId = /* @__PURE__ */ Symbol.for(HashSetSymbolKey);
+var HashSetTypeId = /*#__PURE__*/ Symbol.for(HashSetSymbolKey);
 var HashSetProto = {
 	[HashSetTypeId]: HashSetTypeId,
 	[Symbol.iterator]() {
@@ -24666,23 +21705,23 @@ var makeImpl = (keyMap) => {
 };
 /** @internal */
 var isHashSet = (u) => hasProperty(u, HashSetTypeId);
-var _empty$3 = /* @__PURE__ */ makeImpl(/* @__PURE__ */ empty$15());
+var _empty$4 = /*#__PURE__*/ makeImpl(/*#__PURE__*/ empty$17());
 /** @internal */
-var empty$14 = () => _empty$3;
+var empty$16 = () => _empty$4;
 /** @internal */
 var fromIterable$3 = (elements) => {
-	const set = beginMutation(empty$14());
-	for (const value of elements) add$1(set, value);
+	const set = beginMutation(empty$16());
+	for (const value of elements) add$3(set, value);
 	return endMutation(set);
 };
 /** @internal */
-var make$19 = (...elements) => {
-	const set = beginMutation(empty$14());
-	for (const value of elements) add$1(set, value);
+var make$23 = (...elements) => {
+	const set = beginMutation(empty$16());
+	for (const value of elements) add$3(set, value);
 	return endMutation(set);
 };
 /** @internal */
-var has$2 = /* @__PURE__ */ dual(2, (self, value) => has$3(self._keyMap, value));
+var has$2 = /*#__PURE__*/ dual(2, (self, value) => has$3(self._keyMap, value));
 /** @internal */
 var size$1 = (self) => size$2(self._keyMap);
 /** @internal */
@@ -24693,28 +21732,28 @@ var endMutation = (self) => {
 	return self;
 };
 /** @internal */
-var mutate = /* @__PURE__ */ dual(2, (self, f) => {
+var mutate = /*#__PURE__*/ dual(2, (self, f) => {
 	const transient = beginMutation(self);
 	f(transient);
 	return endMutation(transient);
 });
 /** @internal */
-var add$1 = /* @__PURE__ */ dual(2, (self, value) => self._keyMap._editable ? (set$5(value, true)(self._keyMap), self) : makeImpl(set$5(value, true)(self._keyMap)));
+var add$3 = /*#__PURE__*/ dual(2, (self, value) => self._keyMap._editable ? (set$5(value, true)(self._keyMap), self) : makeImpl(set$5(value, true)(self._keyMap)));
 /** @internal */
-var remove$1 = /* @__PURE__ */ dual(2, (self, value) => self._keyMap._editable ? (remove$2(value)(self._keyMap), self) : makeImpl(remove$2(value)(self._keyMap)));
+var remove$1 = /*#__PURE__*/ dual(2, (self, value) => self._keyMap._editable ? (remove$2(value)(self._keyMap), self) : makeImpl(remove$2(value)(self._keyMap)));
 /** @internal */
-var difference$1 = /* @__PURE__ */ dual(2, (self, that) => mutate(self, (set) => {
+var difference$1 = /*#__PURE__*/ dual(2, (self, that) => mutate(self, (set) => {
 	for (const value of that) remove$1(set, value);
 }));
 /** @internal */
-var union$1 = /* @__PURE__ */ dual(2, (self, that) => mutate(empty$14(), (set) => {
-	forEach$2(self, (value) => add$1(set, value));
-	for (const value of that) add$1(set, value);
+var union$1 = /*#__PURE__*/ dual(2, (self, that) => mutate(empty$16(), (set) => {
+	forEach$2(self, (value) => add$3(set, value));
+	for (const value of that) add$3(set, value);
 }));
 /** @internal */
-var forEach$2 = /* @__PURE__ */ dual(2, (self, f) => forEach$3(self._keyMap, (_, k) => f(k)));
+var forEach$2 = /*#__PURE__*/ dual(2, (self, f) => forEach$3(self._keyMap, (_, k) => f(k)));
 /** @internal */
-var reduce$4 = /* @__PURE__ */ dual(3, (self, zero, f) => reduce$5(self._keyMap, zero, (z, _, a) => f(z, a)));
+var reduce$4 = /*#__PURE__*/ dual(3, (self, zero, f) => reduce$5(self._keyMap, zero, (z, _, a) => f(z, a)));
 //#endregion
 //#region node_modules/effect/dist/esm/HashSet.js
 /**
@@ -24997,7 +22036,7 @@ var reduce$4 = /* @__PURE__ */ dual(3, (self, zero, f) => reduce$5(self._keyMap,
 *
 * @see Other `HashSet` constructors are {@link module:HashSet.make} {@link module:HashSet.fromIterable}
 */
-var empty$13 = empty$14;
+var empty$15 = empty$16;
 /**
 * Creates a new `HashSet` from an iterable collection of values.
 *
@@ -25179,7 +22218,7 @@ var fromIterable$2 = fromIterable$3;
 *
 * @see Other `HashSet` constructors are {@link module:HashSet.fromIterable} {@link module:HashSet.empty}
 */
-var make$18 = make$19;
+var make$22 = make$23;
 /**
 * Checks if the specified value exists in the `HashSet`.
 *
@@ -25265,7 +22304,7 @@ var size = size$1;
 *
 * @see Other `HashSet` mutations are {@link module:HashSet.remove} {@link module:HashSet.toggle} {@link module:HashSet.beginMutation} {@link module:HashSet.endMutation} {@link module:HashSet.mutate}
 */
-var add = add$1;
+var add$2 = add$3;
 /**
 * Removes a value from the `HashSet`.
 *
@@ -25381,1157 +22420,6 @@ var union = union$1;
 * ```
 */
 var reduce$3 = reduce$4;
-//#endregion
-//#region node_modules/effect/dist/esm/MutableRef.js
-var TypeId$8 = /* @__PURE__ */ Symbol.for("effect/MutableRef");
-var MutableRefProto = {
-	[TypeId$8]: TypeId$8,
-	toString() {
-		return format$4(this.toJSON());
-	},
-	toJSON() {
-		return {
-			_id: "MutableRef",
-			current: toJSON(this.current)
-		};
-	},
-	[NodeInspectSymbol]() {
-		return this.toJSON();
-	},
-	pipe() {
-		return pipeArguments(this, arguments);
-	}
-};
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var make$17 = (value) => {
-	const ref = Object.create(MutableRefProto);
-	ref.current = value;
-	return ref;
-};
-/**
-* @since 2.0.0
-* @category general
-*/
-var get$5 = (self) => self.current;
-/**
-* @since 2.0.0
-* @category general
-*/
-var set$4 = /* @__PURE__ */ dual(2, (self, value) => {
-	self.current = value;
-	return self;
-});
-//#endregion
-//#region node_modules/effect/dist/esm/internal/fiberId.js
-/** @internal */
-var FiberIdSymbolKey = "effect/FiberId";
-/** @internal */
-var FiberIdTypeId = /* @__PURE__ */ Symbol.for(FiberIdSymbolKey);
-/** @internal */
-var OP_NONE = "None";
-/** @internal */
-var OP_RUNTIME = "Runtime";
-/** @internal */
-var OP_COMPOSITE = "Composite";
-var emptyHash = /* @__PURE__ */ string$2(`${FiberIdSymbolKey}-${OP_NONE}`);
-/** @internal */
-var None$2 = class {
-	[FiberIdTypeId] = FiberIdTypeId;
-	_tag = OP_NONE;
-	id = -1;
-	startTimeMillis = -1;
-	[symbol$1]() {
-		return emptyHash;
-	}
-	[symbol](that) {
-		return isFiberId$1(that) && that._tag === OP_NONE;
-	}
-	toString() {
-		return format$4(this.toJSON());
-	}
-	toJSON() {
-		return {
-			_id: "FiberId",
-			_tag: this._tag
-		};
-	}
-	[NodeInspectSymbol]() {
-		return this.toJSON();
-	}
-};
-/** @internal */
-var Runtime = class {
-	id;
-	startTimeMillis;
-	[FiberIdTypeId] = FiberIdTypeId;
-	_tag = OP_RUNTIME;
-	constructor(id, startTimeMillis) {
-		this.id = id;
-		this.startTimeMillis = startTimeMillis;
-	}
-	[symbol$1]() {
-		return cached(this, string$2(`${FiberIdSymbolKey}-${this._tag}-${this.id}-${this.startTimeMillis}`));
-	}
-	[symbol](that) {
-		return isFiberId$1(that) && that._tag === OP_RUNTIME && this.id === that.id && this.startTimeMillis === that.startTimeMillis;
-	}
-	toString() {
-		return format$4(this.toJSON());
-	}
-	toJSON() {
-		return {
-			_id: "FiberId",
-			_tag: this._tag,
-			id: this.id,
-			startTimeMillis: this.startTimeMillis
-		};
-	}
-	[NodeInspectSymbol]() {
-		return this.toJSON();
-	}
-};
-/** @internal */
-var Composite$1 = class {
-	left;
-	right;
-	[FiberIdTypeId] = FiberIdTypeId;
-	_tag = OP_COMPOSITE;
-	constructor(left, right) {
-		this.left = left;
-		this.right = right;
-	}
-	_hash;
-	[symbol$1]() {
-		return pipe(string$2(`${FiberIdSymbolKey}-${this._tag}`), combine$5(hash(this.left)), combine$5(hash(this.right)), cached(this));
-	}
-	[symbol](that) {
-		return isFiberId$1(that) && that._tag === OP_COMPOSITE && equals$2(this.left, that.left) && equals$2(this.right, that.right);
-	}
-	toString() {
-		return format$4(this.toJSON());
-	}
-	toJSON() {
-		return {
-			_id: "FiberId",
-			_tag: this._tag,
-			left: toJSON(this.left),
-			right: toJSON(this.right)
-		};
-	}
-	[NodeInspectSymbol]() {
-		return this.toJSON();
-	}
-};
-/** @internal */
-var none$3 = /* @__PURE__ */ new None$2();
-/** @internal */
-var runtime$1 = (id, startTimeMillis) => {
-	return new Runtime(id, startTimeMillis);
-};
-/** @internal */
-var composite$1 = (left, right) => {
-	return new Composite$1(left, right);
-};
-/** @internal */
-var isFiberId$1 = (self) => hasProperty(self, FiberIdTypeId);
-/** @internal */
-var ids = (self) => {
-	switch (self._tag) {
-		case OP_NONE: return empty$13();
-		case OP_RUNTIME: return make$18(self.id);
-		case OP_COMPOSITE: return pipe(ids(self.left), union(ids(self.right)));
-	}
-};
-var _fiberCounter = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/Fiber/Id/_fiberCounter"), () => make$17(0));
-/** @internal */
-var threadName$1 = (self) => {
-	return Array.from(ids(self)).map((n) => `#${n}`).join(",");
-};
-/** @internal */
-var unsafeMake$7 = () => {
-	const id = get$5(_fiberCounter);
-	pipe(_fiberCounter, set$4(id + 1));
-	return new Runtime(id, Date.now());
-};
-//#endregion
-//#region node_modules/effect/dist/esm/FiberId.js
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var none$2 = none$3;
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var runtime = runtime$1;
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var composite = composite$1;
-/**
-* Returns `true` if the specified unknown value is a `FiberId`, `false`
-* otherwise.
-*
-* @since 2.0.0
-* @category refinements
-*/
-var isFiberId = isFiberId$1;
-/**
-* Creates a string representing the name of the current thread of execution
-* represented by the specified `FiberId`.
-*
-* @since 2.0.0
-* @category destructors
-*/
-var threadName = threadName$1;
-/**
-* Unsafely creates a new `FiberId`.
-*
-* @since 2.0.0
-* @category unsafe
-*/
-var unsafeMake$6 = unsafeMake$7;
-//#endregion
-//#region node_modules/effect/dist/esm/HashMap.js
-/**
-* @since 2.0.0
-*/
-/**
-* Creates a new `HashMap`.
-*
-* @since 2.0.0
-* @category constructors
-*/
-var empty$12 = empty$15;
-/**
-* Creates a new `HashMap` from an iterable collection of key/value pairs.
-*
-* @since 2.0.0
-* @category constructors
-*/
-var fromIterable$1 = fromIterable$4;
-/**
-* Checks if the `HashMap` contains any entries.
-*
-* @since 2.0.0
-* @category elements
-*/
-var isEmpty$1 = isEmpty$2;
-/**
-* Safely lookup the value for the specified key in the `HashMap` using the
-* internal hashing function.
-*
-* @since 2.0.0
-* @category elements
-*/
-var get$4 = get$6;
-/**
-* Sets the specified key to the specified value using the internal hashing
-* function.
-*
-* @since 2.0.0
-*/
-var set$3 = set$5;
-/**
-* Returns an `IterableIterator` of the keys within the `HashMap`.
-*
-* @since 2.0.0
-* @category getters
-*/
-var keys = keys$1;
-/**
-* Set or remove the specified key in the `HashMap` using the specified
-* update function. The value of the specified key will be computed using the
-* provided hash.
-*
-* The update function will be invoked with the current value of the key if it
-* exists, or `None` if no such value exists.
-*
-* @since 2.0.0
-*/
-var modifyAt = modifyAt$1;
-/**
-* Maps over the entries of the `HashMap` using the specified function.
-*
-* @since 2.0.0
-* @category mapping
-*/
-var map$4 = map$5;
-/**
-* Reduces the specified state over the entries of the `HashMap`.
-*
-* @since 2.0.0
-* @category folding
-*/
-var reduce$2 = reduce$5;
-//#endregion
-//#region node_modules/effect/dist/esm/List.js
-/**
-* A data type for immutable linked lists representing ordered collections of elements of type `A`.
-*
-* This data type is optimal for last-in-first-out (LIFO), stack-like access patterns. If you need another access pattern, for example, random access or FIFO, consider using a collection more suited to this than `List`.
-*
-* **Performance**
-*
-* - Time: `List` has `O(1)` prepend and head/tail access. Most other operations are `O(n)` on the number of elements in the list. This includes the index-based lookup of elements, `length`, `append` and `reverse`.
-* - Space: `List` implements structural sharing of the tail list. This means that many operations are either zero- or constant-memory cost.
-*
-* @since 2.0.0
-*/
-/**
-* This file is ported from
-*
-* Scala (https://www.scala-lang.org)
-*
-* Copyright EPFL and Lightbend, Inc.
-*
-* Licensed under Apache License 2.0
-* (http://www.apache.org/licenses/LICENSE-2.0).
-*/
-/**
-* @since 2.0.0
-* @category symbol
-*/
-var TypeId$7 = /* @__PURE__ */ Symbol.for("effect/List");
-/**
-* Converts the specified `List` to an `Array`.
-*
-* @category conversions
-* @since 2.0.0
-*/
-var toArray = (self) => fromIterable$6(self);
-/**
-* @category equivalence
-* @since 2.0.0
-*/
-var getEquivalence = (isEquivalent) => mapInput$1(getEquivalence$2(isEquivalent), toArray);
-var _equivalence = /* @__PURE__ */ getEquivalence(equals$2);
-var ConsProto = {
-	[TypeId$7]: TypeId$7,
-	_tag: "Cons",
-	toString() {
-		return format$4(this.toJSON());
-	},
-	toJSON() {
-		return {
-			_id: "List",
-			_tag: "Cons",
-			values: toArray(this).map(toJSON)
-		};
-	},
-	[NodeInspectSymbol]() {
-		return this.toJSON();
-	},
-	[symbol](that) {
-		return isList(that) && this._tag === that._tag && _equivalence(this, that);
-	},
-	[symbol$1]() {
-		return cached(this, array(toArray(this)));
-	},
-	[Symbol.iterator]() {
-		let done = false;
-		let self = this;
-		return {
-			next() {
-				if (done) return this.return();
-				if (self._tag === "Nil") {
-					done = true;
-					return this.return();
-				}
-				const value = self.head;
-				self = self.tail;
-				return {
-					done,
-					value
-				};
-			},
-			return(value) {
-				if (!done) done = true;
-				return {
-					done: true,
-					value
-				};
-			}
-		};
-	},
-	pipe() {
-		return pipeArguments(this, arguments);
-	}
-};
-var makeCons = (head, tail) => {
-	const cons = Object.create(ConsProto);
-	cons.head = head;
-	cons.tail = tail;
-	return cons;
-};
-var NilHash = /* @__PURE__ */ string$2("Nil");
-var _Nil = /* @__PURE__ */ Object.create({
-	[TypeId$7]: TypeId$7,
-	_tag: "Nil",
-	toString() {
-		return format$4(this.toJSON());
-	},
-	toJSON() {
-		return {
-			_id: "List",
-			_tag: "Nil"
-		};
-	},
-	[NodeInspectSymbol]() {
-		return this.toJSON();
-	},
-	[symbol$1]() {
-		return NilHash;
-	},
-	[symbol](that) {
-		return isList(that) && this._tag === that._tag;
-	},
-	[Symbol.iterator]() {
-		return { next() {
-			return {
-				done: true,
-				value: void 0
-			};
-		} };
-	},
-	pipe() {
-		return pipeArguments(this, arguments);
-	}
-});
-/**
-* Returns `true` if the specified value is a `List`, `false` otherwise.
-*
-* @since 2.0.0
-* @category refinements
-*/
-var isList = (u) => hasProperty(u, TypeId$7);
-/**
-* Returns `true` if the specified value is a `List.Nil<A>`, `false` otherwise.
-*
-* @since 2.0.0
-* @category refinements
-*/
-var isNil = (self) => self._tag === "Nil";
-/**
-* Returns `true` if the specified value is a `List.Cons<A>`, `false` otherwise.
-*
-* @since 2.0.0
-* @category refinements
-*/
-var isCons = (self) => self._tag === "Cons";
-/**
-* Constructs a new empty `List<A>`.
-*
-* @since 2.0.0
-* @category constructors
-*/
-var nil = () => _Nil;
-/**
-* Constructs a new `List.Cons<A>` from the specified `head` and `tail` values.
-*
-* @since 2.0.0
-* @category constructors
-*/
-var cons = (head, tail) => makeCons(head, tail);
-/**
-* Constructs a new empty `List<A>`.
-*
-* Alias of {@link nil}.
-*
-* @since 2.0.0
-* @category constructors
-*/
-var empty$11 = nil;
-/**
-* Constructs a new `List<A>` from the specified value.
-*
-* @since 2.0.0
-* @category constructors
-*/
-var of = (value) => makeCons(value, _Nil);
-/**
-* Concatenates two lists, combining their elements.
-* If either list is non-empty, the result is also a non-empty list.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { List } from "effect"
-*
-* assert.deepStrictEqual(
-*   List.make(1, 2).pipe(List.appendAll(List.make("a", "b")), List.toArray),
-*   [1, 2, "a", "b"]
-* )
-* ```
-*
-* @category concatenating
-* @since 2.0.0
-*/
-var appendAll = /* @__PURE__ */ dual(2, (self, that) => prependAll(that, self));
-/**
-* Prepends the specified element to the beginning of the list.
-*
-* @category concatenating
-* @since 2.0.0
-*/
-var prepend = /* @__PURE__ */ dual(2, (self, element) => cons(element, self));
-/**
-* Prepends the specified prefix list to the beginning of the specified list.
-* If either list is non-empty, the result is also a non-empty list.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { List } from "effect"
-*
-* assert.deepStrictEqual(
-*   List.make(1, 2).pipe(List.prependAll(List.make("a", "b")), List.toArray),
-*   ["a", "b", 1, 2]
-* )
-* ```
-*
-* @category concatenating
-* @since 2.0.0
-*/
-var prependAll = /* @__PURE__ */ dual(2, (self, prefix) => {
-	if (isNil(self)) return prefix;
-	else if (isNil(prefix)) return self;
-	else {
-		const result = makeCons(prefix.head, self);
-		let curr = result;
-		let that = prefix.tail;
-		while (!isNil(that)) {
-			const temp = makeCons(that.head, self);
-			curr.tail = temp;
-			curr = temp;
-			that = that.tail;
-		}
-		return result;
-	}
-});
-/**
-* Folds over the elements of the list using the specified function, using the
-* specified initial value.
-*
-* @since 2.0.0
-* @category folding
-*/
-var reduce$1 = /* @__PURE__ */ dual(3, (self, zero, f) => {
-	let acc = zero;
-	let these = self;
-	while (!isNil(these)) {
-		acc = f(acc, these.head);
-		these = these.tail;
-	}
-	return acc;
-});
-/**
-* Returns a new list with the elements of the specified list in reverse order.
-*
-* @since 2.0.0
-* @category elements
-*/
-var reverse = (self) => {
-	let result = empty$11();
-	let these = self;
-	while (!isNil(these)) {
-		result = prepend(result, these.head);
-		these = these.tail;
-	}
-	return result;
-};
-Array.prototype;
-/** @internal */
-var Structural = /* @__PURE__ */ function() {
-	function Structural(args) {
-		if (args) Object.assign(this, args);
-	}
-	Structural.prototype = StructuralPrototype;
-	return Structural;
-}();
-//#endregion
-//#region node_modules/effect/dist/esm/internal/differ/contextPatch.js
-/** @internal */
-var ContextPatchTypeId = /* @__PURE__ */ Symbol.for("effect/DifferContextPatch");
-function variance$4(a) {
-	return a;
-}
-/** @internal */
-var PatchProto$2 = {
-	...Structural.prototype,
-	[ContextPatchTypeId]: {
-		_Value: variance$4,
-		_Patch: variance$4
-	}
-};
-var _empty$2 = /* @__PURE__ */ Object.create(/* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(PatchProto$2), { _tag: "Empty" }));
-/**
-* @internal
-*/
-var empty$10 = () => _empty$2;
-var AndThenProto$2 = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(PatchProto$2), { _tag: "AndThen" });
-var makeAndThen$2 = (first, second) => {
-	const o = Object.create(AndThenProto$2);
-	o.first = first;
-	o.second = second;
-	return o;
-};
-var AddServiceProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(PatchProto$2), { _tag: "AddService" });
-var makeAddService = (key, service) => {
-	const o = Object.create(AddServiceProto);
-	o.key = key;
-	o.service = service;
-	return o;
-};
-var RemoveServiceProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(PatchProto$2), { _tag: "RemoveService" });
-var makeRemoveService = (key) => {
-	const o = Object.create(RemoveServiceProto);
-	o.key = key;
-	return o;
-};
-var UpdateServiceProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(PatchProto$2), { _tag: "UpdateService" });
-var makeUpdateService = (key, update) => {
-	const o = Object.create(UpdateServiceProto);
-	o.key = key;
-	o.update = update;
-	return o;
-};
-/** @internal */
-var diff$6 = (oldValue, newValue) => {
-	const missingServices = new Map(oldValue.unsafeMap);
-	let patch = empty$10();
-	for (const [tag, newService] of newValue.unsafeMap.entries()) if (missingServices.has(tag)) {
-		const old = missingServices.get(tag);
-		missingServices.delete(tag);
-		if (!equals$2(old, newService)) patch = combine$4(makeUpdateService(tag, () => newService))(patch);
-	} else {
-		missingServices.delete(tag);
-		patch = combine$4(makeAddService(tag, newService))(patch);
-	}
-	for (const [tag] of missingServices.entries()) patch = combine$4(makeRemoveService(tag))(patch);
-	return patch;
-};
-/** @internal */
-var combine$4 = /* @__PURE__ */ dual(2, (self, that) => makeAndThen$2(self, that));
-/** @internal */
-var patch$7 = /* @__PURE__ */ dual(2, (self, context) => {
-	if (self._tag === "Empty") return context;
-	let wasServiceUpdated = false;
-	let patches = of$1(self);
-	const updatedContext = new Map(context.unsafeMap);
-	while (isNonEmpty$1(patches)) {
-		const head = headNonEmpty(patches);
-		const tail = tailNonEmpty(patches);
-		switch (head._tag) {
-			case "Empty":
-				patches = tail;
-				break;
-			case "AddService":
-				updatedContext.set(head.key, head.service);
-				patches = tail;
-				break;
-			case "AndThen":
-				patches = prepend$1(prepend$1(tail, head.second), head.first);
-				break;
-			case "RemoveService":
-				updatedContext.delete(head.key);
-				patches = tail;
-				break;
-			case "UpdateService":
-				updatedContext.set(head.key, head.update(updatedContext.get(head.key)));
-				wasServiceUpdated = true;
-				patches = tail;
-				break;
-		}
-	}
-	if (!wasServiceUpdated) return makeContext(updatedContext);
-	const map = /* @__PURE__ */ new Map();
-	for (const [tag] of context.unsafeMap) if (updatedContext.has(tag)) {
-		map.set(tag, updatedContext.get(tag));
-		updatedContext.delete(tag);
-	}
-	for (const [tag, s] of updatedContext) map.set(tag, s);
-	return makeContext(map);
-});
-//#endregion
-//#region node_modules/effect/dist/esm/internal/differ/hashSetPatch.js
-/** @internal */
-var HashSetPatchTypeId = /* @__PURE__ */ Symbol.for("effect/DifferHashSetPatch");
-function variance$3(a) {
-	return a;
-}
-/** @internal */
-var PatchProto$1 = {
-	...Structural.prototype,
-	[HashSetPatchTypeId]: {
-		_Value: variance$3,
-		_Key: variance$3,
-		_Patch: variance$3
-	}
-};
-var _empty$1 = /* @__PURE__ */ Object.create(/* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(PatchProto$1), { _tag: "Empty" }));
-/** @internal */
-var empty$9 = () => _empty$1;
-var AndThenProto$1 = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(PatchProto$1), { _tag: "AndThen" });
-/** @internal */
-var makeAndThen$1 = (first, second) => {
-	const o = Object.create(AndThenProto$1);
-	o.first = first;
-	o.second = second;
-	return o;
-};
-var AddProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(PatchProto$1), { _tag: "Add" });
-/** @internal */
-var makeAdd = (value) => {
-	const o = Object.create(AddProto);
-	o.value = value;
-	return o;
-};
-var RemoveProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(PatchProto$1), { _tag: "Remove" });
-/** @internal */
-var makeRemove = (value) => {
-	const o = Object.create(RemoveProto);
-	o.value = value;
-	return o;
-};
-/** @internal */
-var diff$5 = (oldValue, newValue) => {
-	const [removed, patch] = reduce$3([oldValue, empty$9()], ([set, patch], value) => {
-		if (has$1(value)(set)) return [remove(value)(set), patch];
-		return [set, combine$3(makeAdd(value))(patch)];
-	})(newValue);
-	return reduce$3(patch, (patch, value) => combine$3(makeRemove(value))(patch))(removed);
-};
-/** @internal */
-var combine$3 = /* @__PURE__ */ dual(2, (self, that) => makeAndThen$1(self, that));
-/** @internal */
-var patch$6 = /* @__PURE__ */ dual(2, (self, oldValue) => {
-	if (self._tag === "Empty") return oldValue;
-	let set = oldValue;
-	let patches = of$1(self);
-	while (isNonEmpty$1(patches)) {
-		const head = headNonEmpty(patches);
-		const tail = tailNonEmpty(patches);
-		switch (head._tag) {
-			case "Empty":
-				patches = tail;
-				break;
-			case "AndThen":
-				patches = prepend$1(head.first)(prepend$1(head.second)(tail));
-				break;
-			case "Add":
-				set = add(head.value)(set);
-				patches = tail;
-				break;
-			case "Remove":
-				set = remove(head.value)(set);
-				patches = tail;
-		}
-	}
-	return set;
-});
-//#endregion
-//#region node_modules/effect/dist/esm/internal/differ/readonlyArrayPatch.js
-/** @internal */
-var ReadonlyArrayPatchTypeId = /* @__PURE__ */ Symbol.for("effect/DifferReadonlyArrayPatch");
-function variance$2(a) {
-	return a;
-}
-var PatchProto = {
-	...Structural.prototype,
-	[ReadonlyArrayPatchTypeId]: {
-		_Value: variance$2,
-		_Patch: variance$2
-	}
-};
-var _empty = /* @__PURE__ */ Object.create(/* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(PatchProto), { _tag: "Empty" }));
-/**
-* @internal
-*/
-var empty$8 = () => _empty;
-var AndThenProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(PatchProto), { _tag: "AndThen" });
-var makeAndThen = (first, second) => {
-	const o = Object.create(AndThenProto);
-	o.first = first;
-	o.second = second;
-	return o;
-};
-var AppendProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(PatchProto), { _tag: "Append" });
-var makeAppend = (values) => {
-	const o = Object.create(AppendProto);
-	o.values = values;
-	return o;
-};
-var SliceProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(PatchProto), { _tag: "Slice" });
-var makeSlice = (from, until) => {
-	const o = Object.create(SliceProto);
-	o.from = from;
-	o.until = until;
-	return o;
-};
-var UpdateProto = /* @__PURE__ */ Object.assign(/* @__PURE__ */ Object.create(PatchProto), { _tag: "Update" });
-var makeUpdate = (index, patch) => {
-	const o = Object.create(UpdateProto);
-	o.index = index;
-	o.patch = patch;
-	return o;
-};
-/** @internal */
-var diff$4 = (options) => {
-	let i = 0;
-	let patch = empty$8();
-	while (i < options.oldValue.length && i < options.newValue.length) {
-		const oldElement = options.oldValue[i];
-		const newElement = options.newValue[i];
-		const valuePatch = options.differ.diff(oldElement, newElement);
-		if (!equals$2(valuePatch, options.differ.empty)) patch = combine$2(patch, makeUpdate(i, valuePatch));
-		i = i + 1;
-	}
-	if (i < options.oldValue.length) patch = combine$2(patch, makeSlice(0, i));
-	if (i < options.newValue.length) patch = combine$2(patch, makeAppend(drop$1(i)(options.newValue)));
-	return patch;
-};
-/** @internal */
-var combine$2 = /* @__PURE__ */ dual(2, (self, that) => makeAndThen(self, that));
-/** @internal */
-var patch$5 = /* @__PURE__ */ dual(3, (self, oldValue, differ) => {
-	if (self._tag === "Empty") return oldValue;
-	let readonlyArray = oldValue.slice();
-	let patches = of$2(self);
-	while (isNonEmptyArray(patches)) {
-		const head = headNonEmpty$1(patches);
-		const tail = tailNonEmpty$1(patches);
-		switch (head._tag) {
-			case "Empty":
-				patches = tail;
-				break;
-			case "AndThen":
-				tail.unshift(head.first, head.second);
-				patches = tail;
-				break;
-			case "Append":
-				for (const value of head.values) readonlyArray.push(value);
-				patches = tail;
-				break;
-			case "Slice":
-				readonlyArray = readonlyArray.slice(head.from, head.until);
-				patches = tail;
-				break;
-			case "Update":
-				readonlyArray[head.index] = differ.patch(head.patch, readonlyArray[head.index]);
-				patches = tail;
-				break;
-		}
-	}
-	return readonlyArray;
-});
-/** @internal */
-var DifferProto = {
-	[/* @__PURE__ */ Symbol.for("effect/Differ")]: {
-		_P: identity,
-		_V: identity
-	},
-	pipe() {
-		return pipeArguments(this, arguments);
-	}
-};
-/** @internal */
-var make$16 = (params) => {
-	const differ = Object.create(DifferProto);
-	differ.empty = params.empty;
-	differ.diff = params.diff;
-	differ.combine = params.combine;
-	differ.patch = params.patch;
-	return differ;
-};
-/** @internal */
-var environment = () => make$16({
-	empty: empty$10(),
-	combine: (first, second) => combine$4(second)(first),
-	diff: (oldValue, newValue) => diff$6(oldValue, newValue),
-	patch: (patch, oldValue) => patch$7(oldValue)(patch)
-});
-/** @internal */
-var hashSet = () => make$16({
-	empty: empty$9(),
-	combine: (first, second) => combine$3(second)(first),
-	diff: (oldValue, newValue) => diff$5(oldValue, newValue),
-	patch: (patch, oldValue) => patch$6(oldValue)(patch)
-});
-/** @internal */
-var readonlyArray = (differ) => make$16({
-	empty: empty$8(),
-	combine: (first, second) => combine$2(first, second),
-	diff: (oldValue, newValue) => diff$4({
-		oldValue,
-		newValue,
-		differ
-	}),
-	patch: (patch, oldValue) => patch$5(patch, oldValue, differ)
-});
-/** @internal */
-var update$2 = () => updateWith((_, a) => a);
-/** @internal */
-var updateWith = (f) => make$16({
-	empty: identity,
-	combine: (first, second) => {
-		if (first === identity) return second;
-		if (second === identity) return first;
-		return (a) => second(first(a));
-	},
-	diff: (oldValue, newValue) => {
-		if (equals$2(oldValue, newValue)) return identity;
-		return constant(newValue);
-	},
-	patch: (patch, oldValue) => f(oldValue, patch(oldValue))
-});
-//#endregion
-//#region node_modules/effect/dist/esm/internal/runtimeFlagsPatch.js
-/** @internal */
-var BIT_MASK = 255;
-/** @internal */
-var BIT_SHIFT = 8;
-/** @internal */
-var active = (patch) => patch & BIT_MASK;
-/** @internal */
-var enabled = (patch) => patch >> BIT_SHIFT & BIT_MASK;
-/** @internal */
-var make$15 = (active, enabled) => (active & BIT_MASK) + ((enabled & active & BIT_MASK) << BIT_SHIFT);
-/** @internal */
-var empty$7 = /* @__PURE__ */ make$15(0, 0);
-/** @internal */
-var enable$2 = (flag) => make$15(flag, flag);
-/** @internal */
-var disable$2 = (flag) => make$15(flag, 0);
-/** @internal */
-var exclude$1 = /* @__PURE__ */ dual(2, (self, flag) => make$15(active(self) & ~flag, enabled(self)));
-/** @internal */
-var andThen$2 = /* @__PURE__ */ dual(2, (self, that) => self | that);
-/** @internal */
-var invert = (n) => ~n >>> 0 & BIT_MASK;
-/** @internal */
-var cooperativeYielding = (self) => isEnabled(self, 32);
-/** @internal */
-var disable$1 = /* @__PURE__ */ dual(2, (self, flag) => self & ~flag);
-/** @internal */
-var enable$1 = /* @__PURE__ */ dual(2, (self, flag) => self | flag);
-/** @internal */
-var interruptible$2 = (self) => interruption(self) && !windDown(self);
-/** @internal */
-var interruption = (self) => isEnabled(self, 1);
-/** @internal */
-var isEnabled = /* @__PURE__ */ dual(2, (self, flag) => (self & flag) !== 0);
-/** @internal */
-var make$14 = (...flags) => flags.reduce((a, b) => a | b, 0);
-/** @internal */
-var none$1 = /* @__PURE__ */ make$14(0);
-/** @internal */
-var runtimeMetrics = (self) => isEnabled(self, 4);
-var windDown = (self) => isEnabled(self, 16);
-/** @internal */
-var diff$3 = /* @__PURE__ */ dual(2, (self, that) => make$15(self ^ that, that));
-/** @internal */
-var patch$4 = /* @__PURE__ */ dual(2, (self, patch) => self & (invert(active(patch)) | enabled(patch)) | active(patch) & enabled(patch));
-/** @internal */
-var differ$1 = /* @__PURE__ */ make$16({
-	empty: empty$7,
-	diff: (oldValue, newValue) => diff$3(oldValue, newValue),
-	combine: (first, second) => andThen$2(second)(first),
-	patch: (_patch, oldValue) => patch$4(oldValue, _patch)
-});
-//#endregion
-//#region node_modules/effect/dist/esm/RuntimeFlagsPatch.js
-/**
-* Creates a `RuntimeFlagsPatch` describing enabling the provided `RuntimeFlag`.
-*
-* @since 2.0.0
-* @category constructors
-*/
-var enable = enable$2;
-/**
-* Creates a `RuntimeFlagsPatch` describing disabling the provided `RuntimeFlag`.
-*
-* @since 2.0.0
-* @category constructors
-*/
-var disable = disable$2;
-/**
-* Creates a `RuntimeFlagsPatch` which describes exclusion of the specified
-* `RuntimeFlag` from the set of `RuntimeFlags`.
-*
-* @category utils
-* @since 2.0.0
-*/
-var exclude = exclude$1;
-//#endregion
-//#region node_modules/effect/dist/esm/internal/blockedRequests.js
-/**
-* Combines this collection of blocked requests with the specified collection
-* of blocked requests, in parallel.
-*
-* @internal
-*/
-var par = (self, that) => ({
-	_tag: "Par",
-	left: self,
-	right: that
-});
-/**
-* Combines this collection of blocked requests with the specified collection
-* of blocked requests, in sequence.
-*
-* @internal
-*/
-var seq = (self, that) => ({
-	_tag: "Seq",
-	left: self,
-	right: that
-});
-/**
-* Flattens a collection of blocked requests into a collection of pipelined
-* and batched requests that can be submitted for execution.
-*
-* @internal
-*/
-var flatten$1 = (self) => {
-	let current = of(self);
-	let updated = empty$11();
-	while (1) {
-		const [parallel, sequential] = reduce$1(current, [parallelCollectionEmpty(), empty$11()], ([parallel, sequential], blockedRequest) => {
-			const [par, seq] = step$1(blockedRequest);
-			return [parallelCollectionCombine(parallel, par), appendAll(sequential, seq)];
-		});
-		updated = merge$2(updated, parallel);
-		if (isNil(sequential)) return reverse(updated);
-		current = sequential;
-	}
-	throw new Error("BUG: BlockedRequests.flatten - please report an issue at https://github.com/Effect-TS/effect/issues");
-};
-/**
-* Takes one step in evaluating a collection of blocked requests, returning a
-* collection of blocked requests that can be performed in parallel and a list
-* of blocked requests that must be performed sequentially after those
-* requests.
-*/
-var step$1 = (requests) => {
-	let current = requests;
-	let parallel = parallelCollectionEmpty();
-	let stack = empty$11();
-	let sequential = empty$11();
-	while (1) switch (current._tag) {
-		case "Empty":
-			if (isNil(stack)) return [parallel, sequential];
-			current = stack.head;
-			stack = stack.tail;
-			break;
-		case "Par":
-			stack = cons(current.right, stack);
-			current = current.left;
-			break;
-		case "Seq": {
-			const left = current.left;
-			const right = current.right;
-			switch (left._tag) {
-				case "Empty":
-					current = right;
-					break;
-				case "Par": {
-					const l = left.left;
-					const r = left.right;
-					current = par(seq(l, right), seq(r, right));
-					break;
-				}
-				case "Seq": {
-					const l = left.left;
-					const r = left.right;
-					current = seq(l, seq(r, right));
-					break;
-				}
-				case "Single":
-					current = left;
-					sequential = cons(right, sequential);
-					break;
-			}
-			break;
-		}
-		case "Single":
-			parallel = parallelCollectionAdd(parallel, current);
-			if (isNil(stack)) return [parallel, sequential];
-			current = stack.head;
-			stack = stack.tail;
-			break;
-	}
-	throw new Error("BUG: BlockedRequests.step - please report an issue at https://github.com/Effect-TS/effect/issues");
-};
-/**
-* Merges a collection of requests that must be executed sequentially with a
-* collection of requests that can be executed in parallel. If the collections
-* are both from the same single data source then the requests can be
-* pipelined while preserving ordering guarantees.
-*/
-var merge$2 = (sequential, parallel) => {
-	if (isNil(sequential)) return of(parallelCollectionToSequentialCollection(parallel));
-	if (parallelCollectionIsEmpty(parallel)) return sequential;
-	const seqHeadKeys = sequentialCollectionKeys(sequential.head);
-	const parKeys = parallelCollectionKeys(parallel);
-	if (seqHeadKeys.length === 1 && parKeys.length === 1 && equals$2(seqHeadKeys[0], parKeys[0])) return cons(sequentialCollectionCombine(sequential.head, parallelCollectionToSequentialCollection(parallel)), sequential.tail);
-	return cons(parallelCollectionToSequentialCollection(parallel), sequential);
-};
-/** @internal */
-var RequestBlockParallelTypeId = /* @__PURE__ */ Symbol.for("effect/RequestBlock/RequestBlockParallel");
-var parallelVariance = { 
-/* c8 ignore next */
-_R: (_) => _ };
-var ParallelImpl = class {
-	map;
-	[RequestBlockParallelTypeId] = parallelVariance;
-	constructor(map) {
-		this.map = map;
-	}
-};
-/** @internal */
-var parallelCollectionEmpty = () => new ParallelImpl(empty$12());
-/** @internal */
-var parallelCollectionAdd = (self, blockedRequest) => new ParallelImpl(modifyAt(self.map, blockedRequest.dataSource, (_) => orElseSome(map$7(_, append(blockedRequest.blockedRequest)), () => of$1(blockedRequest.blockedRequest))));
-/** @internal */
-var parallelCollectionCombine = (self, that) => new ParallelImpl(reduce$2(self.map, that.map, (map, value, key) => set$3(map, key, match$4(get$4(map, key), {
-	onNone: () => value,
-	onSome: (other) => appendAll$1(value, other)
-}))));
-/** @internal */
-var parallelCollectionIsEmpty = (self) => isEmpty$1(self.map);
-/** @internal */
-var parallelCollectionKeys = (self) => Array.from(keys(self.map));
-/** @internal */
-var parallelCollectionToSequentialCollection = (self) => sequentialCollectionMake(map$4(self.map, (x) => of$1(x)));
-/** @internal */
-var SequentialCollectionTypeId = /* @__PURE__ */ Symbol.for("effect/RequestBlock/RequestBlockSequential");
-var sequentialVariance = { 
-/* c8 ignore next */
-_R: (_) => _ };
-var SequentialImpl = class {
-	map;
-	[SequentialCollectionTypeId] = sequentialVariance;
-	constructor(map) {
-		this.map = map;
-	}
-};
-/** @internal */
-var sequentialCollectionMake = (map) => new SequentialImpl(map);
-/** @internal */
-var sequentialCollectionCombine = (self, that) => new SequentialImpl(reduce$2(that.map, self.map, (map, value, key) => set$3(map, key, match$4(get$4(map, key), {
-	onNone: () => empty$16(),
-	onSome: (a) => appendAll$1(a, value)
-}))));
-/** @internal */
-var sequentialCollectionKeys = (self) => Array.from(keys(self.map));
-/** @internal */
-var sequentialCollectionToChunk = (self) => Array.from(self.map);
 /** @internal */
 var OP_EMPTY$2 = "Empty";
 /** @internal */
@@ -26547,13 +22435,13 @@ var OP_SEQUENTIAL$1 = "Sequential";
 /** @internal */
 var CauseSymbolKey = "effect/Cause";
 /** @internal */
-var CauseTypeId = /* @__PURE__ */ Symbol.for(CauseSymbolKey);
-var variance$1 = { 
+var CauseTypeId = /*#__PURE__*/ Symbol.for(CauseSymbolKey);
+var variance$4 = { 
 /* c8 ignore next */
 _E: (_) => _ };
 /** @internal */
 var proto$4 = {
-	[CauseTypeId]: variance$1,
+	[CauseTypeId]: variance$4,
 	[symbol$1]() {
 		return pipe(hash(CauseSymbolKey), combine$5(hash(flattenCause(this))), cached(this));
 	},
@@ -26601,8 +22489,8 @@ var proto$4 = {
 	}
 };
 /** @internal */
-var empty$6 = /* @__PURE__ */ (() => {
-	const o = /* @__PURE__ */ Object.create(proto$4);
+var empty$14 = /*#__PURE__*/ (() => {
+	const o = /*#__PURE__*/ Object.create(proto$4);
 	o._tag = OP_EMPTY$2;
 	return o;
 })();
@@ -26650,9 +22538,9 @@ var isEmptyType = (self) => self._tag === OP_EMPTY$2;
 /** @internal */
 var isFailType$1 = (self) => self._tag === OP_FAIL$1;
 /** @internal */
-var isEmpty = (self) => {
+var isEmpty$1 = (self) => {
 	if (self._tag === "Empty") return true;
-	return reduce(self, true, (acc, cause) => {
+	return reduce$2(self, true, (acc, cause) => {
 		switch (cause._tag) {
 			case OP_EMPTY$2: return some(acc);
 			case "Die":
@@ -26667,11 +22555,11 @@ var isInterrupted = (self) => isSome(interruptOption(self));
 /** @internal */
 var isInterruptedOnly = (self) => reduceWithContext$1(void 0, IsInterruptedOnlyCauseReducer)(self);
 /** @internal */
-var failures = (self) => reverse$1(reduce(self, empty$16(), (list, cause) => cause._tag === "Fail" ? some(pipe(list, prepend$1(cause.error))) : none$4()));
+var failures = (self) => reverse$1(reduce$2(self, empty$18(), (list, cause) => cause._tag === "Fail" ? some(pipe(list, prepend$1(cause.error))) : none$4()));
 /** @internal */
-var defects = (self) => reverse$1(reduce(self, empty$16(), (list, cause) => cause._tag === "Die" ? some(pipe(list, prepend$1(cause.defect))) : none$4()));
+var defects = (self) => reverse$1(reduce$2(self, empty$18(), (list, cause) => cause._tag === "Die" ? some(pipe(list, prepend$1(cause.defect))) : none$4()));
 /** @internal */
-var interruptors = (self) => reduce(self, empty$13(), (set, cause) => cause._tag === "Interrupt" ? some(pipe(set, add(cause.fiberId))) : none$4());
+var interruptors = (self) => reduce$2(self, empty$15(), (set, cause) => cause._tag === "Interrupt" ? some(pipe(set, add$2(cause.fiberId))) : none$4());
 /** @internal */
 var failureOption = (self) => find(self, (cause) => cause._tag === "Fail" ? some(cause.error) : none$4());
 /** @internal */
@@ -26685,7 +22573,7 @@ var failureOrCause = (self) => {
 /** @internal */
 var interruptOption = (self) => find(self, (cause) => cause._tag === "Interrupt" ? some(cause.fiberId) : none$4());
 /** @internal */
-var keepDefectsAndElectFailures = (self) => match$2(self, {
+var keepDefectsAndElectFailures = (self) => match$3(self, {
 	onEmpty: none$4(),
 	onFail: (failure) => some(die$1(failure)),
 	onDie: (defect) => some(die$1(defect)),
@@ -26694,17 +22582,17 @@ var keepDefectsAndElectFailures = (self) => match$2(self, {
 	onParallel: mergeWith(parallel$2)
 });
 /** @internal */
-var stripFailures = (self) => match$2(self, {
-	onEmpty: empty$6,
-	onFail: () => empty$6,
+var stripFailures = (self) => match$3(self, {
+	onEmpty: empty$14,
+	onFail: () => empty$14,
 	onDie: die$1,
 	onInterrupt: interrupt,
 	onSequential: sequential$2,
 	onParallel: parallel$2
 });
 /** @internal */
-var electFailures = (self) => match$2(self, {
-	onEmpty: empty$6,
+var electFailures = (self) => match$3(self, {
+	onEmpty: empty$14,
 	onFail: die$1,
 	onDie: die$1,
 	onInterrupt: interrupt,
@@ -26715,12 +22603,12 @@ var electFailures = (self) => match$2(self, {
 var causeEquals = (left, right) => {
 	let leftStack = of$1(left);
 	let rightStack = of$1(right);
-	while (isNonEmpty$1(leftStack) && isNonEmpty$1(rightStack)) {
-		const [leftParallel, leftSequential] = pipe(headNonEmpty(leftStack), reduce([empty$13(), empty$16()], ([parallel, sequential], cause) => {
+	while (isNonEmpty$2(leftStack) && isNonEmpty$2(rightStack)) {
+		const [leftParallel, leftSequential] = pipe(headNonEmpty(leftStack), reduce$2([empty$15(), empty$18()], ([parallel, sequential], cause) => {
 			const [par, seq] = evaluateCause(cause);
 			return some([pipe(parallel, union(par)), pipe(sequential, appendAll$1(seq))]);
 		}));
-		const [rightParallel, rightSequential] = pipe(headNonEmpty(rightStack), reduce([empty$13(), empty$16()], ([parallel, sequential], cause) => {
+		const [rightParallel, rightSequential] = pipe(headNonEmpty(rightStack), reduce$2([empty$15(), empty$18()], ([parallel, sequential], cause) => {
 			const [par, seq] = evaluateCause(cause);
 			return some([pipe(parallel, union(par)), pipe(sequential, appendAll$1(seq))]);
 		}));
@@ -26738,12 +22626,12 @@ var causeEquals = (left, right) => {
 * @internal
 */
 var flattenCause = (cause) => {
-	return flattenCauseLoop(of$1(cause), empty$16());
+	return flattenCauseLoop(of$1(cause), empty$18());
 };
 /** @internal */
 var flattenCauseLoop = (causes, flattened) => {
 	while (1) {
-		const [parallel, sequential] = pipe(causes, reduce$6([empty$13(), empty$16()], ([parallel, sequential], cause) => {
+		const [parallel, sequential] = pipe(causes, reduce$6([empty$15(), empty$18()], ([parallel, sequential], cause) => {
 			const [par, seq] = evaluateCause(cause);
 			return [pipe(parallel, union(par)), pipe(sequential, appendAll$1(seq))];
 		}));
@@ -26755,7 +22643,7 @@ var flattenCauseLoop = (causes, flattened) => {
 	throw new Error(getBugErrorMessage("Cause.flattenCauseLoop"));
 };
 /** @internal */
-var find = /* @__PURE__ */ dual(2, (self, pf) => {
+var find = /*#__PURE__*/ dual(2, (self, pf) => {
 	const stack = [self];
 	while (stack.length > 0) {
 		const item = stack.pop();
@@ -26784,25 +22672,25 @@ var find = /* @__PURE__ */ dual(2, (self, pf) => {
 var evaluateCause = (self) => {
 	let cause = self;
 	const stack = [];
-	let _parallel = empty$13();
-	let _sequential = empty$16();
+	let _parallel = empty$15();
+	let _sequential = empty$18();
 	while (cause !== void 0) switch (cause._tag) {
 		case OP_EMPTY$2:
 			if (stack.length === 0) return [_parallel, _sequential];
 			cause = stack.pop();
 			break;
 		case OP_FAIL$1:
-			_parallel = add(_parallel, make$22(cause._tag, cause.error));
+			_parallel = add$2(_parallel, make$25(cause._tag, cause.error));
 			if (stack.length === 0) return [_parallel, _sequential];
 			cause = stack.pop();
 			break;
 		case "Die":
-			_parallel = add(_parallel, make$22(cause._tag, cause.defect));
+			_parallel = add$2(_parallel, make$25(cause._tag, cause.defect));
 			if (stack.length === 0) return [_parallel, _sequential];
 			cause = stack.pop();
 			break;
 		case OP_INTERRUPT:
-			_parallel = add(_parallel, make$22(cause._tag, cause.fiberId));
+			_parallel = add$2(_parallel, make$25(cause._tag, cause.fiberId));
 			if (stack.length === 0) return [_parallel, _sequential];
 			cause = stack.pop();
 			break;
@@ -26842,7 +22730,7 @@ var IsInterruptedOnlyCauseReducer = {
 var OP_SEQUENTIAL_CASE = "SequentialCase";
 var OP_PARALLEL_CASE = "ParallelCase";
 /** @internal */
-var match$2 = /* @__PURE__ */ dual(2, (self, { onDie, onEmpty, onFail, onInterrupt, onParallel, onSequential }) => {
+var match$3 = /*#__PURE__*/ dual(2, (self, { onDie, onEmpty, onFail, onInterrupt, onParallel, onSequential }) => {
 	return reduceWithContext$1(self, void 0, {
 		emptyCase: () => onEmpty,
 		failCase: (_, error) => onFail(error),
@@ -26853,7 +22741,7 @@ var match$2 = /* @__PURE__ */ dual(2, (self, { onDie, onEmpty, onFail, onInterru
 	});
 });
 /** @internal */
-var reduce = /* @__PURE__ */ dual(3, (self, zero, pf) => {
+var reduce$2 = /*#__PURE__*/ dual(3, (self, zero, pf) => {
 	let accumulator = zero;
 	let cause = self;
 	const causes = [];
@@ -26878,7 +22766,7 @@ var reduce = /* @__PURE__ */ dual(3, (self, zero, pf) => {
 	return accumulator;
 });
 /** @internal */
-var reduceWithContext$1 = /* @__PURE__ */ dual(3, (self, context, reducer) => {
+var reduceWithContext$1 = /*#__PURE__*/ dual(3, (self, context, reducer) => {
 	const input = [self];
 	const output = [];
 	while (input.length > 0) {
@@ -26995,7 +22883,7 @@ var prettyErrorMessage = (u) => {
 };
 var locationRegex = /\((.*)\)/g;
 /** @internal */
-var spanToTrace = /* @__PURE__ */ globalValue("effect/Tracer/spanToTrace", () => /* @__PURE__ */ new WeakMap());
+var spanToTrace = /*#__PURE__*/ globalValue("effect/Tracer/spanToTrace", () => /* @__PURE__ */ new WeakMap());
 var prettyErrorStack = (message, stack, span) => {
 	const out = [message];
 	const lines = stack.startsWith(message) ? stack.slice(message.length).split("\n") : stack.split("\n");
@@ -27032,7 +22920,7 @@ var prettyErrorStack = (message, stack, span) => {
 	return out.join("\n");
 };
 /** @internal */
-var spanSymbol = /* @__PURE__ */ Symbol.for("effect/SpanAnnotation");
+var spanSymbol = /*#__PURE__*/ Symbol.for("effect/SpanAnnotation");
 /** @internal */
 var prettyErrors = (cause) => reduceWithContext$1(cause, void 0, {
 	emptyCase: () => [],
@@ -27047,13 +22935,2006 @@ var prettyErrors = (cause) => reduceWithContext$1(cause, void 0, {
 	sequentialCase: (_, l, r) => [...l, ...r]
 });
 //#endregion
+//#region node_modules/effect/dist/esm/internal/context.js
+/** @internal */
+var TagTypeId = /*#__PURE__*/ Symbol.for("effect/Context/Tag");
+/** @internal */
+var ReferenceTypeId = /*#__PURE__*/ Symbol.for("effect/Context/Reference");
+/** @internal */
+var STMTypeId = /*#__PURE__*/ Symbol.for("effect/STM");
+/** @internal */
+var TagProto = {
+	...EffectPrototype$1,
+	_op: "Tag",
+	[STMTypeId]: effectVariance,
+	[TagTypeId]: {
+		_Service: (_) => _,
+		_Identifier: (_) => _
+	},
+	toString() {
+		return format$4(this.toJSON());
+	},
+	toJSON() {
+		return {
+			_id: "Tag",
+			key: this.key,
+			stack: this.stack
+		};
+	},
+	[NodeInspectSymbol]() {
+		return this.toJSON();
+	},
+	of(self) {
+		return self;
+	},
+	context(self) {
+		return make$21(this, self);
+	}
+};
+var ReferenceProto = {
+	...TagProto,
+	[ReferenceTypeId]: ReferenceTypeId
+};
+/** @internal */
+var makeGenericTag = (key) => {
+	const limit = Error.stackTraceLimit;
+	Error.stackTraceLimit = 2;
+	const creationError = /* @__PURE__ */ new Error();
+	Error.stackTraceLimit = limit;
+	const tag = Object.create(TagProto);
+	Object.defineProperty(tag, "stack", { get() {
+		return creationError.stack;
+	} });
+	tag.key = key;
+	return tag;
+};
+/** @internal */
+var Tag$1 = (id) => () => {
+	const limit = Error.stackTraceLimit;
+	Error.stackTraceLimit = 2;
+	const creationError = /* @__PURE__ */ new Error();
+	Error.stackTraceLimit = limit;
+	function TagClass() {}
+	Object.setPrototypeOf(TagClass, TagProto);
+	TagClass.key = id;
+	Object.defineProperty(TagClass, "stack", { get() {
+		return creationError.stack;
+	} });
+	return TagClass;
+};
+/** @internal */
+var Reference$1 = () => (id, options) => {
+	const limit = Error.stackTraceLimit;
+	Error.stackTraceLimit = 2;
+	const creationError = /* @__PURE__ */ new Error();
+	Error.stackTraceLimit = limit;
+	function ReferenceClass() {}
+	Object.setPrototypeOf(ReferenceClass, ReferenceProto);
+	ReferenceClass.key = id;
+	ReferenceClass.defaultValue = options.defaultValue;
+	Object.defineProperty(ReferenceClass, "stack", { get() {
+		return creationError.stack;
+	} });
+	return ReferenceClass;
+};
+/** @internal */
+var TypeId$11 = /*#__PURE__*/ Symbol.for("effect/Context");
+/** @internal */
+var ContextProto = {
+	[TypeId$11]: { _Services: (_) => _ },
+	[symbol](that) {
+		if (isContext$1(that)) {
+			if (this.unsafeMap.size === that.unsafeMap.size) {
+				for (const k of this.unsafeMap.keys()) if (!that.unsafeMap.has(k) || !equals$2(this.unsafeMap.get(k), that.unsafeMap.get(k))) return false;
+				return true;
+			}
+		}
+		return false;
+	},
+	[symbol$1]() {
+		return cached(this, number$1(this.unsafeMap.size));
+	},
+	pipe() {
+		return pipeArguments(this, arguments);
+	},
+	toString() {
+		return format$4(this.toJSON());
+	},
+	toJSON() {
+		return {
+			_id: "Context",
+			services: Array.from(this.unsafeMap).map(toJSON)
+		};
+	},
+	[NodeInspectSymbol]() {
+		return this.toJSON();
+	}
+};
+/** @internal */
+var makeContext = (unsafeMap) => {
+	const context = Object.create(ContextProto);
+	context.unsafeMap = unsafeMap;
+	return context;
+};
+var serviceNotFoundError = (tag) => {
+	const error = /* @__PURE__ */ new Error(`Service not found${tag.key ? `: ${String(tag.key)}` : ""}`);
+	if (tag.stack) {
+		const lines = tag.stack.split("\n");
+		if (lines.length > 2) {
+			const afterAt = lines[2].match(/at (.*)/);
+			if (afterAt) error.message = error.message + ` (defined at ${afterAt[1]})`;
+		}
+	}
+	if (error.stack) {
+		const lines = error.stack.split("\n");
+		lines.splice(1, 3);
+		error.stack = lines.join("\n");
+	}
+	return error;
+};
+/** @internal */
+var isContext$1 = (u) => hasProperty(u, TypeId$11);
+/** @internal */
+var isTag$1 = (u) => hasProperty(u, TagTypeId);
+/** @internal */
+var isReference = (u) => hasProperty(u, ReferenceTypeId);
+var _empty$3 = /*#__PURE__*/ makeContext(/*#__PURE__*/ new Map());
+/** @internal */
+var empty$13 = () => _empty$3;
+/** @internal */
+var make$21 = (tag, service) => makeContext(/* @__PURE__ */ new Map([[tag.key, service]]));
+/** @internal */
+var add$1 = /*#__PURE__*/ dual(3, (self, tag, service) => {
+	const map = new Map(self.unsafeMap);
+	map.set(tag.key, service);
+	return makeContext(map);
+});
+var defaultValueCache = /*#__PURE__*/ globalValue("effect/Context/defaultValueCache", () => /* @__PURE__ */ new Map());
+var getDefaultValue = (tag) => {
+	if (defaultValueCache.has(tag.key)) return defaultValueCache.get(tag.key);
+	const value = tag.defaultValue();
+	defaultValueCache.set(tag.key, value);
+	return value;
+};
+/** @internal */
+var unsafeGetReference = (self, tag) => {
+	return self.unsafeMap.has(tag.key) ? self.unsafeMap.get(tag.key) : getDefaultValue(tag);
+};
+/** @internal */
+var unsafeGet$1 = /*#__PURE__*/ dual(2, (self, tag) => {
+	if (!self.unsafeMap.has(tag.key)) {
+		if (ReferenceTypeId in tag) return getDefaultValue(tag);
+		throw serviceNotFoundError(tag);
+	}
+	return self.unsafeMap.get(tag.key);
+});
+/** @internal */
+var get$7 = unsafeGet$1;
+/** @internal */
+var getOption$1 = /*#__PURE__*/ dual(2, (self, tag) => {
+	if (!self.unsafeMap.has(tag.key)) return isReference(tag) ? some$1(getDefaultValue(tag)) : none$5;
+	return some$1(self.unsafeMap.get(tag.key));
+});
+/** @internal */
+var merge$4 = /*#__PURE__*/ dual(2, (self, that) => {
+	const map = new Map(self.unsafeMap);
+	for (const [tag, s] of that.unsafeMap) map.set(tag, s);
+	return makeContext(map);
+});
+/** @internal */
+var mergeAll$3 = (...ctxs) => {
+	const map = /* @__PURE__ */ new Map();
+	for (let i = 0; i < ctxs.length; i++) ctxs[i].unsafeMap.forEach((value, key) => {
+		map.set(key, value);
+	});
+	return makeContext(map);
+};
+//#endregion
+//#region node_modules/effect/dist/esm/Context.js
+/**
+* Creates a new `Tag` instance with an optional key parameter.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { Context } from "effect"
+*
+* assert.strictEqual(Context.GenericTag("PORT").key === Context.GenericTag("PORT").key, true)
+* ```
+*
+* @since 2.0.0
+* @category constructors
+*/
+var GenericTag = makeGenericTag;
+/**
+* Checks if the provided argument is a `Context`.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { Context } from "effect"
+*
+* assert.strictEqual(Context.isContext(Context.empty()), true)
+* ```
+*
+* @since 2.0.0
+* @category guards
+*/
+var isContext = isContext$1;
+/**
+* Checks if the provided argument is a `Tag`.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { Context } from "effect"
+*
+* assert.strictEqual(Context.isTag(Context.GenericTag("Tag")), true)
+* ```
+*
+* @since 2.0.0
+* @category guards
+*/
+var isTag = isTag$1;
+/**
+* Returns an empty `Context`.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { Context } from "effect"
+*
+* assert.strictEqual(Context.isContext(Context.empty()), true)
+* ```
+*
+* @since 2.0.0
+* @category constructors
+*/
+var empty$12 = empty$13;
+/**
+* Creates a new `Context` with a single service associated to the tag.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { Context } from "effect"
+*
+* const Port = Context.GenericTag<{ PORT: number }>("Port")
+*
+* const Services = Context.make(Port, { PORT: 8080 })
+*
+* assert.deepStrictEqual(Context.get(Services, Port), { PORT: 8080 })
+* ```
+*
+* @since 2.0.0
+* @category constructors
+*/
+var make$20 = make$21;
+/**
+* Adds a service to a given `Context`.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { Context, pipe } from "effect"
+*
+* const Port = Context.GenericTag<{ PORT: number }>("Port")
+* const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
+*
+* const someContext = Context.make(Port, { PORT: 8080 })
+*
+* const Services = pipe(
+*   someContext,
+*   Context.add(Timeout, { TIMEOUT: 5000 })
+* )
+*
+* assert.deepStrictEqual(Context.get(Services, Port), { PORT: 8080 })
+* assert.deepStrictEqual(Context.get(Services, Timeout), { TIMEOUT: 5000 })
+* ```
+*
+* @since 2.0.0
+*/
+var add = add$1;
+/**
+* Get a service from the context that corresponds to the given tag.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { pipe, Context } from "effect"
+*
+* const Port = Context.GenericTag<{ PORT: number }>("Port")
+* const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
+*
+* const Services = pipe(
+*   Context.make(Port, { PORT: 8080 }),
+*   Context.add(Timeout, { TIMEOUT: 5000 })
+* )
+*
+* assert.deepStrictEqual(Context.get(Services, Timeout), { TIMEOUT: 5000 })
+* ```
+*
+* @since 2.0.0
+* @category getters
+*/
+var get$6 = get$7;
+/**
+* Get a service from the context that corresponds to the given tag.
+* This function is unsafe because if the tag is not present in the context, a runtime error will be thrown.
+*
+* For a safer version see {@link getOption}.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { Context } from "effect"
+*
+* const Port = Context.GenericTag<{ PORT: number }>("Port")
+* const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
+*
+* const Services = Context.make(Port, { PORT: 8080 })
+*
+* assert.deepStrictEqual(Context.unsafeGet(Services, Port), { PORT: 8080 })
+* assert.throws(() => Context.unsafeGet(Services, Timeout))
+* ```
+*
+* @since 2.0.0
+* @category unsafe
+*/
+var unsafeGet = unsafeGet$1;
+/**
+* Get the value associated with the specified tag from the context wrapped in an `Option` object. If the tag is not
+* found, the `Option` object will be `None`.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { Context, Option } from "effect"
+*
+* const Port = Context.GenericTag<{ PORT: number }>("Port")
+* const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
+*
+* const Services = Context.make(Port, { PORT: 8080 })
+*
+* assert.deepStrictEqual(Context.getOption(Services, Port), Option.some({ PORT: 8080 }))
+* assert.deepStrictEqual(Context.getOption(Services, Timeout), Option.none())
+* ```
+*
+* @since 2.0.0
+* @category getters
+*/
+var getOption = getOption$1;
+/**
+* Merges two `Context`s, returning a new `Context` containing the services of both.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { Context } from "effect"
+*
+* const Port = Context.GenericTag<{ PORT: number }>("Port")
+* const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
+*
+* const firstContext = Context.make(Port, { PORT: 8080 })
+* const secondContext = Context.make(Timeout, { TIMEOUT: 5000 })
+*
+* const Services = Context.merge(firstContext, secondContext)
+*
+* assert.deepStrictEqual(Context.get(Services, Port), { PORT: 8080 })
+* assert.deepStrictEqual(Context.get(Services, Timeout), { TIMEOUT: 5000 })
+* ```
+*
+* @since 2.0.0
+*/
+var merge$3 = merge$4;
+/**
+* Merges any number of `Context`s, returning a new `Context` containing the services of all.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { Context } from "effect"
+*
+* const Port = Context.GenericTag<{ PORT: number }>("Port")
+* const Timeout = Context.GenericTag<{ TIMEOUT: number }>("Timeout")
+* const Host = Context.GenericTag<{ HOST: string }>("Host")
+*
+* const firstContext = Context.make(Port, { PORT: 8080 })
+* const secondContext = Context.make(Timeout, { TIMEOUT: 5000 })
+* const thirdContext = Context.make(Host, { HOST: "localhost" })
+*
+* const Services = Context.mergeAll(firstContext, secondContext, thirdContext)
+*
+* assert.deepStrictEqual(Context.get(Services, Port), { PORT: 8080 })
+* assert.deepStrictEqual(Context.get(Services, Timeout), { TIMEOUT: 5000 })
+* assert.deepStrictEqual(Context.get(Services, Host), { HOST: "localhost" })
+* ```
+*
+* @since 3.12.0
+*/
+var mergeAll$2 = mergeAll$3;
+/**
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { Context, Layer } from "effect"
+*
+* class MyTag extends Context.Tag("MyTag")<
+*  MyTag,
+*  { readonly myNum: number }
+* >() {
+*  static Live = Layer.succeed(this, { myNum: 108 })
+* }
+* ```
+*
+* @since 2.0.0
+* @category constructors
+*/
+var Tag = Tag$1;
+/**
+* Creates a context tag with a default value.
+*
+* **Details**
+*
+* `Context.Reference` allows you to create a tag that can hold a value. You can
+* provide a default value for the service, which will automatically be used
+* when the context is accessed, or override it with a custom implementation
+* when needed.
+*
+* **Example** (Declaring a Tag with a default value)
+*
+* ```ts
+* import * as assert from "node:assert"
+* import { Context, Effect } from "effect"
+*
+* class SpecialNumber extends Context.Reference<SpecialNumber>()(
+*   "SpecialNumber",
+*   { defaultValue: () => 2048 }
+* ) {}
+*
+* //      ┌─── Effect<void, never, never>
+* //      ▼
+* const program = Effect.gen(function* () {
+*   const specialNumber = yield* SpecialNumber
+*   console.log(`The special number is ${specialNumber}`)
+* })
+*
+* // No need to provide the SpecialNumber implementation
+* Effect.runPromise(program)
+* // Output: The special number is 2048
+* ```
+*
+* **Example** (Overriding the default value)
+*
+* ```ts
+* import { Context, Effect } from "effect"
+*
+* class SpecialNumber extends Context.Reference<SpecialNumber>()(
+*   "SpecialNumber",
+*   { defaultValue: () => 2048 }
+* ) {}
+*
+* const program = Effect.gen(function* () {
+*   const specialNumber = yield* SpecialNumber
+*   console.log(`The special number is ${specialNumber}`)
+* })
+*
+* Effect.runPromise(program.pipe(Effect.provideService(SpecialNumber, -1)))
+* // Output: The special number is -1
+* ```
+*
+* @since 3.11.0
+* @category constructors
+* @experimental
+*/
+var Reference = Reference$1;
+//#endregion
+//#region node_modules/effect/dist/esm/Duration.js
+/**
+* @since 2.0.0
+*/
+var TypeId$10 = /*#__PURE__*/ Symbol.for("effect/Duration");
+var bigint0$2 = /*#__PURE__*/ BigInt(0);
+var bigint24 = /*#__PURE__*/ BigInt(24);
+var bigint60 = /*#__PURE__*/ BigInt(60);
+var bigint1e3 = /*#__PURE__*/ BigInt(1e3);
+var bigint1e6 = /*#__PURE__*/ BigInt(1e6);
+var bigint1e9 = /*#__PURE__*/ BigInt(1e9);
+var DURATION_REGEX = /^(-?\d+(?:\.\d+)?)\s+(nanos?|micros?|millis?|seconds?|minutes?|hours?|days?|weeks?)$/;
+/**
+* @since 2.0.0
+*/
+var decode = (input) => {
+	if (isDuration(input)) return input;
+	else if (isNumber(input)) return millis(input);
+	else if (isBigInt(input)) return nanos(input);
+	else if (Array.isArray(input) && input.length === 2 && input.every(isNumber)) {
+		if (input[0] === -Infinity || input[1] === -Infinity || Number.isNaN(input[0]) || Number.isNaN(input[1])) return zero$1;
+		if (input[0] === Infinity || input[1] === Infinity) return infinity;
+		return nanos(BigInt(Math.round(input[0] * 1e9)) + BigInt(Math.round(input[1])));
+	} else if (isString(input)) {
+		const match = DURATION_REGEX.exec(input);
+		if (match) {
+			const [_, valueStr, unit] = match;
+			const value = Number(valueStr);
+			switch (unit) {
+				case "nano":
+				case "nanos": return nanos(BigInt(valueStr));
+				case "micro":
+				case "micros": return micros(BigInt(valueStr));
+				case "milli":
+				case "millis": return millis(value);
+				case "second":
+				case "seconds": return seconds(value);
+				case "minute":
+				case "minutes": return minutes(value);
+				case "hour":
+				case "hours": return hours(value);
+				case "day":
+				case "days": return days(value);
+				case "week":
+				case "weeks": return weeks(value);
+			}
+		}
+	}
+	throw new Error("Invalid DurationInput");
+};
+var zeroValue = {
+	_tag: "Millis",
+	millis: 0
+};
+var infinityValue = { _tag: "Infinity" };
+var DurationProto = {
+	[TypeId$10]: TypeId$10,
+	[symbol$1]() {
+		return cached(this, structure(this.value));
+	},
+	[symbol](that) {
+		return isDuration(that) && equals$1(this, that);
+	},
+	toString() {
+		return `Duration(${format$3(this)})`;
+	},
+	toJSON() {
+		switch (this.value._tag) {
+			case "Millis": return {
+				_id: "Duration",
+				_tag: "Millis",
+				millis: this.value.millis
+			};
+			case "Nanos": return {
+				_id: "Duration",
+				_tag: "Nanos",
+				hrtime: toHrTime(this)
+			};
+			case "Infinity": return {
+				_id: "Duration",
+				_tag: "Infinity"
+			};
+		}
+	},
+	[NodeInspectSymbol]() {
+		return this.toJSON();
+	},
+	pipe() {
+		return pipeArguments(this, arguments);
+	}
+};
+var make$19 = (input) => {
+	const duration = Object.create(DurationProto);
+	if (isNumber(input)) if (isNaN(input) || input <= 0) duration.value = zeroValue;
+	else if (!Number.isFinite(input)) duration.value = infinityValue;
+	else if (!Number.isInteger(input)) duration.value = {
+		_tag: "Nanos",
+		nanos: BigInt(Math.round(input * 1e6))
+	};
+	else duration.value = {
+		_tag: "Millis",
+		millis: input
+	};
+	else if (input <= bigint0$2) duration.value = zeroValue;
+	else duration.value = {
+		_tag: "Nanos",
+		nanos: input
+	};
+	return duration;
+};
+/**
+* @since 2.0.0
+* @category guards
+*/
+var isDuration = (u) => hasProperty(u, TypeId$10);
+/**
+* @since 2.0.0
+* @category guards
+*/
+var isFinite = (self) => self.value._tag !== "Infinity";
+/**
+* @since 3.5.0
+* @category guards
+*/
+var isZero$1 = (self) => {
+	switch (self.value._tag) {
+		case "Millis": return self.value.millis === 0;
+		case "Nanos": return self.value.nanos === bigint0$2;
+		case "Infinity": return false;
+	}
+};
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var zero$1 = /*#__PURE__*/ make$19(0);
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var infinity = /*#__PURE__*/ make$19(Infinity);
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var nanos = (nanos) => make$19(nanos);
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var micros = (micros) => make$19(micros * bigint1e3);
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var millis = (millis) => make$19(millis);
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var seconds = (seconds) => make$19(seconds * 1e3);
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var minutes = (minutes) => make$19(minutes * 6e4);
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var hours = (hours) => make$19(hours * 36e5);
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var days = (days) => make$19(days * 864e5);
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var weeks = (weeks) => make$19(weeks * 6048e5);
+/**
+* @since 2.0.0
+* @category getters
+*/
+var toMillis = (self) => match$2(self, {
+	onMillis: (millis) => millis,
+	onNanos: (nanos) => Number(nanos) / 1e6
+});
+/**
+* Get the duration in nanoseconds as a bigint.
+*
+* If the duration is infinite, returns `Option.none()`
+*
+* @since 2.0.0
+* @category getters
+*/
+var toNanos = (self) => {
+	const _self = decode(self);
+	switch (_self.value._tag) {
+		case "Infinity": return none$4();
+		case "Nanos": return some(_self.value.nanos);
+		case "Millis": return some(BigInt(Math.round(_self.value.millis * 1e6)));
+	}
+};
+/**
+* Get the duration in nanoseconds as a bigint.
+*
+* If the duration is infinite, it throws an error.
+*
+* @since 2.0.0
+* @category getters
+*/
+var unsafeToNanos = (self) => {
+	const _self = decode(self);
+	switch (_self.value._tag) {
+		case "Infinity": throw new Error("Cannot convert infinite duration to nanos");
+		case "Nanos": return _self.value.nanos;
+		case "Millis": return BigInt(Math.round(_self.value.millis * 1e6));
+	}
+};
+/**
+* @since 2.0.0
+* @category getters
+*/
+var toHrTime = (self) => {
+	const _self = decode(self);
+	switch (_self.value._tag) {
+		case "Infinity": return [Infinity, 0];
+		case "Nanos": return [Number(_self.value.nanos / bigint1e9), Number(_self.value.nanos % bigint1e9)];
+		case "Millis": return [Math.floor(_self.value.millis / 1e3), Math.round(_self.value.millis % 1e3 * 1e6)];
+	}
+};
+/**
+* @since 2.0.0
+* @category pattern matching
+*/
+var match$2 = /*#__PURE__*/ dual(2, (self, options) => {
+	const _self = decode(self);
+	switch (_self.value._tag) {
+		case "Nanos": return options.onNanos(_self.value.nanos);
+		case "Infinity": return options.onMillis(Infinity);
+		case "Millis": return options.onMillis(_self.value.millis);
+	}
+});
+/**
+* @since 2.0.0
+* @category pattern matching
+*/
+var matchWith = /*#__PURE__*/ dual(3, (self, that, options) => {
+	const _self = decode(self);
+	const _that = decode(that);
+	if (_self.value._tag === "Infinity" || _that.value._tag === "Infinity") return options.onMillis(toMillis(_self), toMillis(_that));
+	else if (_self.value._tag === "Nanos" || _that.value._tag === "Nanos") {
+		const selfNanos = _self.value._tag === "Nanos" ? _self.value.nanos : BigInt(Math.round(_self.value.millis * 1e6));
+		const thatNanos = _that.value._tag === "Nanos" ? _that.value.nanos : BigInt(Math.round(_that.value.millis * 1e6));
+		return options.onNanos(selfNanos, thatNanos);
+	}
+	return options.onMillis(_self.value.millis, _that.value.millis);
+});
+/**
+* @category instances
+* @since 2.0.0
+*/
+var Equivalence$3 = (self, that) => matchWith(self, that, {
+	onMillis: (self, that) => self === that,
+	onNanos: (self, that) => self === that
+});
+/**
+* @since 2.0.0
+* @category predicates
+*/
+var lessThanOrEqualTo$1 = /*#__PURE__*/ dual(2, (self, that) => matchWith(self, that, {
+	onMillis: (self, that) => self <= that,
+	onNanos: (self, that) => self <= that
+}));
+/**
+* @since 2.0.0
+* @category predicates
+*/
+var greaterThanOrEqualTo$1 = /*#__PURE__*/ dual(2, (self, that) => matchWith(self, that, {
+	onMillis: (self, that) => self >= that,
+	onNanos: (self, that) => self >= that
+}));
+/**
+* @since 2.0.0
+* @category predicates
+*/
+var equals$1 = /*#__PURE__*/ dual(2, (self, that) => Equivalence$3(decode(self), decode(that)));
+/**
+* Converts a `Duration` to its parts.
+*
+* @since 3.8.0
+* @category conversions
+*/
+var parts = (self) => {
+	const duration = decode(self);
+	if (duration.value._tag === "Infinity") return {
+		days: Infinity,
+		hours: Infinity,
+		minutes: Infinity,
+		seconds: Infinity,
+		millis: Infinity,
+		nanos: Infinity
+	};
+	const nanos = unsafeToNanos(duration);
+	const ms = nanos / bigint1e6;
+	const sec = ms / bigint1e3;
+	const min = sec / bigint60;
+	const hr = min / bigint60;
+	const days = hr / bigint24;
+	return {
+		days: Number(days),
+		hours: Number(hr % bigint24),
+		minutes: Number(min % bigint60),
+		seconds: Number(sec % bigint60),
+		millis: Number(ms % bigint1e3),
+		nanos: Number(nanos % bigint1e6)
+	};
+};
+/**
+* Converts a `Duration` to a human readable string.
+*
+* @since 2.0.0
+* @category conversions
+* @example
+* ```ts
+* import { Duration } from "effect"
+*
+* Duration.format(Duration.millis(1000)) // "1s"
+* Duration.format(Duration.millis(1001)) // "1s 1ms"
+* ```
+*/
+var format$3 = (self) => {
+	const duration = decode(self);
+	if (duration.value._tag === "Infinity") return "Infinity";
+	if (isZero$1(duration)) return "0";
+	const fragments = parts(duration);
+	const pieces = [];
+	if (fragments.days !== 0) pieces.push(`${fragments.days}d`);
+	if (fragments.hours !== 0) pieces.push(`${fragments.hours}h`);
+	if (fragments.minutes !== 0) pieces.push(`${fragments.minutes}m`);
+	if (fragments.seconds !== 0) pieces.push(`${fragments.seconds}s`);
+	if (fragments.millis !== 0) pieces.push(`${fragments.millis}ms`);
+	if (fragments.nanos !== 0) pieces.push(`${fragments.nanos}ns`);
+	return pieces.join(" ");
+};
+//#endregion
+//#region node_modules/effect/dist/esm/MutableRef.js
+var TypeId$9 = /*#__PURE__*/ Symbol.for("effect/MutableRef");
+var MutableRefProto = {
+	[TypeId$9]: TypeId$9,
+	toString() {
+		return format$4(this.toJSON());
+	},
+	toJSON() {
+		return {
+			_id: "MutableRef",
+			current: toJSON(this.current)
+		};
+	},
+	[NodeInspectSymbol]() {
+		return this.toJSON();
+	},
+	pipe() {
+		return pipeArguments(this, arguments);
+	}
+};
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var make$18 = (value) => {
+	const ref = Object.create(MutableRefProto);
+	ref.current = value;
+	return ref;
+};
+/**
+* @since 2.0.0
+* @category general
+*/
+var get$5 = (self) => self.current;
+/**
+* @since 2.0.0
+* @category general
+*/
+var set$4 = /*#__PURE__*/ dual(2, (self, value) => {
+	self.current = value;
+	return self;
+});
+//#endregion
+//#region node_modules/effect/dist/esm/internal/fiberId.js
+/** @internal */
+var FiberIdSymbolKey = "effect/FiberId";
+/** @internal */
+var FiberIdTypeId = /*#__PURE__*/ Symbol.for(FiberIdSymbolKey);
+/** @internal */
+var OP_NONE = "None";
+/** @internal */
+var OP_RUNTIME = "Runtime";
+/** @internal */
+var OP_COMPOSITE = "Composite";
+var emptyHash = /*#__PURE__*/ string$2(`${FiberIdSymbolKey}-${OP_NONE}`);
+/** @internal */
+var None$2 = class {
+	[FiberIdTypeId] = FiberIdTypeId;
+	_tag = OP_NONE;
+	id = -1;
+	startTimeMillis = -1;
+	[symbol$1]() {
+		return emptyHash;
+	}
+	[symbol](that) {
+		return isFiberId$1(that) && that._tag === OP_NONE;
+	}
+	toString() {
+		return format$4(this.toJSON());
+	}
+	toJSON() {
+		return {
+			_id: "FiberId",
+			_tag: this._tag
+		};
+	}
+	[NodeInspectSymbol]() {
+		return this.toJSON();
+	}
+};
+/** @internal */
+var Runtime = class {
+	id;
+	startTimeMillis;
+	[FiberIdTypeId] = FiberIdTypeId;
+	_tag = OP_RUNTIME;
+	constructor(id, startTimeMillis) {
+		this.id = id;
+		this.startTimeMillis = startTimeMillis;
+	}
+	[symbol$1]() {
+		return cached(this, string$2(`${FiberIdSymbolKey}-${this._tag}-${this.id}-${this.startTimeMillis}`));
+	}
+	[symbol](that) {
+		return isFiberId$1(that) && that._tag === OP_RUNTIME && this.id === that.id && this.startTimeMillis === that.startTimeMillis;
+	}
+	toString() {
+		return format$4(this.toJSON());
+	}
+	toJSON() {
+		return {
+			_id: "FiberId",
+			_tag: this._tag,
+			id: this.id,
+			startTimeMillis: this.startTimeMillis
+		};
+	}
+	[NodeInspectSymbol]() {
+		return this.toJSON();
+	}
+};
+/** @internal */
+var Composite$1 = class {
+	left;
+	right;
+	[FiberIdTypeId] = FiberIdTypeId;
+	_tag = OP_COMPOSITE;
+	constructor(left, right) {
+		this.left = left;
+		this.right = right;
+	}
+	_hash;
+	[symbol$1]() {
+		return pipe(string$2(`${FiberIdSymbolKey}-${this._tag}`), combine$5(hash(this.left)), combine$5(hash(this.right)), cached(this));
+	}
+	[symbol](that) {
+		return isFiberId$1(that) && that._tag === OP_COMPOSITE && equals$2(this.left, that.left) && equals$2(this.right, that.right);
+	}
+	toString() {
+		return format$4(this.toJSON());
+	}
+	toJSON() {
+		return {
+			_id: "FiberId",
+			_tag: this._tag,
+			left: toJSON(this.left),
+			right: toJSON(this.right)
+		};
+	}
+	[NodeInspectSymbol]() {
+		return this.toJSON();
+	}
+};
+/** @internal */
+var none$3 = /*#__PURE__*/ new None$2();
+/** @internal */
+var runtime$1 = (id, startTimeMillis) => {
+	return new Runtime(id, startTimeMillis);
+};
+/** @internal */
+var composite$1 = (left, right) => {
+	return new Composite$1(left, right);
+};
+/** @internal */
+var isFiberId$1 = (self) => hasProperty(self, FiberIdTypeId);
+/** @internal */
+var ids = (self) => {
+	switch (self._tag) {
+		case OP_NONE: return empty$15();
+		case OP_RUNTIME: return make$22(self.id);
+		case OP_COMPOSITE: return pipe(ids(self.left), union(ids(self.right)));
+	}
+};
+var _fiberCounter = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/Fiber/Id/_fiberCounter"), () => make$18(0));
+/** @internal */
+var threadName$1 = (self) => {
+	return Array.from(ids(self)).map((n) => `#${n}`).join(",");
+};
+/** @internal */
+var unsafeMake$7 = () => {
+	const id = get$5(_fiberCounter);
+	pipe(_fiberCounter, set$4(id + 1));
+	return new Runtime(id, Date.now());
+};
+//#endregion
+//#region node_modules/effect/dist/esm/FiberId.js
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var none$2 = none$3;
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var runtime = runtime$1;
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var composite = composite$1;
+/**
+* Returns `true` if the specified unknown value is a `FiberId`, `false`
+* otherwise.
+*
+* @since 2.0.0
+* @category refinements
+*/
+var isFiberId = isFiberId$1;
+/**
+* Creates a string representing the name of the current thread of execution
+* represented by the specified `FiberId`.
+*
+* @since 2.0.0
+* @category destructors
+*/
+var threadName = threadName$1;
+/**
+* Unsafely creates a new `FiberId`.
+*
+* @since 2.0.0
+* @category unsafe
+*/
+var unsafeMake$6 = unsafeMake$7;
+//#endregion
+//#region node_modules/effect/dist/esm/HashMap.js
+/**
+* @since 2.0.0
+*/
+/**
+* Creates a new `HashMap`.
+*
+* @since 2.0.0
+* @category constructors
+*/
+var empty$11 = empty$17;
+/**
+* Creates a new `HashMap` from an iterable collection of key/value pairs.
+*
+* @since 2.0.0
+* @category constructors
+*/
+var fromIterable$1 = fromIterable$4;
+/**
+* Checks if the `HashMap` contains any entries.
+*
+* @since 2.0.0
+* @category elements
+*/
+var isEmpty = isEmpty$2;
+/**
+* Safely lookup the value for the specified key in the `HashMap` using the
+* internal hashing function.
+*
+* @since 2.0.0
+* @category elements
+*/
+var get$4 = get$8;
+/**
+* Sets the specified key to the specified value using the internal hashing
+* function.
+*
+* @since 2.0.0
+*/
+var set$3 = set$5;
+/**
+* Returns an `IterableIterator` of the keys within the `HashMap`.
+*
+* @since 2.0.0
+* @category getters
+*/
+var keys = keys$1;
+/**
+* Set or remove the specified key in the `HashMap` using the specified
+* update function. The value of the specified key will be computed using the
+* provided hash.
+*
+* The update function will be invoked with the current value of the key if it
+* exists, or `None` if no such value exists.
+*
+* @since 2.0.0
+*/
+var modifyAt = modifyAt$1;
+/**
+* Maps over the entries of the `HashMap` using the specified function.
+*
+* @since 2.0.0
+* @category mapping
+*/
+var map$4 = map$5;
+/**
+* Reduces the specified state over the entries of the `HashMap`.
+*
+* @since 2.0.0
+* @category folding
+*/
+var reduce$1 = reduce$5;
+//#endregion
+//#region node_modules/effect/dist/esm/List.js
+/**
+* A data type for immutable linked lists representing ordered collections of elements of type `A`.
+*
+* This data type is optimal for last-in-first-out (LIFO), stack-like access patterns. If you need another access pattern, for example, random access or FIFO, consider using a collection more suited to this than `List`.
+*
+* **Performance**
+*
+* - Time: `List` has `O(1)` prepend and head/tail access. Most other operations are `O(n)` on the number of elements in the list. This includes the index-based lookup of elements, `length`, `append` and `reverse`.
+* - Space: `List` implements structural sharing of the tail list. This means that many operations are either zero- or constant-memory cost.
+*
+* @since 2.0.0
+*/
+/**
+* This file is ported from
+*
+* Scala (https://www.scala-lang.org)
+*
+* Copyright EPFL and Lightbend, Inc.
+*
+* Licensed under Apache License 2.0
+* (http://www.apache.org/licenses/LICENSE-2.0).
+*/
+/**
+* @since 2.0.0
+* @category symbol
+*/
+var TypeId$8 = /*#__PURE__*/ Symbol.for("effect/List");
+/**
+* Converts the specified `List` to an `Array`.
+*
+* @category conversions
+* @since 2.0.0
+*/
+var toArray = (self) => fromIterable$6(self);
+/**
+* @category equivalence
+* @since 2.0.0
+*/
+var getEquivalence = (isEquivalent) => mapInput$1(getEquivalence$2(isEquivalent), toArray);
+var _equivalence = /*#__PURE__*/ getEquivalence(equals$2);
+var ConsProto = {
+	[TypeId$8]: TypeId$8,
+	_tag: "Cons",
+	toString() {
+		return format$4(this.toJSON());
+	},
+	toJSON() {
+		return {
+			_id: "List",
+			_tag: "Cons",
+			values: toArray(this).map(toJSON)
+		};
+	},
+	[NodeInspectSymbol]() {
+		return this.toJSON();
+	},
+	[symbol](that) {
+		return isList(that) && this._tag === that._tag && _equivalence(this, that);
+	},
+	[symbol$1]() {
+		return cached(this, array(toArray(this)));
+	},
+	[Symbol.iterator]() {
+		let done = false;
+		let self = this;
+		return {
+			next() {
+				if (done) return this.return();
+				if (self._tag === "Nil") {
+					done = true;
+					return this.return();
+				}
+				const value = self.head;
+				self = self.tail;
+				return {
+					done,
+					value
+				};
+			},
+			return(value) {
+				if (!done) done = true;
+				return {
+					done: true,
+					value
+				};
+			}
+		};
+	},
+	pipe() {
+		return pipeArguments(this, arguments);
+	}
+};
+var makeCons = (head, tail) => {
+	const cons = Object.create(ConsProto);
+	cons.head = head;
+	cons.tail = tail;
+	return cons;
+};
+var NilHash = /*#__PURE__*/ string$2("Nil");
+var _Nil = /*#__PURE__*/ Object.create({
+	[TypeId$8]: TypeId$8,
+	_tag: "Nil",
+	toString() {
+		return format$4(this.toJSON());
+	},
+	toJSON() {
+		return {
+			_id: "List",
+			_tag: "Nil"
+		};
+	},
+	[NodeInspectSymbol]() {
+		return this.toJSON();
+	},
+	[symbol$1]() {
+		return NilHash;
+	},
+	[symbol](that) {
+		return isList(that) && this._tag === that._tag;
+	},
+	[Symbol.iterator]() {
+		return { next() {
+			return {
+				done: true,
+				value: void 0
+			};
+		} };
+	},
+	pipe() {
+		return pipeArguments(this, arguments);
+	}
+});
+/**
+* Returns `true` if the specified value is a `List`, `false` otherwise.
+*
+* @since 2.0.0
+* @category refinements
+*/
+var isList = (u) => hasProperty(u, TypeId$8);
+/**
+* Returns `true` if the specified value is a `List.Nil<A>`, `false` otherwise.
+*
+* @since 2.0.0
+* @category refinements
+*/
+var isNil = (self) => self._tag === "Nil";
+/**
+* Returns `true` if the specified value is a `List.Cons<A>`, `false` otherwise.
+*
+* @since 2.0.0
+* @category refinements
+*/
+var isCons = (self) => self._tag === "Cons";
+/**
+* Constructs a new empty `List<A>`.
+*
+* @since 2.0.0
+* @category constructors
+*/
+var nil = () => _Nil;
+/**
+* Constructs a new `List.Cons<A>` from the specified `head` and `tail` values.
+*
+* @since 2.0.0
+* @category constructors
+*/
+var cons = (head, tail) => makeCons(head, tail);
+/**
+* Constructs a new empty `List<A>`.
+*
+* Alias of {@link nil}.
+*
+* @since 2.0.0
+* @category constructors
+*/
+var empty$10 = nil;
+/**
+* Constructs a new `List<A>` from the specified value.
+*
+* @since 2.0.0
+* @category constructors
+*/
+var of = (value) => makeCons(value, _Nil);
+/**
+* Concatenates two lists, combining their elements.
+* If either list is non-empty, the result is also a non-empty list.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { List } from "effect"
+*
+* assert.deepStrictEqual(
+*   List.make(1, 2).pipe(List.appendAll(List.make("a", "b")), List.toArray),
+*   [1, 2, "a", "b"]
+* )
+* ```
+*
+* @category concatenating
+* @since 2.0.0
+*/
+var appendAll = /*#__PURE__*/ dual(2, (self, that) => prependAll(that, self));
+/**
+* Prepends the specified element to the beginning of the list.
+*
+* @category concatenating
+* @since 2.0.0
+*/
+var prepend = /*#__PURE__*/ dual(2, (self, element) => cons(element, self));
+/**
+* Prepends the specified prefix list to the beginning of the specified list.
+* If either list is non-empty, the result is also a non-empty list.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { List } from "effect"
+*
+* assert.deepStrictEqual(
+*   List.make(1, 2).pipe(List.prependAll(List.make("a", "b")), List.toArray),
+*   ["a", "b", 1, 2]
+* )
+* ```
+*
+* @category concatenating
+* @since 2.0.0
+*/
+var prependAll = /*#__PURE__*/ dual(2, (self, prefix) => {
+	if (isNil(self)) return prefix;
+	else if (isNil(prefix)) return self;
+	else {
+		const result = makeCons(prefix.head, self);
+		let curr = result;
+		let that = prefix.tail;
+		while (!isNil(that)) {
+			const temp = makeCons(that.head, self);
+			curr.tail = temp;
+			curr = temp;
+			that = that.tail;
+		}
+		return result;
+	}
+});
+/**
+* Folds over the elements of the list using the specified function, using the
+* specified initial value.
+*
+* @since 2.0.0
+* @category folding
+*/
+var reduce = /*#__PURE__*/ dual(3, (self, zero, f) => {
+	let acc = zero;
+	let these = self;
+	while (!isNil(these)) {
+		acc = f(acc, these.head);
+		these = these.tail;
+	}
+	return acc;
+});
+/**
+* Returns a new list with the elements of the specified list in reverse order.
+*
+* @since 2.0.0
+* @category elements
+*/
+var reverse = (self) => {
+	let result = empty$10();
+	let these = self;
+	while (!isNil(these)) {
+		result = prepend(result, these.head);
+		these = these.tail;
+	}
+	return result;
+};
+Array.prototype;
+/** @internal */
+var Structural = /*#__PURE__*/ function() {
+	function Structural(args) {
+		if (args) Object.assign(this, args);
+	}
+	Structural.prototype = StructuralPrototype;
+	return Structural;
+}();
+//#endregion
+//#region node_modules/effect/dist/esm/internal/differ/contextPatch.js
+/** @internal */
+var ContextPatchTypeId = /*#__PURE__*/ Symbol.for("effect/DifferContextPatch");
+function variance$3(a) {
+	return a;
+}
+/** @internal */
+var PatchProto$2 = {
+	...Structural.prototype,
+	[ContextPatchTypeId]: {
+		_Value: variance$3,
+		_Patch: variance$3
+	}
+};
+var _empty$2 = /*#__PURE__*/ Object.create(/* @__PURE__ */ Object.assign(/*#__PURE__*/ Object.create(PatchProto$2), { _tag: "Empty" }));
+/**
+* @internal
+*/
+var empty$9 = () => _empty$2;
+var AndThenProto$2 = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(PatchProto$2), { _tag: "AndThen" });
+var makeAndThen$2 = (first, second) => {
+	const o = Object.create(AndThenProto$2);
+	o.first = first;
+	o.second = second;
+	return o;
+};
+var AddServiceProto = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(PatchProto$2), { _tag: "AddService" });
+var makeAddService = (key, service) => {
+	const o = Object.create(AddServiceProto);
+	o.key = key;
+	o.service = service;
+	return o;
+};
+var RemoveServiceProto = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(PatchProto$2), { _tag: "RemoveService" });
+var makeRemoveService = (key) => {
+	const o = Object.create(RemoveServiceProto);
+	o.key = key;
+	return o;
+};
+var UpdateServiceProto = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(PatchProto$2), { _tag: "UpdateService" });
+var makeUpdateService = (key, update) => {
+	const o = Object.create(UpdateServiceProto);
+	o.key = key;
+	o.update = update;
+	return o;
+};
+/** @internal */
+var diff$6 = (oldValue, newValue) => {
+	const missingServices = new Map(oldValue.unsafeMap);
+	let patch = empty$9();
+	for (const [tag, newService] of newValue.unsafeMap.entries()) if (missingServices.has(tag)) {
+		const old = missingServices.get(tag);
+		missingServices.delete(tag);
+		if (!equals$2(old, newService)) patch = combine$4(makeUpdateService(tag, () => newService))(patch);
+	} else {
+		missingServices.delete(tag);
+		patch = combine$4(makeAddService(tag, newService))(patch);
+	}
+	for (const [tag] of missingServices.entries()) patch = combine$4(makeRemoveService(tag))(patch);
+	return patch;
+};
+/** @internal */
+var combine$4 = /*#__PURE__*/ dual(2, (self, that) => makeAndThen$2(self, that));
+/** @internal */
+var patch$7 = /*#__PURE__*/ dual(2, (self, context) => {
+	if (self._tag === "Empty") return context;
+	let wasServiceUpdated = false;
+	let patches = of$1(self);
+	const updatedContext = new Map(context.unsafeMap);
+	while (isNonEmpty$2(patches)) {
+		const head = headNonEmpty(patches);
+		const tail = tailNonEmpty(patches);
+		switch (head._tag) {
+			case "Empty":
+				patches = tail;
+				break;
+			case "AddService":
+				updatedContext.set(head.key, head.service);
+				patches = tail;
+				break;
+			case "AndThen":
+				patches = prepend$1(prepend$1(tail, head.second), head.first);
+				break;
+			case "RemoveService":
+				updatedContext.delete(head.key);
+				patches = tail;
+				break;
+			case "UpdateService":
+				updatedContext.set(head.key, head.update(updatedContext.get(head.key)));
+				wasServiceUpdated = true;
+				patches = tail;
+				break;
+		}
+	}
+	if (!wasServiceUpdated) return makeContext(updatedContext);
+	const map = /* @__PURE__ */ new Map();
+	for (const [tag] of context.unsafeMap) if (updatedContext.has(tag)) {
+		map.set(tag, updatedContext.get(tag));
+		updatedContext.delete(tag);
+	}
+	for (const [tag, s] of updatedContext) map.set(tag, s);
+	return makeContext(map);
+});
+//#endregion
+//#region node_modules/effect/dist/esm/internal/differ/hashSetPatch.js
+/** @internal */
+var HashSetPatchTypeId = /*#__PURE__*/ Symbol.for("effect/DifferHashSetPatch");
+function variance$2(a) {
+	return a;
+}
+/** @internal */
+var PatchProto$1 = {
+	...Structural.prototype,
+	[HashSetPatchTypeId]: {
+		_Value: variance$2,
+		_Key: variance$2,
+		_Patch: variance$2
+	}
+};
+var _empty$1 = /*#__PURE__*/ Object.create(/* @__PURE__ */ Object.assign(/*#__PURE__*/ Object.create(PatchProto$1), { _tag: "Empty" }));
+/** @internal */
+var empty$8 = () => _empty$1;
+var AndThenProto$1 = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(PatchProto$1), { _tag: "AndThen" });
+/** @internal */
+var makeAndThen$1 = (first, second) => {
+	const o = Object.create(AndThenProto$1);
+	o.first = first;
+	o.second = second;
+	return o;
+};
+var AddProto = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(PatchProto$1), { _tag: "Add" });
+/** @internal */
+var makeAdd = (value) => {
+	const o = Object.create(AddProto);
+	o.value = value;
+	return o;
+};
+var RemoveProto = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(PatchProto$1), { _tag: "Remove" });
+/** @internal */
+var makeRemove = (value) => {
+	const o = Object.create(RemoveProto);
+	o.value = value;
+	return o;
+};
+/** @internal */
+var diff$5 = (oldValue, newValue) => {
+	const [removed, patch] = reduce$3([oldValue, empty$8()], ([set, patch], value) => {
+		if (has$1(value)(set)) return [remove(value)(set), patch];
+		return [set, combine$3(makeAdd(value))(patch)];
+	})(newValue);
+	return reduce$3(patch, (patch, value) => combine$3(makeRemove(value))(patch))(removed);
+};
+/** @internal */
+var combine$3 = /*#__PURE__*/ dual(2, (self, that) => makeAndThen$1(self, that));
+/** @internal */
+var patch$6 = /*#__PURE__*/ dual(2, (self, oldValue) => {
+	if (self._tag === "Empty") return oldValue;
+	let set = oldValue;
+	let patches = of$1(self);
+	while (isNonEmpty$2(patches)) {
+		const head = headNonEmpty(patches);
+		const tail = tailNonEmpty(patches);
+		switch (head._tag) {
+			case "Empty":
+				patches = tail;
+				break;
+			case "AndThen":
+				patches = prepend$1(head.first)(prepend$1(head.second)(tail));
+				break;
+			case "Add":
+				set = add$2(head.value)(set);
+				patches = tail;
+				break;
+			case "Remove":
+				set = remove(head.value)(set);
+				patches = tail;
+		}
+	}
+	return set;
+});
+//#endregion
+//#region node_modules/effect/dist/esm/internal/differ/readonlyArrayPatch.js
+/** @internal */
+var ReadonlyArrayPatchTypeId = /*#__PURE__*/ Symbol.for("effect/DifferReadonlyArrayPatch");
+function variance$1(a) {
+	return a;
+}
+var PatchProto = {
+	...Structural.prototype,
+	[ReadonlyArrayPatchTypeId]: {
+		_Value: variance$1,
+		_Patch: variance$1
+	}
+};
+var _empty = /*#__PURE__*/ Object.create(/* @__PURE__ */ Object.assign(/*#__PURE__*/ Object.create(PatchProto), { _tag: "Empty" }));
+/**
+* @internal
+*/
+var empty$7 = () => _empty;
+var AndThenProto = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(PatchProto), { _tag: "AndThen" });
+var makeAndThen = (first, second) => {
+	const o = Object.create(AndThenProto);
+	o.first = first;
+	o.second = second;
+	return o;
+};
+var AppendProto = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(PatchProto), { _tag: "Append" });
+var makeAppend = (values) => {
+	const o = Object.create(AppendProto);
+	o.values = values;
+	return o;
+};
+var SliceProto = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(PatchProto), { _tag: "Slice" });
+var makeSlice = (from, until) => {
+	const o = Object.create(SliceProto);
+	o.from = from;
+	o.until = until;
+	return o;
+};
+var UpdateProto = /*#__PURE__*/ Object.assign(/*#__PURE__*/ Object.create(PatchProto), { _tag: "Update" });
+var makeUpdate = (index, patch) => {
+	const o = Object.create(UpdateProto);
+	o.index = index;
+	o.patch = patch;
+	return o;
+};
+/** @internal */
+var diff$4 = (options) => {
+	let i = 0;
+	let patch = empty$7();
+	while (i < options.oldValue.length && i < options.newValue.length) {
+		const oldElement = options.oldValue[i];
+		const newElement = options.newValue[i];
+		const valuePatch = options.differ.diff(oldElement, newElement);
+		if (!equals$2(valuePatch, options.differ.empty)) patch = combine$2(patch, makeUpdate(i, valuePatch));
+		i = i + 1;
+	}
+	if (i < options.oldValue.length) patch = combine$2(patch, makeSlice(0, i));
+	if (i < options.newValue.length) patch = combine$2(patch, makeAppend(drop$1(i)(options.newValue)));
+	return patch;
+};
+/** @internal */
+var combine$2 = /*#__PURE__*/ dual(2, (self, that) => makeAndThen(self, that));
+/** @internal */
+var patch$5 = /*#__PURE__*/ dual(3, (self, oldValue, differ) => {
+	if (self._tag === "Empty") return oldValue;
+	let readonlyArray = oldValue.slice();
+	let patches = of$2(self);
+	while (isNonEmptyArray(patches)) {
+		const head = headNonEmpty$1(patches);
+		const tail = tailNonEmpty$1(patches);
+		switch (head._tag) {
+			case "Empty":
+				patches = tail;
+				break;
+			case "AndThen":
+				tail.unshift(head.first, head.second);
+				patches = tail;
+				break;
+			case "Append":
+				for (const value of head.values) readonlyArray.push(value);
+				patches = tail;
+				break;
+			case "Slice":
+				readonlyArray = readonlyArray.slice(head.from, head.until);
+				patches = tail;
+				break;
+			case "Update":
+				readonlyArray[head.index] = differ.patch(head.patch, readonlyArray[head.index]);
+				patches = tail;
+				break;
+		}
+	}
+	return readonlyArray;
+});
+/** @internal */
+var DifferProto = {
+	[/* @__PURE__ */ Symbol.for("effect/Differ")]: {
+		_P: identity,
+		_V: identity
+	},
+	pipe() {
+		return pipeArguments(this, arguments);
+	}
+};
+/** @internal */
+var make$17 = (params) => {
+	const differ = Object.create(DifferProto);
+	differ.empty = params.empty;
+	differ.diff = params.diff;
+	differ.combine = params.combine;
+	differ.patch = params.patch;
+	return differ;
+};
+/** @internal */
+var environment = () => make$17({
+	empty: empty$9(),
+	combine: (first, second) => combine$4(second)(first),
+	diff: (oldValue, newValue) => diff$6(oldValue, newValue),
+	patch: (patch, oldValue) => patch$7(oldValue)(patch)
+});
+/** @internal */
+var hashSet = () => make$17({
+	empty: empty$8(),
+	combine: (first, second) => combine$3(second)(first),
+	diff: (oldValue, newValue) => diff$5(oldValue, newValue),
+	patch: (patch, oldValue) => patch$6(oldValue)(patch)
+});
+/** @internal */
+var readonlyArray = (differ) => make$17({
+	empty: empty$7(),
+	combine: (first, second) => combine$2(first, second),
+	diff: (oldValue, newValue) => diff$4({
+		oldValue,
+		newValue,
+		differ
+	}),
+	patch: (patch, oldValue) => patch$5(patch, oldValue, differ)
+});
+/** @internal */
+var update$2 = () => updateWith((_, a) => a);
+/** @internal */
+var updateWith = (f) => make$17({
+	empty: identity,
+	combine: (first, second) => {
+		if (first === identity) return second;
+		if (second === identity) return first;
+		return (a) => second(first(a));
+	},
+	diff: (oldValue, newValue) => {
+		if (equals$2(oldValue, newValue)) return identity;
+		return constant(newValue);
+	},
+	patch: (patch, oldValue) => f(oldValue, patch(oldValue))
+});
+//#endregion
+//#region node_modules/effect/dist/esm/internal/runtimeFlagsPatch.js
+/** @internal */
+var BIT_MASK = 255;
+/** @internal */
+var BIT_SHIFT = 8;
+/** @internal */
+var active = (patch) => patch & BIT_MASK;
+/** @internal */
+var enabled = (patch) => patch >> BIT_SHIFT & BIT_MASK;
+/** @internal */
+var make$16 = (active, enabled) => (active & BIT_MASK) + ((enabled & active & BIT_MASK) << BIT_SHIFT);
+/** @internal */
+var empty$6 = /*#__PURE__*/ make$16(0, 0);
+/** @internal */
+var enable$2 = (flag) => make$16(flag, flag);
+/** @internal */
+var disable$2 = (flag) => make$16(flag, 0);
+/** @internal */
+var exclude$1 = /*#__PURE__*/ dual(2, (self, flag) => make$16(active(self) & ~flag, enabled(self)));
+/** @internal */
+var andThen$2 = /*#__PURE__*/ dual(2, (self, that) => self | that);
+/** @internal */
+var invert = (n) => ~n >>> 0 & BIT_MASK;
+/** @internal */
+var cooperativeYielding = (self) => isEnabled(self, 32);
+/** @internal */
+var disable$1 = /*#__PURE__*/ dual(2, (self, flag) => self & ~flag);
+/** @internal */
+var enable$1 = /*#__PURE__*/ dual(2, (self, flag) => self | flag);
+/** @internal */
+var interruptible$2 = (self) => interruption(self) && !windDown(self);
+/** @internal */
+var interruption = (self) => isEnabled(self, 1);
+/** @internal */
+var isEnabled = /*#__PURE__*/ dual(2, (self, flag) => (self & flag) !== 0);
+/** @internal */
+var make$15 = (...flags) => flags.reduce((a, b) => a | b, 0);
+/** @internal */
+var none$1 = /*#__PURE__*/ make$15(0);
+/** @internal */
+var runtimeMetrics = (self) => isEnabled(self, 4);
+var windDown = (self) => isEnabled(self, 16);
+/** @internal */
+var diff$3 = /*#__PURE__*/ dual(2, (self, that) => make$16(self ^ that, that));
+/** @internal */
+var patch$4 = /*#__PURE__*/ dual(2, (self, patch) => self & (invert(active(patch)) | enabled(patch)) | active(patch) & enabled(patch));
+/** @internal */
+var differ$1 = /*#__PURE__*/ make$17({
+	empty: empty$6,
+	diff: (oldValue, newValue) => diff$3(oldValue, newValue),
+	combine: (first, second) => andThen$2(second)(first),
+	patch: (_patch, oldValue) => patch$4(oldValue, _patch)
+});
+//#endregion
+//#region node_modules/effect/dist/esm/RuntimeFlagsPatch.js
+/**
+* Creates a `RuntimeFlagsPatch` describing enabling the provided `RuntimeFlag`.
+*
+* @since 2.0.0
+* @category constructors
+*/
+var enable = enable$2;
+/**
+* Creates a `RuntimeFlagsPatch` describing disabling the provided `RuntimeFlag`.
+*
+* @since 2.0.0
+* @category constructors
+*/
+var disable = disable$2;
+/**
+* Creates a `RuntimeFlagsPatch` which describes exclusion of the specified
+* `RuntimeFlag` from the set of `RuntimeFlags`.
+*
+* @category utils
+* @since 2.0.0
+*/
+var exclude = exclude$1;
+//#endregion
+//#region node_modules/effect/dist/esm/internal/blockedRequests.js
+/**
+* Combines this collection of blocked requests with the specified collection
+* of blocked requests, in parallel.
+*
+* @internal
+*/
+var par = (self, that) => ({
+	_tag: "Par",
+	left: self,
+	right: that
+});
+/**
+* Combines this collection of blocked requests with the specified collection
+* of blocked requests, in sequence.
+*
+* @internal
+*/
+var seq = (self, that) => ({
+	_tag: "Seq",
+	left: self,
+	right: that
+});
+/**
+* Flattens a collection of blocked requests into a collection of pipelined
+* and batched requests that can be submitted for execution.
+*
+* @internal
+*/
+var flatten$2 = (self) => {
+	let current = of(self);
+	let updated = empty$10();
+	while (1) {
+		const [parallel, sequential] = reduce(current, [parallelCollectionEmpty(), empty$10()], ([parallel, sequential], blockedRequest) => {
+			const [par, seq] = step$1(blockedRequest);
+			return [parallelCollectionCombine(parallel, par), appendAll(sequential, seq)];
+		});
+		updated = merge$2(updated, parallel);
+		if (isNil(sequential)) return reverse(updated);
+		current = sequential;
+	}
+	throw new Error("BUG: BlockedRequests.flatten - please report an issue at https://github.com/Effect-TS/effect/issues");
+};
+/**
+* Takes one step in evaluating a collection of blocked requests, returning a
+* collection of blocked requests that can be performed in parallel and a list
+* of blocked requests that must be performed sequentially after those
+* requests.
+*/
+var step$1 = (requests) => {
+	let current = requests;
+	let parallel = parallelCollectionEmpty();
+	let stack = empty$10();
+	let sequential = empty$10();
+	while (1) switch (current._tag) {
+		case "Empty":
+			if (isNil(stack)) return [parallel, sequential];
+			current = stack.head;
+			stack = stack.tail;
+			break;
+		case "Par":
+			stack = cons(current.right, stack);
+			current = current.left;
+			break;
+		case "Seq": {
+			const left = current.left;
+			const right = current.right;
+			switch (left._tag) {
+				case "Empty":
+					current = right;
+					break;
+				case "Par": {
+					const l = left.left;
+					const r = left.right;
+					current = par(seq(l, right), seq(r, right));
+					break;
+				}
+				case "Seq": {
+					const l = left.left;
+					const r = left.right;
+					current = seq(l, seq(r, right));
+					break;
+				}
+				case "Single":
+					current = left;
+					sequential = cons(right, sequential);
+					break;
+			}
+			break;
+		}
+		case "Single":
+			parallel = parallelCollectionAdd(parallel, current);
+			if (isNil(stack)) return [parallel, sequential];
+			current = stack.head;
+			stack = stack.tail;
+			break;
+	}
+	throw new Error("BUG: BlockedRequests.step - please report an issue at https://github.com/Effect-TS/effect/issues");
+};
+/**
+* Merges a collection of requests that must be executed sequentially with a
+* collection of requests that can be executed in parallel. If the collections
+* are both from the same single data source then the requests can be
+* pipelined while preserving ordering guarantees.
+*/
+var merge$2 = (sequential, parallel) => {
+	if (isNil(sequential)) return of(parallelCollectionToSequentialCollection(parallel));
+	if (parallelCollectionIsEmpty(parallel)) return sequential;
+	const seqHeadKeys = sequentialCollectionKeys(sequential.head);
+	const parKeys = parallelCollectionKeys(parallel);
+	if (seqHeadKeys.length === 1 && parKeys.length === 1 && equals$2(seqHeadKeys[0], parKeys[0])) return cons(sequentialCollectionCombine(sequential.head, parallelCollectionToSequentialCollection(parallel)), sequential.tail);
+	return cons(parallelCollectionToSequentialCollection(parallel), sequential);
+};
+/** @internal */
+var RequestBlockParallelTypeId = /*#__PURE__*/ Symbol.for("effect/RequestBlock/RequestBlockParallel");
+var parallelVariance = { 
+/* c8 ignore next */
+_R: (_) => _ };
+var ParallelImpl = class {
+	map;
+	[RequestBlockParallelTypeId] = parallelVariance;
+	constructor(map) {
+		this.map = map;
+	}
+};
+/** @internal */
+var parallelCollectionEmpty = () => new ParallelImpl(empty$11());
+/** @internal */
+var parallelCollectionAdd = (self, blockedRequest) => new ParallelImpl(modifyAt(self.map, blockedRequest.dataSource, (_) => orElseSome(map$7(_, append(blockedRequest.blockedRequest)), () => of$1(blockedRequest.blockedRequest))));
+/** @internal */
+var parallelCollectionCombine = (self, that) => new ParallelImpl(reduce$1(self.map, that.map, (map, value, key) => set$3(map, key, match$4(get$4(map, key), {
+	onNone: () => value,
+	onSome: (other) => appendAll$1(value, other)
+}))));
+/** @internal */
+var parallelCollectionIsEmpty = (self) => isEmpty(self.map);
+/** @internal */
+var parallelCollectionKeys = (self) => Array.from(keys(self.map));
+/** @internal */
+var parallelCollectionToSequentialCollection = (self) => sequentialCollectionMake(map$4(self.map, (x) => of$1(x)));
+/** @internal */
+var SequentialCollectionTypeId = /*#__PURE__*/ Symbol.for("effect/RequestBlock/RequestBlockSequential");
+var sequentialVariance = { 
+/* c8 ignore next */
+_R: (_) => _ };
+var SequentialImpl = class {
+	map;
+	[SequentialCollectionTypeId] = sequentialVariance;
+	constructor(map) {
+		this.map = map;
+	}
+};
+/** @internal */
+var sequentialCollectionMake = (map) => new SequentialImpl(map);
+/** @internal */
+var sequentialCollectionCombine = (self, that) => new SequentialImpl(reduce$1(that.map, self.map, (map, value, key) => set$3(map, key, match$4(get$4(map, key), {
+	onNone: () => empty$18(),
+	onSome: (a) => appendAll$1(a, value)
+}))));
+/** @internal */
+var sequentialCollectionKeys = (self) => Array.from(keys(self.map));
+/** @internal */
+var sequentialCollectionToChunk = (self) => Array.from(self.map);
+//#endregion
 //#region node_modules/effect/dist/esm/internal/opCodes/deferred.js
 /** @internal */
 var OP_STATE_PENDING = "Pending";
 /** @internal */
 var OP_STATE_DONE = "Done";
 /** @internal */
-var DeferredTypeId = /* @__PURE__ */ Symbol.for("effect/Deferred");
+var DeferredTypeId = /*#__PURE__*/ Symbol.for("effect/Deferred");
 /** @internal */
 var deferredVariance = {
 	/* c8 ignore next */
@@ -27126,7 +25007,7 @@ var runRequestBlock = (blockedRequests) => {
 	return effect;
 };
 /** @internal */
-var EffectTypeId = /* @__PURE__ */ Symbol.for("effect/Effect");
+var EffectTypeId = /*#__PURE__*/ Symbol.for("effect/Effect");
 /** @internal */
 var RevertFlags = class {
 	patch;
@@ -27264,7 +25145,7 @@ var withFiberRuntime = (withRuntime) => {
 	effect.effect_instruction_i0 = withRuntime;
 	return effect;
 };
-var acquireUseRelease = /* @__PURE__ */ dual(3, (acquire, use, release) => uninterruptibleMask$1((restore) => flatMap$3(acquire, (a) => flatMap$3(exit(suspend$4(() => restore(use(a)))), (exit) => {
+var acquireUseRelease = /*#__PURE__*/ dual(3, (acquire, use, release) => uninterruptibleMask$1((restore) => flatMap$3(acquire, (a) => flatMap$3(exit(suspend$4(() => restore(use(a)))), (exit) => {
 	return suspend$4(() => release(a, exit)).pipe(matchCauseEffect$1({
 		onFailure: (cause) => {
 			switch (exit._tag) {
@@ -27275,7 +25156,7 @@ var acquireUseRelease = /* @__PURE__ */ dual(3, (acquire, use, release) => unint
 		onSuccess: () => exit
 	}));
 }))));
-var as$1 = /* @__PURE__ */ dual(2, (self, value) => flatMap$3(self, () => succeed$5(value)));
+var as$1 = /*#__PURE__*/ dual(2, (self, value) => flatMap$3(self, () => succeed$5(value)));
 var asVoid = (self) => as$1(self, void 0);
 var custom = function() {
 	const wrapper = new EffectPrimitive(OP_COMMIT);
@@ -27335,24 +25216,24 @@ var async_ = (resume, blockingOn = none$2) => {
 		}) : effect;
 	});
 };
-var catchAllCause$1 = /* @__PURE__ */ dual(2, (self, f) => {
+var catchAllCause$1 = /*#__PURE__*/ dual(2, (self, f) => {
 	const effect = new EffectPrimitive(OP_ON_FAILURE);
 	effect.effect_instruction_i0 = self;
 	effect.effect_instruction_i1 = f;
 	return effect;
 });
-var catchAll$1 = /* @__PURE__ */ dual(2, (self, f) => matchEffect(self, {
+var catchAll$1 = /*#__PURE__*/ dual(2, (self, f) => matchEffect(self, {
 	onFailure: f,
 	onSuccess: succeed$5
 }));
-var catchIf$1 = /* @__PURE__ */ dual(3, (self, predicate, f) => catchAllCause$1(self, (cause) => {
+var catchIf$1 = /*#__PURE__*/ dual(3, (self, predicate, f) => catchAllCause$1(self, (cause) => {
 	const either = failureOrCause(cause);
 	switch (either._tag) {
 		case "Left": return predicate(either.left) ? f(either.left) : failCause$1(cause);
 		case "Right": return failCause$1(either.right);
 	}
 }));
-var originalSymbol = /* @__PURE__ */ Symbol.for("effect/OriginalAnnotation");
+var originalSymbol = /*#__PURE__*/ Symbol.for("effect/OriginalAnnotation");
 var capture = (obj, span) => {
 	if (isSome(span)) return new Proxy(obj, {
 		has(target, p) {
@@ -27384,15 +25265,15 @@ var failCause$1 = (cause) => {
 	return effect;
 };
 var failCauseSync = (evaluate) => flatMap$3(sync$2(evaluate), failCause$1);
-var fiberId = /* @__PURE__ */ withFiberRuntime((state) => succeed$5(state.id()));
+var fiberId = /*#__PURE__*/ withFiberRuntime((state) => succeed$5(state.id()));
 var fiberIdWith = (f) => withFiberRuntime((state) => f(state.id()));
-var flatMap$3 = /* @__PURE__ */ dual(2, (self, f) => {
+var flatMap$3 = /*#__PURE__*/ dual(2, (self, f) => {
 	const effect = new EffectPrimitive(OP_ON_SUCCESS);
 	effect.effect_instruction_i0 = self;
 	effect.effect_instruction_i1 = f;
 	return effect;
 });
-var andThen$1 = /* @__PURE__ */ dual(2, (self, f) => flatMap$3(self, (a) => {
+var andThen$1 = /*#__PURE__*/ dual(2, (self, f) => flatMap$3(self, (a) => {
 	const b = typeof f === "function" ? f(a) : f;
 	if (isEffect$1(b)) return b;
 	else if (isPromiseLike(b)) return unsafeAsync((resume) => {
@@ -27405,19 +25286,19 @@ var step = (self) => {
 	effect.effect_instruction_i0 = self;
 	return effect;
 };
-var flatten = (self) => flatMap$3(self, identity);
-var matchCause = /* @__PURE__ */ dual(2, (self, options) => matchCauseEffect$1(self, {
+var flatten$1 = (self) => flatMap$3(self, identity);
+var matchCause = /*#__PURE__*/ dual(2, (self, options) => matchCauseEffect$1(self, {
 	onFailure: (cause) => succeed$5(options.onFailure(cause)),
 	onSuccess: (a) => succeed$5(options.onSuccess(a))
 }));
-var matchCauseEffect$1 = /* @__PURE__ */ dual(2, (self, options) => {
+var matchCauseEffect$1 = /*#__PURE__*/ dual(2, (self, options) => {
 	const effect = new EffectPrimitive(OP_ON_SUCCESS_AND_FAILURE);
 	effect.effect_instruction_i0 = self;
 	effect.effect_instruction_i1 = options.onFailure;
 	effect.effect_instruction_i2 = options.onSuccess;
 	return effect;
 });
-var matchEffect = /* @__PURE__ */ dual(2, (self, options) => matchCauseEffect$1(self, {
+var matchEffect = /*#__PURE__*/ dual(2, (self, options) => matchCauseEffect$1(self, {
 	onFailure: (cause) => {
 		if (defects(cause).length > 0) return failCause$1(electFailures(cause));
 		const failures$2 = failures(cause);
@@ -27426,7 +25307,7 @@ var matchEffect = /* @__PURE__ */ dual(2, (self, options) => matchCauseEffect$1(
 	},
 	onSuccess: options.onSuccess
 }));
-var forEachSequential = /* @__PURE__ */ dual(2, (self, f) => suspend$4(() => {
+var forEachSequential = /*#__PURE__*/ dual(2, (self, f) => suspend$4(() => {
 	const arr = fromIterable$6(self);
 	const ret = allocate(arr.length);
 	let i = 0;
@@ -27438,7 +25319,7 @@ var forEachSequential = /* @__PURE__ */ dual(2, (self, f) => suspend$4(() => {
 		}
 	}), ret);
 }));
-var forEachSequentialDiscard = /* @__PURE__ */ dual(2, (self, f) => suspend$4(() => {
+var forEachSequentialDiscard = /*#__PURE__*/ dual(2, (self, f) => suspend$4(() => {
 	const arr = fromIterable$6(self);
 	let i = 0;
 	return whileLoop({
@@ -27455,12 +25336,12 @@ var interruptible$1 = (self) => {
 	effect.effect_instruction_i1 = () => self;
 	return effect;
 };
-var map$3 = /* @__PURE__ */ dual(2, (self, f) => flatMap$3(self, (a) => sync$2(() => f(a))));
-var mapBoth$2 = /* @__PURE__ */ dual(2, (self, options) => matchEffect(self, {
+var map$3 = /*#__PURE__*/ dual(2, (self, f) => flatMap$3(self, (a) => sync$2(() => f(a))));
+var mapBoth$2 = /*#__PURE__*/ dual(2, (self, options) => matchEffect(self, {
 	onFailure: (e) => failSync(() => options.onFailure(e)),
 	onSuccess: (a) => sync$2(() => options.onSuccess(a))
 }));
-var mapError$2 = /* @__PURE__ */ dual(2, (self, f) => matchCauseEffect$1(self, {
+var mapError$2 = /*#__PURE__*/ dual(2, (self, f) => matchCauseEffect$1(self, {
 	onFailure: (cause) => {
 		const either = failureOrCause(cause);
 		switch (either._tag) {
@@ -27470,7 +25351,7 @@ var mapError$2 = /* @__PURE__ */ dual(2, (self, f) => matchCauseEffect$1(self, {
 	},
 	onSuccess: succeed$5
 }));
-var onExit$1 = /* @__PURE__ */ dual(2, (self, cleanup) => uninterruptibleMask$1((restore) => matchCauseEffect$1(restore(self), {
+var onExit$1 = /*#__PURE__*/ dual(2, (self, cleanup) => uninterruptibleMask$1((restore) => matchCauseEffect$1(restore(self), {
 	onFailure: (cause1) => {
 		const result = exitFailCause$1(cause1);
 		return matchCauseEffect$1(cleanup(result), {
@@ -27483,11 +25364,11 @@ var onExit$1 = /* @__PURE__ */ dual(2, (self, cleanup) => uninterruptibleMask$1(
 		return zipRight(cleanup(result), result);
 	}
 })));
-var onInterrupt = /* @__PURE__ */ dual(2, (self, cleanup) => onExit$1(self, exitMatch({
+var onInterrupt = /*#__PURE__*/ dual(2, (self, cleanup) => onExit$1(self, exitMatch({
 	onFailure: (cause) => isInterruptedOnly(cause) ? asVoid(cleanup(interruptors(cause))) : void_$1,
 	onSuccess: () => void_$1
 })));
-var orElse$2 = /* @__PURE__ */ dual(2, (self, that) => attemptOrElse(self, that, succeed$5));
+var orElse$2 = /*#__PURE__*/ dual(2, (self, that) => attemptOrElse(self, that, succeed$5));
 var succeed$5 = (value) => {
 	const effect = new EffectPrimitiveSuccess(OP_SUCCESS);
 	effect.effect_instruction_i0 = value;
@@ -27503,7 +25384,7 @@ var sync$2 = (thunk) => {
 	effect.effect_instruction_i0 = thunk;
 	return effect;
 };
-var tap = /* @__PURE__ */ dual((args) => args.length === 3 || args.length === 2 && !(isObject(args[1]) && "onlyEffect" in args[1]), (self, f) => flatMap$3(self, (a) => {
+var tap = /*#__PURE__*/ dual((args) => args.length === 3 || args.length === 2 && !(isObject(args[1]) && "onlyEffect" in args[1]), (self, f) => flatMap$3(self, (a) => {
 	const b = typeof f === "function" ? f(a) : f;
 	if (isEffect$1(b)) return as$1(b, a);
 	else if (isPromiseLike(b)) return unsafeAsync((resume) => {
@@ -27514,7 +25395,7 @@ var tap = /* @__PURE__ */ dual((args) => args.length === 3 || args.length === 2 
 var transplant = (f) => withFiberRuntime((state) => {
 	return f(fiberRefLocally(currentForkScopeOverride, some(pipe(state.getFiberRef(currentForkScopeOverride), getOrElse(() => state.scope())))));
 });
-var attemptOrElse = /* @__PURE__ */ dual(3, (self, that, onSuccess) => matchCauseEffect$1(self, {
+var attemptOrElse = /*#__PURE__*/ dual(3, (self, that, onSuccess) => matchCauseEffect$1(self, {
 	onFailure: (cause) => {
 		if (defects(cause).length > 0) return failCause$1(getOrThrow(keepDefectsAndElectFailures(cause)));
 		return that();
@@ -27533,14 +25414,14 @@ var uninterruptibleMask$1 = (f) => custom(f, function() {
 	effect.effect_instruction_i1 = (oldFlags) => interruption(oldFlags) ? internalCall(() => this.effect_instruction_i0(interruptible$1)) : internalCall(() => this.effect_instruction_i0(uninterruptible));
 	return effect;
 });
-var void_$1 = /* @__PURE__ */ succeed$5(void 0);
+var void_$1 = /*#__PURE__*/ succeed$5(void 0);
 var updateRuntimeFlags = (patch) => {
 	const effect = new EffectPrimitive(OP_UPDATE_RUNTIME_FLAGS);
 	effect.effect_instruction_i0 = patch;
 	effect.effect_instruction_i1 = void 0;
 	return effect;
 };
-var whenEffect = /* @__PURE__ */ dual(2, (self, condition) => flatMap$3(condition, (b) => {
+var whenEffect = /*#__PURE__*/ dual(2, (self, condition) => flatMap$3(condition, (b) => {
 	if (b) return pipe(self, map$3(some));
 	return succeed$5(none$4());
 }));
@@ -27571,7 +25452,7 @@ var fnUntraced = (body, ...pipeables) => Object.defineProperty(pipeables.length 
 	value: body.length,
 	configurable: true
 });
-var withRuntimeFlags = /* @__PURE__ */ dual(2, (self, update) => {
+var withRuntimeFlags = /*#__PURE__*/ dual(2, (self, update) => {
 	const effect = new EffectPrimitive(OP_UPDATE_RUNTIME_FLAGS);
 	effect.effect_instruction_i0 = update;
 	effect.effect_instruction_i1 = () => self;
@@ -27581,12 +25462,12 @@ var yieldNow$2 = (options) => {
 	const effect = new EffectPrimitive(OP_YIELD);
 	return typeof options?.priority !== "undefined" ? withSchedulingPriority(effect, options.priority) : effect;
 };
-var zip = /* @__PURE__ */ dual(2, (self, that) => flatMap$3(self, (a) => map$3(that, (b) => [a, b])));
-var zipLeft = /* @__PURE__ */ dual(2, (self, that) => flatMap$3(self, (a) => as$1(that, a)));
-var zipRight = /* @__PURE__ */ dual(2, (self, that) => flatMap$3(self, () => that));
-var zipWith$1 = /* @__PURE__ */ dual(3, (self, that, f) => flatMap$3(self, (a) => map$3(that, (b) => f(a, b))));
+var zip = /*#__PURE__*/ dual(2, (self, that) => flatMap$3(self, (a) => map$3(that, (b) => [a, b])));
+var zipLeft = /*#__PURE__*/ dual(2, (self, that) => flatMap$3(self, (a) => as$1(that, a)));
+var zipRight = /*#__PURE__*/ dual(2, (self, that) => flatMap$3(self, () => that));
+var zipWith$1 = /*#__PURE__*/ dual(3, (self, that, f) => flatMap$3(self, (a) => map$3(that, (b) => f(a, b))));
 var interruptFiber = (self) => flatMap$3(fiberId, (fiberId) => pipe(self, interruptAsFiber(fiberId)));
-var interruptAsFiber = /* @__PURE__ */ dual(2, (self, fiberId) => flatMap$3(self.interruptAsFork(fiberId), () => self.await));
+var interruptAsFiber = /*#__PURE__*/ dual(2, (self, fiberId) => flatMap$3(self.interruptAsFork(fiberId), () => self.await));
 /** @internal */
 var logLevelAll = {
 	_tag: "All",
@@ -27668,20 +25549,20 @@ var logLevelNone = {
 	}
 };
 /** @internal */
-var FiberRefTypeId = /* @__PURE__ */ Symbol.for("effect/FiberRef");
+var FiberRefTypeId = /*#__PURE__*/ Symbol.for("effect/FiberRef");
 var fiberRefVariance = { 
 /* c8 ignore next */
 _A: (_) => _ };
 var fiberRefGet = (self) => withFiberRuntime((fiber) => exitSucceed$1(fiber.getFiberRef(self)));
-var fiberRefGetWith = /* @__PURE__ */ dual(2, (self, f) => flatMap$3(fiberRefGet(self), f));
-var fiberRefSet = /* @__PURE__ */ dual(2, (self, value) => fiberRefModify(self, () => [void 0, value]));
-var fiberRefModify = /* @__PURE__ */ dual(2, (self, f) => withFiberRuntime((state) => {
+var fiberRefGetWith = /*#__PURE__*/ dual(2, (self, f) => flatMap$3(fiberRefGet(self), f));
+var fiberRefSet = /*#__PURE__*/ dual(2, (self, value) => fiberRefModify(self, () => [void 0, value]));
+var fiberRefModify = /*#__PURE__*/ dual(2, (self, f) => withFiberRuntime((state) => {
 	const [b, a] = f(state.getFiberRef(self));
 	state.setFiberRef(self, a);
 	return succeed$5(b);
 }));
-var fiberRefLocally = /* @__PURE__ */ dual(3, (use, self, value) => acquireUseRelease(zipLeft(fiberRefGet(self), fiberRefSet(self, value)), () => use, (oldValue) => fiberRefSet(self, oldValue)));
-var fiberRefLocallyWith = /* @__PURE__ */ dual(3, (use, self, f) => fiberRefGetWith(self, (a) => fiberRefLocally(use, self, f(a))));
+var fiberRefLocally = /*#__PURE__*/ dual(3, (use, self, value) => acquireUseRelease(zipLeft(fiberRefGet(self), fiberRefSet(self, value)), () => use, (oldValue) => fiberRefSet(self, oldValue)));
+var fiberRefLocallyWith = /*#__PURE__*/ dual(3, (use, self, f) => fiberRefGetWith(self, (a) => fiberRefLocally(use, self, f(a))));
 /** @internal */
 var fiberRefUnsafeMake = (initial, options) => fiberRefUnsafeMakePatch(initial, {
 	differ: update$2(),
@@ -27734,51 +25615,51 @@ var fiberRefUnsafeMakeRuntimeFlags = (initial) => fiberRefUnsafeMakePatch(initia
 	fork: differ$1.empty
 });
 /** @internal */
-var currentContext = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentContext"), () => fiberRefUnsafeMakeContext(empty$17()));
+var currentContext = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentContext"), () => fiberRefUnsafeMakeContext(empty$12()));
 /** @internal */
-var currentSchedulingPriority = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentSchedulingPriority"), () => fiberRefUnsafeMake(0));
+var currentSchedulingPriority = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentSchedulingPriority"), () => fiberRefUnsafeMake(0));
 /** @internal */
-var currentMaxOpsBeforeYield = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentMaxOpsBeforeYield"), () => fiberRefUnsafeMake(2048));
+var currentMaxOpsBeforeYield = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentMaxOpsBeforeYield"), () => fiberRefUnsafeMake(2048));
 /** @internal */
-var currentLogAnnotations = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentLogAnnotation"), () => fiberRefUnsafeMake(empty$12()));
+var currentLogAnnotations = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentLogAnnotation"), () => fiberRefUnsafeMake(empty$11()));
 /** @internal */
-var currentLogLevel = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentLogLevel"), () => fiberRefUnsafeMake(logLevelInfo));
+var currentLogLevel = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentLogLevel"), () => fiberRefUnsafeMake(logLevelInfo));
 /** @internal */
-var currentLogSpan = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentLogSpan"), () => fiberRefUnsafeMake(empty$11()));
+var currentLogSpan = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentLogSpan"), () => fiberRefUnsafeMake(empty$10()));
 /** @internal */
-var withSchedulingPriority = /* @__PURE__ */ dual(2, (self, scheduler) => fiberRefLocally(self, currentSchedulingPriority, scheduler));
+var withSchedulingPriority = /*#__PURE__*/ dual(2, (self, scheduler) => fiberRefLocally(self, currentSchedulingPriority, scheduler));
 /** @internal */
-var currentConcurrency = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentConcurrency"), () => fiberRefUnsafeMake("unbounded"));
+var currentConcurrency = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentConcurrency"), () => fiberRefUnsafeMake("unbounded"));
 /**
 * @internal
 */
-var currentRequestBatching = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentRequestBatching"), () => fiberRefUnsafeMake(true));
+var currentRequestBatching = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentRequestBatching"), () => fiberRefUnsafeMake(true));
 /** @internal */
-var currentUnhandledErrorLogLevel = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentUnhandledErrorLogLevel"), () => fiberRefUnsafeMake(some(logLevelDebug)));
+var currentUnhandledErrorLogLevel = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentUnhandledErrorLogLevel"), () => fiberRefUnsafeMake(some(logLevelDebug)));
 /** @internal */
-var currentVersionMismatchErrorLogLevel = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/versionMismatchErrorLogLevel"), () => fiberRefUnsafeMake(some(logLevelWarning)));
+var currentVersionMismatchErrorLogLevel = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/versionMismatchErrorLogLevel"), () => fiberRefUnsafeMake(some(logLevelWarning)));
 /** @internal */
-var currentMetricLabels = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentMetricLabels"), () => fiberRefUnsafeMakeReadonlyArray(empty$19()));
+var currentMetricLabels = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentMetricLabels"), () => fiberRefUnsafeMakeReadonlyArray(empty$19()));
 /** @internal */
-var currentForkScopeOverride = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentForkScopeOverride"), () => fiberRefUnsafeMake(none$4(), {
+var currentForkScopeOverride = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentForkScopeOverride"), () => fiberRefUnsafeMake(none$4(), {
 	fork: () => none$4(),
 	join: (parent, _) => parent
 }));
 /** @internal */
-var currentInterruptedCause = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentInterruptedCause"), () => fiberRefUnsafeMake(empty$6, {
-	fork: () => empty$6,
+var currentInterruptedCause = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentInterruptedCause"), () => fiberRefUnsafeMake(empty$14, {
+	fork: () => empty$14,
 	join: (parent, _) => parent
 }));
 /** @internal */
-var ScopeTypeId = /* @__PURE__ */ Symbol.for("effect/Scope");
+var ScopeTypeId = /*#__PURE__*/ Symbol.for("effect/Scope");
 /** @internal */
-var CloseableScopeTypeId = /* @__PURE__ */ Symbol.for("effect/CloseableScope");
+var CloseableScopeTypeId = /*#__PURE__*/ Symbol.for("effect/CloseableScope");
 var scopeAddFinalizer = (self, finalizer) => self.addFinalizer(() => asVoid(finalizer));
 var scopeAddFinalizerExit = (self, finalizer) => self.addFinalizer(finalizer);
 var scopeClose = (self, exit) => self.close(exit);
 var scopeFork = (self, strategy) => self.fork(strategy);
 /** @internal */
-var YieldableError$1 = /* @__PURE__ */ function() {
+var YieldableError$1 = /*#__PURE__*/ function() {
 	class YieldableError extends globalThis.Error {
 		commit() {
 			return fail$3(this);
@@ -27807,25 +25688,25 @@ var makeException = (proto, tag) => {
 	return Base;
 };
 /** @internal */
-var RuntimeExceptionTypeId = /* @__PURE__ */ Symbol.for("effect/Cause/errors/RuntimeException");
+var RuntimeExceptionTypeId = /*#__PURE__*/ Symbol.for("effect/Cause/errors/RuntimeException");
 /** @internal */
-var RuntimeException = /* @__PURE__ */ makeException({ [RuntimeExceptionTypeId]: RuntimeExceptionTypeId }, "RuntimeException");
+var RuntimeException = /*#__PURE__*/ makeException({ [RuntimeExceptionTypeId]: RuntimeExceptionTypeId }, "RuntimeException");
 /** @internal */
-var InterruptedExceptionTypeId = /* @__PURE__ */ Symbol.for("effect/Cause/errors/InterruptedException");
+var InterruptedExceptionTypeId = /*#__PURE__*/ Symbol.for("effect/Cause/errors/InterruptedException");
 /** @internal */
 var isInterruptedException = (u) => hasProperty(u, InterruptedExceptionTypeId);
 /** @internal */
-var IllegalArgumentExceptionTypeId = /* @__PURE__ */ Symbol.for("effect/Cause/errors/IllegalArgument");
+var IllegalArgumentExceptionTypeId = /*#__PURE__*/ Symbol.for("effect/Cause/errors/IllegalArgument");
 /** @internal */
-var IllegalArgumentException$1 = /* @__PURE__ */ makeException({ [IllegalArgumentExceptionTypeId]: IllegalArgumentExceptionTypeId }, "IllegalArgumentException");
+var IllegalArgumentException$1 = /*#__PURE__*/ makeException({ [IllegalArgumentExceptionTypeId]: IllegalArgumentExceptionTypeId }, "IllegalArgumentException");
 /** @internal */
-var NoSuchElementExceptionTypeId = /* @__PURE__ */ Symbol.for("effect/Cause/errors/NoSuchElement");
+var NoSuchElementExceptionTypeId = /*#__PURE__*/ Symbol.for("effect/Cause/errors/NoSuchElement");
 /** @internal */
-var NoSuchElementException$1 = /* @__PURE__ */ makeException({ [NoSuchElementExceptionTypeId]: NoSuchElementExceptionTypeId }, "NoSuchElementException");
+var NoSuchElementException$1 = /*#__PURE__*/ makeException({ [NoSuchElementExceptionTypeId]: NoSuchElementExceptionTypeId }, "NoSuchElementException");
 /** @internal */
-var UnknownExceptionTypeId = /* @__PURE__ */ Symbol.for("effect/Cause/errors/UnknownException");
+var UnknownExceptionTypeId = /*#__PURE__*/ Symbol.for("effect/Cause/errors/UnknownException");
 /** @internal */
-var UnknownException = /* @__PURE__ */ function() {
+var UnknownException = /*#__PURE__*/ function() {
 	class UnknownException extends YieldableError$1 {
 		_tag = "UnknownException";
 		error;
@@ -27845,7 +25726,7 @@ var exitIsExit = (u) => isEffect$1(u) && "_tag" in u && (u._tag === "Success" ||
 /** @internal */
 var exitIsSuccess = (self) => self._tag === "Success";
 /** @internal */
-var exitAs = /* @__PURE__ */ dual(2, (self, value) => {
+var exitAs = /*#__PURE__*/ dual(2, (self, value) => {
 	switch (self._tag) {
 		case OP_FAILURE: return exitFailCause$1(self.effect_instruction_i0);
 		case OP_SUCCESS: return exitSucceed$1(value);
@@ -27868,21 +25749,21 @@ var exitFailCause$1 = (cause) => {
 /** @internal */
 var exitInterrupt$1 = (fiberId) => exitFailCause$1(interrupt(fiberId));
 /** @internal */
-var exitMap = /* @__PURE__ */ dual(2, (self, f) => {
+var exitMap = /*#__PURE__*/ dual(2, (self, f) => {
 	switch (self._tag) {
 		case OP_FAILURE: return exitFailCause$1(self.effect_instruction_i0);
 		case OP_SUCCESS: return exitSucceed$1(f(self.effect_instruction_i0));
 	}
 });
 /** @internal */
-var exitMatch = /* @__PURE__ */ dual(2, (self, { onFailure, onSuccess }) => {
+var exitMatch = /*#__PURE__*/ dual(2, (self, { onFailure, onSuccess }) => {
 	switch (self._tag) {
 		case OP_FAILURE: return onFailure(self.effect_instruction_i0);
 		case OP_SUCCESS: return onSuccess(self.effect_instruction_i0);
 	}
 });
 /** @internal */
-var exitMatchEffect = /* @__PURE__ */ dual(2, (self, { onFailure, onSuccess }) => {
+var exitMatchEffect = /*#__PURE__*/ dual(2, (self, { onFailure, onSuccess }) => {
 	switch (self._tag) {
 		case OP_FAILURE: return onFailure(self.effect_instruction_i0);
 		case OP_SUCCESS: return onSuccess(self.effect_instruction_i0);
@@ -27895,9 +25776,9 @@ var exitSucceed$1 = (value) => {
 	return effect;
 };
 /** @internal */
-var exitVoid$1 = /* @__PURE__ */ exitSucceed$1(void 0);
+var exitVoid$1 = /*#__PURE__*/ exitSucceed$1(void 0);
 /** @internal */
-var exitZipWith = /* @__PURE__ */ dual(3, (self, that, { onFailure, onSuccess }) => {
+var exitZipWith = /*#__PURE__*/ dual(3, (self, that, { onFailure, onSuccess }) => {
 	switch (self._tag) {
 		case OP_FAILURE: switch (that._tag) {
 			case OP_SUCCESS: return exitFailCause$1(self.effect_instruction_i0);
@@ -27911,7 +25792,7 @@ var exitZipWith = /* @__PURE__ */ dual(3, (self, that, { onFailure, onSuccess })
 });
 var exitCollectAllInternal = (exits, combineCauses) => {
 	const list = fromIterable$5(exits);
-	if (!isNonEmpty$1(list)) return none$4();
+	if (!isNonEmpty$2(list)) return none$4();
 	return pipe(tailNonEmpty(list), reduce$6(pipe(headNonEmpty(list), exitMap(of$1)), (accumulator, current) => pipe(accumulator, exitZipWith(current, {
 		onSuccess: (list, value) => pipe(list, prepend$1(value)),
 		onFailure: combineCauses
@@ -27922,7 +25803,7 @@ var deferredUnsafeMake = (fiberId) => {
 	return {
 		...CommitPrototype,
 		[DeferredTypeId]: deferredVariance,
-		state: make$17(pending([])),
+		state: make$18(pending([])),
 		commit() {
 			return deferredAwait(this);
 		},
@@ -27940,7 +25821,7 @@ var deferredAwait = (self) => asyncInterrupt((resume) => {
 			return deferredInterruptJoiner(self, resume);
 	}
 }, self.blockingOn);
-var deferredCompleteWith = /* @__PURE__ */ dual(2, (self, effect) => sync$2(() => {
+var deferredCompleteWith = /*#__PURE__*/ dual(2, (self, effect) => sync$2(() => {
 	const state = get$5(self.state);
 	switch (state._tag) {
 		case OP_STATE_DONE: return false;
@@ -27950,8 +25831,8 @@ var deferredCompleteWith = /* @__PURE__ */ dual(2, (self, effect) => sync$2(() =
 			return true;
 	}
 }));
-var deferredFailCause = /* @__PURE__ */ dual(2, (self, cause) => deferredCompleteWith(self, failCause$1(cause)));
-var deferredSucceed = /* @__PURE__ */ dual(2, (self, value) => deferredCompleteWith(self, succeed$5(value)));
+var deferredFailCause = /*#__PURE__*/ dual(2, (self, cause) => deferredCompleteWith(self, failCause$1(cause)));
+var deferredSucceed = /*#__PURE__*/ dual(2, (self, value) => deferredCompleteWith(self, succeed$5(value)));
 /** @internal */
 var deferredUnsafeDone = (self, effect) => {
 	const state = get$5(self.state);
@@ -27967,213 +25848,60 @@ var deferredInterruptJoiner = (self, joiner) => sync$2(() => {
 		if (index >= 0) state.joiners.splice(index, 1);
 	}
 });
-var constContext = /* @__PURE__ */ withFiberRuntime((fiber) => exitSucceed$1(fiber.currentContext));
+var constContext = /*#__PURE__*/ withFiberRuntime((fiber) => exitSucceed$1(fiber.currentContext));
 var context$1 = () => constContext;
 var contextWithEffect = (f) => flatMap$3(context$1(), f);
-var provideContext$1 = /* @__PURE__ */ dual(2, (self, context) => fiberRefLocally(currentContext, context)(self));
-var provideSomeContext = /* @__PURE__ */ dual(2, (self, context) => fiberRefLocallyWith(currentContext, (parent) => merge$3(parent, context))(self));
-var mapInputContext = /* @__PURE__ */ dual(2, (self, f) => contextWithEffect((context) => provideContext$1(self, f(context))));
+var provideContext$1 = /*#__PURE__*/ dual(2, (self, context) => fiberRefLocally(currentContext, context)(self));
+var provideSomeContext = /*#__PURE__*/ dual(2, (self, context) => fiberRefLocallyWith(currentContext, (parent) => merge$3(parent, context))(self));
+var mapInputContext = /*#__PURE__*/ dual(2, (self, f) => contextWithEffect((context) => provideContext$1(self, f(context))));
 /** @internal */
 var currentSpanFromFiber = (fiber) => {
 	const span = fiber.currentSpan;
 	return span !== void 0 && span._tag === "Span" ? some(span) : none$4();
 };
 //#endregion
-//#region node_modules/effect/dist/esm/Exit.js
+//#region node_modules/effect/dist/esm/Cause.js
 /**
-* Returns `true` if the specified `Exit` is a `Success`, `false` otherwise.
+* Checks if a `Cause` is a `Fail` type.
+*
+* @see {@link fail} Create a new `Fail` cause
 *
 * @since 2.0.0
-* @category refinements
+* @category Guards
 */
-var isSuccess = exitIsSuccess;
-//#endregion
-//#region node_modules/effect/dist/esm/MutableHashMap.js
-var TypeId$6 = /* @__PURE__ */ Symbol.for("effect/MutableHashMap");
-var MutableHashMapProto = {
-	[TypeId$6]: TypeId$6,
-	[Symbol.iterator]() {
-		return new MutableHashMapIterator(this);
-	},
-	toString() {
-		return format$4(this.toJSON());
-	},
-	toJSON() {
-		return {
-			_id: "MutableHashMap",
-			values: Array.from(this).map(toJSON)
-		};
-	},
-	[NodeInspectSymbol]() {
-		return this.toJSON();
-	},
-	pipe() {
-		return pipeArguments(this, arguments);
-	}
-};
-var MutableHashMapIterator = class MutableHashMapIterator {
-	self;
-	referentialIterator;
-	bucketIterator;
-	constructor(self) {
-		this.self = self;
-		this.referentialIterator = self.referential[Symbol.iterator]();
-	}
-	next() {
-		if (this.bucketIterator !== void 0) return this.bucketIterator.next();
-		const result = this.referentialIterator.next();
-		if (result.done) {
-			this.bucketIterator = new BucketIterator(this.self.buckets.values());
-			return this.next();
-		}
-		return result;
-	}
-	[Symbol.iterator]() {
-		return new MutableHashMapIterator(this.self);
-	}
-};
-var BucketIterator = class {
-	backing;
-	constructor(backing) {
-		this.backing = backing;
-	}
-	currentBucket;
-	next() {
-		if (this.currentBucket === void 0) {
-			const result = this.backing.next();
-			if (result.done) return result;
-			this.currentBucket = result.value[Symbol.iterator]();
-		}
-		const result = this.currentBucket.next();
-		if (result.done) {
-			this.currentBucket = void 0;
-			return this.next();
-		}
-		return result;
-	}
-};
+var isFailType = isFailType$1;
 /**
+* Creates an error indicating an invalid method argument.
+*
+* **Details**
+*
+* This function constructs an `IllegalArgumentException`. It is typically
+* thrown or returned when an operation receives improper inputs, such as
+* out-of-range values or invalid object states.
+*
 * @since 2.0.0
-* @category constructors
+* @category Errors
 */
-var empty$5 = () => {
-	const self = Object.create(MutableHashMapProto);
-	self.referential = /* @__PURE__ */ new Map();
-	self.buckets = /* @__PURE__ */ new Map();
-	self.bucketsSize = 0;
-	return self;
-};
+var IllegalArgumentException = IllegalArgumentException$1;
 /**
+* Converts a `Cause` into a human-readable string.
+*
+* **Details**
+*
+* This function pretty-prints the entire `Cause`, including any failures,
+* defects, and interruptions. It can be especially helpful for logging,
+* debugging, or displaying structured errors to users.
+*
+* You can optionally pass `options` to configure how the error cause is
+* rendered. By default, it includes essential details of all errors in the
+* `Cause`.
+*
+* @see {@link prettyErrors} Get a list of `PrettyError` objects instead of a single string.
+*
 * @since 2.0.0
-* @category elements
+* @category Formatting
 */
-var get$3 = /* @__PURE__ */ dual(2, (self, key) => {
-	if (isEqual(key) === false) return self.referential.has(key) ? some(self.referential.get(key)) : none$4();
-	const hash = key[symbol$1]();
-	const bucket = self.buckets.get(hash);
-	if (bucket === void 0) return none$4();
-	return getFromBucket(self, bucket, key);
-});
-var getFromBucket = (self, bucket, key, remove = false) => {
-	for (let i = 0, len = bucket.length; i < len; i++) if (key[symbol](bucket[i][0])) {
-		const value = bucket[i][1];
-		if (remove) {
-			bucket.splice(i, 1);
-			self.bucketsSize--;
-		}
-		return some(value);
-	}
-	return none$4();
-};
-/**
-* @since 2.0.0
-* @category elements
-*/
-var has = /* @__PURE__ */ dual(2, (self, key) => isSome(get$3(self, key)));
-/**
-* @since 2.0.0
-*/
-var set$2 = /* @__PURE__ */ dual(3, (self, key, value) => {
-	if (isEqual(key) === false) {
-		self.referential.set(key, value);
-		return self;
-	}
-	const hash = key[symbol$1]();
-	const bucket = self.buckets.get(hash);
-	if (bucket === void 0) {
-		self.buckets.set(hash, [[key, value]]);
-		self.bucketsSize++;
-		return self;
-	}
-	removeFromBucket(self, bucket, key);
-	bucket.push([key, value]);
-	self.bucketsSize++;
-	return self;
-});
-var removeFromBucket = (self, bucket, key) => {
-	for (let i = 0, len = bucket.length; i < len; i++) if (key[symbol](bucket[i][0])) {
-		bucket.splice(i, 1);
-		self.bucketsSize--;
-		return;
-	}
-};
-/** @internal */
-var ClockTypeId = /* @__PURE__ */ Symbol.for("effect/Clock");
-/** @internal */
-var clockTag = /* @__PURE__ */ GenericTag("effect/Clock");
-/** @internal */
-var MAX_TIMER_MILLIS = 2 ** 31 - 1;
-/** @internal */
-var globalClockScheduler = { unsafeSchedule(task, duration) {
-	const millis = toMillis(duration);
-	if (millis > MAX_TIMER_MILLIS) return constFalse;
-	let completed = false;
-	const handle = setTimeout(() => {
-		completed = true;
-		task();
-	}, millis);
-	return () => {
-		clearTimeout(handle);
-		return !completed;
-	};
-} };
-var performanceNowNanos = /* @__PURE__ */ function() {
-	const bigint1e6 = /* @__PURE__ */ BigInt(1e6);
-	if (typeof performance === "undefined" || typeof performance.now !== "function") return () => BigInt(Date.now()) * bigint1e6;
-	let origin;
-	return () => {
-		if (origin === void 0) origin = BigInt(Date.now()) * bigint1e6 - BigInt(Math.round(performance.now() * 1e6));
-		return origin + BigInt(Math.round(performance.now() * 1e6));
-	};
-}();
-var processOrPerformanceNow = /* @__PURE__ */ function() {
-	const processHrtime = typeof process === "object" && "hrtime" in process && typeof process.hrtime.bigint === "function" ? process.hrtime : void 0;
-	if (!processHrtime) return performanceNowNanos;
-	const origin = /* @__PURE__ */ performanceNowNanos() - /* @__PURE__ */ processHrtime.bigint();
-	return () => origin + processHrtime.bigint();
-}();
-/** @internal */
-var ClockImpl = class {
-	[ClockTypeId] = ClockTypeId;
-	unsafeCurrentTimeMillis() {
-		return Date.now();
-	}
-	unsafeCurrentTimeNanos() {
-		return processOrPerformanceNow();
-	}
-	currentTimeMillis = /* @__PURE__ */ sync$2(() => this.unsafeCurrentTimeMillis());
-	currentTimeNanos = /* @__PURE__ */ sync$2(() => this.unsafeCurrentTimeNanos());
-	scheduler() {
-		return succeed$5(globalClockScheduler);
-	}
-	sleep(duration) {
-		return async_((resume) => {
-			return asVoid(sync$2(globalClockScheduler.unsafeSchedule(() => resume(void_$1), duration)));
-		});
-	}
-};
-/** @internal */
-var make$13 = () => new ClockImpl();
+var pretty = pretty$1;
 /** @internal */
 var OP_INVALID_DATA = "InvalidData";
 /** @internal */
@@ -28183,7 +25911,7 @@ var OP_SOURCE_UNAVAILABLE = "SourceUnavailable";
 /** @internal */
 var OP_UNSUPPORTED = "Unsupported";
 /** @internal */
-var ConfigErrorTypeId = /* @__PURE__ */ Symbol.for("effect/ConfigError");
+var ConfigErrorTypeId = /*#__PURE__*/ Symbol.for("effect/ConfigError");
 /** @internal */
 var proto$3 = {
 	_tag: "ConfigError",
@@ -28289,7 +26017,7 @@ var Unsupported = (path, message, options = { pathDelim: "." }) => {
 /** @internal */
 var isConfigError$1 = (u) => hasProperty(u, ConfigErrorTypeId);
 /** @internal */
-var prefixed = /* @__PURE__ */ dual(2, (self, prefix) => {
+var prefixed = /*#__PURE__*/ dual(2, (self, prefix) => {
 	switch (self._op) {
 		case "And": return And(prefixed(self.left, prefix), prefixed(self.right, prefix));
 		case "Or": return Or(prefixed(self.left, prefix), prefixed(self.right, prefix));
@@ -28309,7 +26037,7 @@ var IsMissingDataOnlyReducer = {
 	unsupportedCase: constFalse
 };
 /** @internal */
-var reduceWithContext = /* @__PURE__ */ dual(3, (self, context, reducer) => {
+var reduceWithContext = /*#__PURE__*/ dual(3, (self, context, reducer) => {
 	const input = [self];
 	const output = [];
 	while (input.length > 0) {
@@ -28372,11 +26100,130 @@ var reduceWithContext = /* @__PURE__ */ dual(3, (self, context, reducer) => {
 /** @internal */
 var isMissingDataOnly$1 = (self) => reduceWithContext(self, void 0, IsMissingDataOnlyReducer);
 //#endregion
+//#region node_modules/effect/dist/esm/ConfigError.js
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var InvalidData = InvalidData$1;
+/**
+* Returns `true` if the specified value is a `ConfigError`, `false` otherwise.
+*
+* @since 2.0.0
+* @category refinements
+*/
+var isConfigError = isConfigError$1;
+/**
+* Returns `true` if the specified `ConfigError` contains only `MissingData` errors, `false` otherwise.
+*
+* @since 2.0.0
+* @categer getters
+*/
+var isMissingDataOnly = isMissingDataOnly$1;
+/** @internal */
+var ClockTypeId = /*#__PURE__*/ Symbol.for("effect/Clock");
+/** @internal */
+var clockTag = /*#__PURE__*/ GenericTag("effect/Clock");
+/** @internal */
+var MAX_TIMER_MILLIS = 2 ** 31 - 1;
+/** @internal */
+var globalClockScheduler = { unsafeSchedule(task, duration) {
+	const millis = toMillis(duration);
+	if (millis > MAX_TIMER_MILLIS) return constFalse;
+	let completed = false;
+	const handle = setTimeout(() => {
+		completed = true;
+		task();
+	}, millis);
+	return () => {
+		clearTimeout(handle);
+		return !completed;
+	};
+} };
+var performanceNowNanos = /*#__PURE__*/ function() {
+	const bigint1e6 = /*#__PURE__*/ BigInt(1e6);
+	if (typeof performance === "undefined" || typeof performance.now !== "function") return () => BigInt(Date.now()) * bigint1e6;
+	let origin;
+	return () => {
+		if (origin === void 0) origin = BigInt(Date.now()) * bigint1e6 - BigInt(Math.round(performance.now() * 1e6));
+		return origin + BigInt(Math.round(performance.now() * 1e6));
+	};
+}();
+var processOrPerformanceNow = /*#__PURE__*/ function() {
+	const processHrtime = typeof process === "object" && "hrtime" in process && typeof process.hrtime.bigint === "function" ? process.hrtime : void 0;
+	if (!processHrtime) return performanceNowNanos;
+	const origin = /*#__PURE__*/ performanceNowNanos() - /*#__PURE__*/ processHrtime.bigint();
+	return () => origin + processHrtime.bigint();
+}();
+/** @internal */
+var ClockImpl = class {
+	[ClockTypeId] = ClockTypeId;
+	unsafeCurrentTimeMillis() {
+		return Date.now();
+	}
+	unsafeCurrentTimeNanos() {
+		return processOrPerformanceNow();
+	}
+	currentTimeMillis = /*#__PURE__*/ sync$2(() => this.unsafeCurrentTimeMillis());
+	currentTimeNanos = /*#__PURE__*/ sync$2(() => this.unsafeCurrentTimeNanos());
+	scheduler() {
+		return succeed$5(globalClockScheduler);
+	}
+	sleep(duration) {
+		return async_((resume) => {
+			return asVoid(sync$2(globalClockScheduler.unsafeSchedule(() => resume(void_$1), duration)));
+		});
+	}
+};
+/** @internal */
+var make$14 = () => new ClockImpl();
+//#endregion
+//#region node_modules/effect/dist/esm/Number.js
+/**
+* @memberof Number
+* @since 2.0.0
+* @category instances
+*/
+var Order$1 = number;
+/**
+* Tries to parse a `number` from a `string` using the `Number()` function. The
+* following special string values are supported: "NaN", "Infinity",
+* "-Infinity".
+*
+* @memberof Number
+* @since 2.0.0
+* @category constructors
+*/
+var parse = (s) => {
+	if (s === "NaN") return some$1(NaN);
+	if (s === "Infinity") return some$1(Infinity);
+	if (s === "-Infinity") return some$1(-Infinity);
+	if (s.trim() === "") return none$5;
+	const n = Number(s);
+	return Number.isNaN(n) ? none$5 : some$1(n);
+};
+//#endregion
+//#region node_modules/effect/dist/esm/RegExp.js
+/**
+* Escapes special characters in a regular expression pattern.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { RegExp } from "effect"
+*
+* assert.deepStrictEqual(RegExp.escape("a*b"), "a\\*b")
+* ```
+*
+* @since 2.0.0
+*/
+var escape = (string) => string.replace(/[/\\^$*+?.()|[\]{}]/g, "\\$&");
+//#endregion
 //#region node_modules/effect/dist/esm/internal/configProvider/pathPatch.js
 /** @internal */
-var empty$4 = { _tag: "Empty" };
+var empty$5 = { _tag: "Empty" };
 /** @internal */
-var patch$3 = /* @__PURE__ */ dual(2, (path, patch) => {
+var patch$3 = /*#__PURE__*/ dual(2, (path, patch) => {
 	let input = of(patch);
 	let output = path;
 	while (isCons(input)) {
@@ -28434,13 +26281,13 @@ var OP_ZIP_WITH$1 = "ZipWith";
 //#region node_modules/effect/dist/esm/internal/configProvider.js
 var concat = (l, r) => [...l, ...r];
 /** @internal */
-var ConfigProviderTypeId = /* @__PURE__ */ Symbol.for("effect/ConfigProvider");
+var ConfigProviderTypeId = /*#__PURE__*/ Symbol.for("effect/ConfigProvider");
 /** @internal */
-var configProviderTag = /* @__PURE__ */ GenericTag("effect/ConfigProvider");
+var configProviderTag = /*#__PURE__*/ GenericTag("effect/ConfigProvider");
 /** @internal */
-var FlatConfigProviderTypeId = /* @__PURE__ */ Symbol.for("effect/ConfigProviderFlat");
+var FlatConfigProviderTypeId = /*#__PURE__*/ Symbol.for("effect/ConfigProviderFlat");
 /** @internal */
-var make$12 = (options) => ({
+var make$13 = (options) => ({
 	[ConfigProviderTypeId]: ConfigProviderTypeId,
 	pipe() {
 		return pipeArguments(this, arguments);
@@ -28455,7 +26302,7 @@ var makeFlat = (options) => ({
 	enumerateChildren: options.enumerateChildren
 });
 /** @internal */
-var fromFlat = (flat) => make$12({
+var fromFlat = (flat) => make$13({
 	load: (config) => flatMap$3(fromFlatLoop(flat, empty$19(), config, false), (chunk) => match$4(head(chunk), {
 		onNone: () => fail$3(MissingData(empty$19(), `Expected a single value having structure: ${config}`)),
 		onSome: succeed$5
@@ -28490,7 +26337,7 @@ var fromEnv = (options) => {
 	return fromFlat(makeFlat({
 		load,
 		enumerateChildren,
-		patch: empty$4
+		patch: empty$5
 	}));
 };
 /** @internal */
@@ -28519,7 +26366,7 @@ var fromMap = (map, config) => {
 	return fromFlat(makeFlat({
 		load,
 		enumerateChildren,
-		patch: empty$4
+		patch: empty$5
 	}));
 };
 var extend$1 = (leftDef, rightDef, left, right) => {
@@ -28569,7 +26416,7 @@ var fromFlatLoop = (flat, prefix, config, split) => {
 		}))));
 		case OP_HASHMAP: return suspend$4(() => pipe(patch$3(prefix, flat.patch), flatMap$3((prefix) => pipe(flat.enumerateChildren(prefix), flatMap$3((keys) => {
 			return pipe(keys, forEachSequential((key) => fromFlatLoop(flat, concat(prefix, of$2(key)), op.valueConfig, split)), map$3((matrix) => {
-				if (matrix.length === 0) return of$2(empty$12());
+				if (matrix.length === 0) return of$2(empty$11());
 				return pipe(transpose(matrix), map$6((values) => fromIterable$1(zip$1(fromIterable$6(keys), values))));
 			}));
 		})))));
@@ -28588,7 +26435,7 @@ var fromFlatLoop = (flat, prefix, config, split) => {
 };
 var fromFlatLoopFail = (prefix, path) => (index) => left(MissingData(prefix, `The element at index ${index} in a sequence at path "${path}" was missing`));
 /** @internal */
-var orElse$1 = /* @__PURE__ */ dual(2, (self, that) => fromFlat(orElseFlat(self.flattened, () => that().flattened)));
+var orElse$1 = /*#__PURE__*/ dual(2, (self, that) => fromFlat(orElseFlat(self.flattened, () => that().flattened)));
 var orElseFlat = (self, that) => makeFlat({
 	load: (path, config, split) => pipe(patch$3(path, self.patch), flatMap$3((patch) => self.load(patch, config, split)), catchAll$1((error1) => pipe(sync$2(that), flatMap$3((that) => pipe(patch$3(path, that.patch), flatMap$3((patch) => that.load(patch, config, split)), catchAll$1((error2) => fail$3(Or(error1, error2)))))))),
 	enumerateChildren: (path) => pipe(patch$3(path, self.patch), flatMap$3((patch) => self.enumerateChildren(patch)), either$1, flatMap$3((left) => pipe(sync$2(that), flatMap$3((that) => pipe(patch$3(path, that.patch), flatMap$3((patch) => that.enumerateChildren(patch)), either$1, flatMap$3((right) => {
@@ -28598,7 +26445,7 @@ var orElseFlat = (self, that) => makeFlat({
 		if (isRight(left) && isRight(right)) return succeed$5(pipe(left.right, union(right.right)));
 		throw new Error("BUG: ConfigProvider.orElseFlat - please report an issue at https://github.com/Effect-TS/effect/issues");
 	})))))),
-	patch: empty$4
+	patch: empty$5
 });
 var splitPathString = (text, delim) => {
 	return text.split(new RegExp(`\\s*${escape(delim)}\\s*`));
@@ -28654,18 +26501,18 @@ var parseInteger = (str) => {
 //#endregion
 //#region node_modules/effect/dist/esm/internal/defaultServices/console.js
 /** @internal */
-var TypeId$5 = /* @__PURE__ */ Symbol.for("effect/Console");
+var TypeId$7 = /*#__PURE__*/ Symbol.for("effect/Console");
 /** @internal */
-var consoleTag = /* @__PURE__ */ GenericTag("effect/Console");
+var consoleTag = /*#__PURE__*/ GenericTag("effect/Console");
 /** @internal */
 var defaultConsole = {
-	[TypeId$5]: TypeId$5,
+	[TypeId$7]: TypeId$7,
 	assert(condition, ...args) {
 		return sync$2(() => {
 			console.assert(condition, ...args);
 		});
 	},
-	clear: /* @__PURE__ */ sync$2(() => {
+	clear: /*#__PURE__*/ sync$2(() => {
 		console.clear();
 	}),
 	count(label) {
@@ -28701,7 +26548,7 @@ var defaultConsole = {
 	group(options) {
 		return options?.collapsed ? sync$2(() => console.groupCollapsed(options?.label)) : sync$2(() => console.group(options?.label));
 	},
-	groupEnd: /* @__PURE__ */ sync$2(() => {
+	groupEnd: /*#__PURE__*/ sync$2(() => {
 		console.groupEnd();
 	}),
 	info(...args) {
@@ -28743,9 +26590,9 @@ var defaultConsole = {
 	unsafe: console
 };
 /** @internal */
-var RandomTypeId = /* @__PURE__ */ Symbol.for("effect/Random");
+var RandomTypeId = /*#__PURE__*/ Symbol.for("effect/Random");
 /** @internal */
-var randomTag = /* @__PURE__ */ GenericTag("effect/Random");
+var randomTag = /*#__PURE__*/ GenericTag("effect/Random");
 /** @internal */
 var RandomImpl = class {
 	seed;
@@ -28787,24 +26634,24 @@ var swap = (buffer, index1, index2) => {
 	buffer[index2] = tmp;
 	return buffer;
 };
-var make$11 = (seed) => new RandomImpl(hash(seed));
+var make$12 = (seed) => new RandomImpl(hash(seed));
 //#endregion
 //#region node_modules/effect/dist/esm/internal/tracer.js
 /**
 * @since 2.0.0
 */
 /** @internal */
-var TracerTypeId = /* @__PURE__ */ Symbol.for("effect/Tracer");
+var TracerTypeId = /*#__PURE__*/ Symbol.for("effect/Tracer");
 /** @internal */
-var make$10 = (options) => ({
+var make$11 = (options) => ({
 	[TracerTypeId]: TracerTypeId,
 	...options
 });
 /** @internal */
-var tracerTag = /* @__PURE__ */ GenericTag("effect/Tracer");
+var tracerTag = /*#__PURE__*/ GenericTag("effect/Tracer");
 /** @internal */
-var spanTag = /* @__PURE__ */ GenericTag("effect/ParentSpan");
-var randomHexString = /* @__PURE__ */ function() {
+var spanTag = /*#__PURE__*/ GenericTag("effect/ParentSpan");
+var randomHexString = /*#__PURE__*/ function() {
 	const characters = "abcdef0123456789";
 	const charactersLength = 16;
 	return function(length) {
@@ -28866,23 +26713,23 @@ var NativeSpan = class {
 	}
 };
 /** @internal */
-var nativeTracer = /* @__PURE__ */ make$10({
+var nativeTracer = /*#__PURE__*/ make$11({
 	span: (name, parent, context, links, startTime, kind) => new NativeSpan(name, parent, context, links, startTime, kind),
 	context: (f) => f()
 });
 /** @internal */
-var DisablePropagation = /* @__PURE__ */ Reference()("effect/Tracer/DisablePropagation", { defaultValue: constFalse });
+var DisablePropagation = /*#__PURE__*/ Reference()("effect/Tracer/DisablePropagation", { defaultValue: constFalse });
 //#endregion
 //#region node_modules/effect/dist/esm/internal/defaultServices.js
 /** @internal */
-var liveServices = /* @__PURE__ */ pipe(/* @__PURE__ */ empty$17(), /* @__PURE__ */ add$2(clockTag, /* @__PURE__ */ make$13()), /* @__PURE__ */ add$2(consoleTag, defaultConsole), /* @__PURE__ */ add$2(randomTag, /* @__PURE__ */ make$11(/* @__PURE__ */ Math.random())), /* @__PURE__ */ add$2(configProviderTag, /* @__PURE__ */ fromEnv()), /* @__PURE__ */ add$2(tracerTag, nativeTracer));
+var liveServices = /*#__PURE__*/ pipe(/*#__PURE__*/ empty$12(), /*#__PURE__*/ add(clockTag, /*#__PURE__*/ make$14()), /*#__PURE__*/ add(consoleTag, defaultConsole), /*#__PURE__*/ add(randomTag, /*#__PURE__*/ make$12(/*#__PURE__*/ Math.random())), /*#__PURE__*/ add(configProviderTag, /*#__PURE__*/ fromEnv()), /*#__PURE__*/ add(tracerTag, nativeTracer));
 /**
 * The `FiberRef` holding the default `Effect` services.
 *
 * @since 2.0.0
 * @category fiberRefs
 */
-var currentServices = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/DefaultServices/currentServices"), () => fiberRefUnsafeMakeContext(liveServices));
+var currentServices = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/DefaultServices/currentServices"), () => fiberRefUnsafeMakeContext(liveServices));
 /** @internal */
 var defaultServicesWith = (f) => withFiberRuntime((fiber) => f(fiber.currentDefaultServices));
 /** @internal */
@@ -28890,239 +26737,243 @@ var configProviderWith = (f) => defaultServicesWith((services) => f(services.uns
 /** @internal */
 var config = (config) => configProviderWith((_) => _.load(config));
 //#endregion
-//#region node_modules/effect/dist/esm/internal/fiberRefs.js
+//#region node_modules/effect/dist/esm/internal/redacted.js
 /** @internal */
-function unsafeMake$5(fiberRefLocals) {
-	return new FiberRefsImpl(fiberRefLocals);
-}
+var RedactedSymbolKey = "effect/Redacted";
 /** @internal */
-function empty$3() {
-	return unsafeMake$5(/* @__PURE__ */ new Map());
-}
+var redactedRegistry = /*#__PURE__*/ globalValue("effect/Redacted/redactedRegistry", () => /* @__PURE__ */ new WeakMap());
 /** @internal */
-var FiberRefsSym = /* @__PURE__ */ Symbol.for("effect/FiberRefs");
+var RedactedTypeId = /*#__PURE__*/ Symbol.for(RedactedSymbolKey);
 /** @internal */
-var FiberRefsImpl = class {
-	locals;
-	[FiberRefsSym] = FiberRefsSym;
-	constructor(locals) {
-		this.locals = locals;
-	}
+var proto$2 = {
+	[RedactedTypeId]: { _A: (_) => _ },
 	pipe() {
 		return pipeArguments(this, arguments);
+	},
+	toString() {
+		return "<redacted>";
+	},
+	toJSON() {
+		return "<redacted>";
+	},
+	[NodeInspectSymbol]() {
+		return "<redacted>";
+	},
+	[symbol$1]() {
+		return pipe(hash(RedactedSymbolKey), combine$5(hash(redactedRegistry.get(this))), cached(this));
+	},
+	[symbol](that) {
+		return isRedacted(that) && equals$2(redactedRegistry.get(this), redactedRegistry.get(that));
 	}
 };
 /** @internal */
-var findAncestor = (_ref, _parentStack, _childStack, _childModified = false) => {
-	const ref = _ref;
-	let parentStack = _parentStack;
-	let childStack = _childStack;
-	let childModified = _childModified;
-	let ret = void 0;
-	while (ret === void 0) if (isNonEmptyReadonlyArray(parentStack) && isNonEmptyReadonlyArray(childStack)) {
-		const parentFiberId = headNonEmpty$1(parentStack)[0];
-		const parentAncestors = tailNonEmpty$1(parentStack);
-		const childFiberId = headNonEmpty$1(childStack)[0];
-		const childRefValue = headNonEmpty$1(childStack)[1];
-		const childAncestors = tailNonEmpty$1(childStack);
-		if (parentFiberId.startTimeMillis < childFiberId.startTimeMillis) {
-			childStack = childAncestors;
-			childModified = true;
-		} else if (parentFiberId.startTimeMillis > childFiberId.startTimeMillis) parentStack = parentAncestors;
-		else if (parentFiberId.id < childFiberId.id) {
-			childStack = childAncestors;
-			childModified = true;
-		} else if (parentFiberId.id > childFiberId.id) parentStack = parentAncestors;
-		else ret = [childRefValue, childModified];
-	} else ret = [ref.initial, true];
-	return ret;
+var isRedacted = (u) => hasProperty(u, RedactedTypeId);
+/** @internal */
+var make$10 = (value) => {
+	const redacted = Object.create(proto$2);
+	redactedRegistry.set(redacted, value);
+	return redacted;
 };
 /** @internal */
-var joinAs = /* @__PURE__ */ dual(3, (self, fiberId, that) => {
-	const parentFiberRefs = new Map(self.locals);
-	that.locals.forEach((childStack, fiberRef) => {
-		const childValue = childStack[0][1];
-		if (!childStack[0][0][symbol](fiberId)) {
-			if (!parentFiberRefs.has(fiberRef)) {
-				if (equals$2(childValue, fiberRef.initial)) return;
-				parentFiberRefs.set(fiberRef, [[fiberId, fiberRef.join(fiberRef.initial, childValue)]]);
-				return;
-			}
-			const parentStack = parentFiberRefs.get(fiberRef);
-			const [ancestor, wasModified] = findAncestor(fiberRef, parentStack, childStack);
-			if (wasModified) {
-				const patch = fiberRef.diff(ancestor, childValue);
-				const oldValue = parentStack[0][1];
-				const newValue = fiberRef.join(oldValue, fiberRef.patch(patch)(oldValue));
-				if (!equals$2(oldValue, newValue)) {
-					let newStack;
-					const parentFiberId = parentStack[0][0];
-					if (parentFiberId[symbol](fiberId)) newStack = [[parentFiberId, newValue], ...parentStack.slice(1)];
-					else newStack = [[fiberId, newValue], ...parentStack];
-					parentFiberRefs.set(fiberRef, newStack);
-				}
-			}
+var value$1 = (self) => {
+	if (redactedRegistry.has(self)) return redactedRegistry.get(self);
+	else throw new Error("Unable to get redacted value");
+};
+/** @internal */
+var ConfigTypeId = /*#__PURE__*/ Symbol.for("effect/Config");
+var configVariance = { 
+/* c8 ignore next */
+_A: (_) => _ };
+var proto$1 = {
+	...CommitPrototype,
+	[ConfigTypeId]: configVariance,
+	commit() {
+		return config(this);
+	}
+};
+/** @internal */
+var boolean$1 = (name) => {
+	const config = primitive("a boolean property", (text) => {
+		switch (text) {
+			case "true":
+			case "yes":
+			case "on":
+			case "1": return right(true);
+			case "false":
+			case "no":
+			case "off":
+			case "0": return right(false);
+			default: return left(InvalidData$1([], `Expected a boolean value but received ${formatUnknown(text)}`));
 		}
 	});
-	return new FiberRefsImpl(parentFiberRefs);
-});
-/** @internal */
-var forkAs = /* @__PURE__ */ dual(2, (self, childId) => {
-	const map = /* @__PURE__ */ new Map();
-	unsafeForkAs(self, map, childId);
-	return new FiberRefsImpl(map);
-});
-var unsafeForkAs = (self, map, fiberId) => {
-	self.locals.forEach((stack, fiberRef) => {
-		const oldValue = stack[0][1];
-		const newValue = fiberRef.patch(fiberRef.fork)(oldValue);
-		if (equals$2(oldValue, newValue)) map.set(fiberRef, stack);
-		else map.set(fiberRef, [[fiberId, newValue], ...stack]);
-	});
+	return name === void 0 ? config : nested(config, name);
 };
 /** @internal */
-var delete_ = /* @__PURE__ */ dual(2, (self, fiberRef) => {
-	const locals = new Map(self.locals);
-	locals.delete(fiberRef);
-	return new FiberRefsImpl(locals);
+var map$2 = /*#__PURE__*/ dual(2, (self, f) => mapOrFail$1(self, (a) => right(f(a))));
+/** @internal */
+var mapOrFail$1 = /*#__PURE__*/ dual(2, (self, f) => {
+	const mapOrFail = Object.create(proto$1);
+	mapOrFail._tag = OP_MAP_OR_FAIL;
+	mapOrFail.original = self;
+	mapOrFail.mapOrFail = f;
+	return mapOrFail;
 });
 /** @internal */
-var get$2 = /* @__PURE__ */ dual(2, (self, fiberRef) => {
-	if (!self.locals.has(fiberRef)) return none$4();
-	return some(headNonEmpty$1(self.locals.get(fiberRef))[1]);
+var nested = /*#__PURE__*/ dual(2, (self, name) => {
+	const nested = Object.create(proto$1);
+	nested._tag = OP_NESTED;
+	nested.name = name;
+	nested.config = self;
+	return nested;
 });
 /** @internal */
-var getOrDefault$1 = /* @__PURE__ */ dual(2, (self, fiberRef) => pipe(get$2(self, fiberRef), getOrElse(() => fiberRef.initial)));
-/** @internal */
-var updateAs = /* @__PURE__ */ dual(2, (self, { fiberId, fiberRef, value }) => {
-	if (self.locals.size === 0) return new FiberRefsImpl(new Map([[fiberRef, [[fiberId, value]]]]));
-	const locals = new Map(self.locals);
-	unsafeUpdateAs(locals, fiberId, fiberRef, value);
-	return new FiberRefsImpl(locals);
+var orElseIf = /*#__PURE__*/ dual(2, (self, options) => {
+	const fallback = Object.create(proto$1);
+	fallback._tag = OP_FALLBACK;
+	fallback.first = self;
+	fallback.second = suspend$3(options.orElse);
+	fallback.condition = options.if;
+	return fallback;
 });
-var unsafeUpdateAs = (locals, fiberId, fiberRef, value) => {
-	const oldStack = locals.get(fiberRef) ?? [];
-	let newStack;
-	if (isNonEmptyReadonlyArray(oldStack)) {
-		const [currentId, currentValue] = headNonEmpty$1(oldStack);
-		if (currentId[symbol](fiberId)) if (equals$2(currentValue, value)) return;
-		else newStack = [[fiberId, value], ...oldStack.slice(1)];
-		else newStack = [[fiberId, value], ...oldStack];
-	} else newStack = [[fiberId, value]];
-	locals.set(fiberRef, newStack);
+/** @internal */
+var option$3 = (self) => {
+	return pipe(self, map$2(some), orElseIf({
+		orElse: () => succeed$4(none$4()),
+		if: isMissingDataOnly
+	}));
 };
 /** @internal */
-var updateManyAs$1 = /* @__PURE__ */ dual(2, (self, { entries, forkAs }) => {
-	if (self.locals.size === 0) return new FiberRefsImpl(new Map(entries));
-	const locals = new Map(self.locals);
-	if (forkAs !== void 0) unsafeForkAs(self, locals, forkAs);
-	entries.forEach(([fiberRef, values]) => {
-		if (values.length === 1) unsafeUpdateAs(locals, values[0][0], fiberRef, values[0][1]);
-		else values.forEach(([fiberId, value]) => {
-			unsafeUpdateAs(locals, fiberId, fiberRef, value);
-		});
-	});
-	return new FiberRefsImpl(locals);
-});
+var primitive = (description, parse) => {
+	const primitive = Object.create(proto$1);
+	primitive._tag = OP_PRIMITIVE;
+	primitive.description = description;
+	primitive.parse = parse;
+	return primitive;
+};
+/** @internal */
+var redacted$1 = (nameOrConfig) => {
+	return map$2(isConfig(nameOrConfig) ? nameOrConfig : string$1(nameOrConfig), make$10);
+};
+/** @internal */
+var string$1 = (name) => {
+	const config = primitive("a text property", right);
+	return name === void 0 ? config : nested(config, name);
+};
+/** @internal */
+var succeed$4 = (value) => {
+	const constant = Object.create(proto$1);
+	constant._tag = OP_CONSTANT;
+	constant.value = value;
+	constant.parse = () => right(value);
+	return constant;
+};
+/** @internal */
+var suspend$3 = (config) => {
+	const lazy = Object.create(proto$1);
+	lazy._tag = OP_LAZY;
+	lazy.config = config;
+	return lazy;
+};
+/** @internal */
+var isConfig = (u) => hasProperty(u, ConfigTypeId);
 //#endregion
-//#region node_modules/effect/dist/esm/FiberRefs.js
+//#region node_modules/effect/dist/esm/Config.js
 /**
-* Gets the value of the specified `FiberRef` in this collection of `FiberRef`
-* values if it exists or the `initial` value of the `FiberRef` otherwise.
+* Constructs a config for a boolean value.
 *
 * @since 2.0.0
-* @category getters
+* @category constructors
 */
-var getOrDefault = getOrDefault$1;
+var boolean = boolean$1;
 /**
-* Updates the values of the specified `FiberRef` & value pairs using the provided `FiberId`
+* Returns a new config whose structure is the samea as this one, but which
+* may produce a different value, constructed using the specified fallible
+* function.
 *
 * @since 2.0.0
 * @category utils
 */
-var updateManyAs = updateManyAs$1;
+var mapOrFail = mapOrFail$1;
 /**
-* The empty collection of `FiberRef` values.
+* Returns an optional version of this config, which will be `None` if the
+* data is missing from configuration, and `Some` otherwise.
 *
-* @category constructors
 * @since 2.0.0
+* @category utils
 */
-var empty$2 = empty$3;
+var option$2 = option$3;
+/**
+* Constructs a config for a redacted value.
+*
+* @since 2.0.0
+* @category constructors
+*/
+var redacted = redacted$1;
+/**
+* Constructs a config for a string value.
+*
+* @since 2.0.0
+* @category constructors
+*/
+var string = string$1;
 //#endregion
-//#region node_modules/effect/dist/esm/LogLevel.js
+//#region node_modules/effect/dist/esm/Data.js
+/**
+* Provides a constructor for a Case Class.
+*
+* @since 2.0.0
+* @category constructors
+*/
+var Error$3 = /*#__PURE__*/ function() {
+	const plainArgsSymbol = /*#__PURE__*/ Symbol.for("effect/Data/Error/plainArgs");
+	return { BaseEffectError: class extends YieldableError$1 {
+		constructor(args) {
+			super(args?.message, args?.cause ? { cause: args.cause } : void 0);
+			if (args) {
+				Object.assign(this, args);
+				Object.defineProperty(this, plainArgsSymbol, {
+					value: args,
+					enumerable: false
+				});
+			}
+		}
+		toJSON() {
+			return {
+				...this[plainArgsSymbol],
+				...this
+			};
+		}
+	} }.BaseEffectError;
+}();
 /**
 * @since 2.0.0
 * @category constructors
 */
-var All = logLevelAll;
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var Fatal = logLevelFatal;
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var Error$3 = logLevelError;
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var Warning = logLevelWarning;
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var Info = logLevelInfo;
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var Debug = logLevelDebug;
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var Trace = logLevelTrace;
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var None = logLevelNone;
-/**
-* @since 2.0.0
-* @category ordering
-*/
-var greaterThan$1 = /* @__PURE__ */ greaterThan$2(/* @__PURE__ */ pipe(Order$1, /* @__PURE__ */ mapInput((level) => level.ordinal)));
-/**
-* @since 2.0.0
-* @category conversions
-*/
-var fromLiteral = (literal) => {
-	switch (literal) {
-		case "All": return All;
-		case "Debug": return Debug;
-		case "Error": return Error$3;
-		case "Fatal": return Fatal;
-		case "Info": return Info;
-		case "Trace": return Trace;
-		case "None": return None;
-		case "Warning": return Warning;
-	}
+var TaggedError$2 = (tag) => {
+	const O = { BaseEffectError: class extends Error$3 {
+		_tag = tag;
+	} };
+	O.BaseEffectError.prototype.name = tag;
+	return O.BaseEffectError;
 };
 //#endregion
-//#region node_modules/effect/dist/esm/internal/logSpan.js
+//#region node_modules/effect/dist/esm/Boolean.js
 /**
-* Sanitize a given string by replacing spaces, equal signs, and double quotes with underscores.
+* Negates the given boolean: `!self`
 *
-* @internal
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { not } from "effect/Boolean"
+*
+* assert.deepStrictEqual(not(true), false)
+* assert.deepStrictEqual(not(false), true)
+* ```
+*
+* @category combinators
+* @since 2.0.0
 */
-var formatLabel = (key) => key.replace(/[\s="]/g, "_");
-/** @internal */
-var render = (now) => (self) => {
-	return `${formatLabel(self.label)}=${now - self.startTime}ms`;
-};
+var not = (self) => !self;
 //#endregion
 //#region node_modules/effect/dist/esm/Effectable.js
 /**
@@ -29136,325 +26987,6 @@ var Base = Base$1;
 * @category constructors
 */
 var Class = class extends Base {};
-//#endregion
-//#region node_modules/effect/dist/esm/Readable.js
-/**
-* @since 2.0.0
-* @category type ids
-*/
-var TypeId$4 = /* @__PURE__ */ Symbol.for("effect/Readable");
-//#endregion
-//#region node_modules/effect/dist/esm/internal/ref.js
-/** @internal */
-var RefTypeId = /* @__PURE__ */ Symbol.for("effect/Ref");
-/** @internal */
-var refVariance = { 
-/* c8 ignore next */
-_A: (_) => _ };
-var RefImpl = class extends Class {
-	ref;
-	commit() {
-		return this.get;
-	}
-	[RefTypeId] = refVariance;
-	[TypeId$4] = TypeId$4;
-	constructor(ref) {
-		super();
-		this.ref = ref;
-		this.get = sync$2(() => get$5(this.ref));
-	}
-	get;
-	modify(f) {
-		return sync$2(() => {
-			const current = get$5(this.ref);
-			const [b, a] = f(current);
-			if (current !== a) set$4(a)(this.ref);
-			return b;
-		});
-	}
-};
-/** @internal */
-var unsafeMake$4 = (value) => new RefImpl(make$17(value));
-/** @internal */
-var make$9 = (value) => sync$2(() => unsafeMake$4(value));
-/** @internal */
-var get$1 = (self) => self.get;
-/** @internal */
-var set$1 = /* @__PURE__ */ dual(2, (self, value) => self.modify(() => [void 0, value]));
-/** @internal */
-var modify = /* @__PURE__ */ dual(2, (self, f) => self.modify(f));
-/** @internal */
-var update$1 = /* @__PURE__ */ dual(2, (self, f) => self.modify((a) => [void 0, f(a)]));
-//#endregion
-//#region node_modules/effect/dist/esm/Ref.js
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var make$8 = make$9;
-/**
-* @since 2.0.0
-* @category getters
-*/
-var get = get$1;
-/**
-* @since 2.0.0
-* @category utils
-*/
-var set = set$1;
-//#endregion
-//#region node_modules/effect/dist/esm/internal/fiberRefs/patch.js
-/** @internal */
-var OP_EMPTY$1 = "Empty";
-/** @internal */
-var OP_REMOVE = "Remove";
-/** @internal */
-var OP_UPDATE = "Update";
-/** @internal */
-var OP_AND_THEN$1 = "AndThen";
-/** @internal */
-var empty$1 = { _tag: OP_EMPTY$1 };
-/** @internal */
-var diff$2 = (oldValue, newValue) => {
-	const missingLocals = new Map(oldValue.locals);
-	let patch = empty$1;
-	for (const [fiberRef, pairs] of newValue.locals.entries()) {
-		const newValue = headNonEmpty$1(pairs)[1];
-		const old = missingLocals.get(fiberRef);
-		if (old !== void 0) {
-			const oldValue = headNonEmpty$1(old)[1];
-			if (!equals$2(oldValue, newValue)) patch = combine$1({
-				_tag: OP_UPDATE,
-				fiberRef,
-				patch: fiberRef.diff(oldValue, newValue)
-			})(patch);
-		} else patch = combine$1({
-			_tag: "Add",
-			fiberRef,
-			value: newValue
-		})(patch);
-		missingLocals.delete(fiberRef);
-	}
-	for (const [fiberRef] of missingLocals.entries()) patch = combine$1({
-		_tag: OP_REMOVE,
-		fiberRef
-	})(patch);
-	return patch;
-};
-/** @internal */
-var combine$1 = /* @__PURE__ */ dual(2, (self, that) => ({
-	_tag: OP_AND_THEN$1,
-	first: self,
-	second: that
-}));
-/** @internal */
-var patch$2 = /* @__PURE__ */ dual(3, (self, fiberId, oldValue) => {
-	let fiberRefs = oldValue;
-	let patches = of$2(self);
-	while (isNonEmptyReadonlyArray(patches)) {
-		const head = headNonEmpty$1(patches);
-		const tail = tailNonEmpty$1(patches);
-		switch (head._tag) {
-			case OP_EMPTY$1:
-				patches = tail;
-				break;
-			case "Add":
-				fiberRefs = updateAs(fiberRefs, {
-					fiberId,
-					fiberRef: head.fiberRef,
-					value: head.value
-				});
-				patches = tail;
-				break;
-			case OP_REMOVE:
-				fiberRefs = delete_(fiberRefs, head.fiberRef);
-				patches = tail;
-				break;
-			case OP_UPDATE: {
-				const value = getOrDefault$1(fiberRefs, head.fiberRef);
-				fiberRefs = updateAs(fiberRefs, {
-					fiberId,
-					fiberRef: head.fiberRef,
-					value: head.fiberRef.patch(head.patch)(value)
-				});
-				patches = tail;
-				break;
-			}
-			case OP_AND_THEN$1:
-				patches = prepend$2(head.first)(prepend$2(head.second)(tail));
-				break;
-		}
-	}
-	return fiberRefs;
-});
-//#endregion
-//#region node_modules/effect/dist/esm/internal/metric/label.js
-/** @internal */
-var MetricLabelSymbolKey = "effect/MetricLabel";
-/** @internal */
-var MetricLabelTypeId = /* @__PURE__ */ Symbol.for(MetricLabelSymbolKey);
-/** @internal */
-var MetricLabelImpl = class {
-	key;
-	value;
-	[MetricLabelTypeId] = MetricLabelTypeId;
-	_hash;
-	constructor(key, value) {
-		this.key = key;
-		this.value = value;
-		this._hash = string$2(MetricLabelSymbolKey + this.key + this.value);
-	}
-	[symbol$1]() {
-		return this._hash;
-	}
-	[symbol](that) {
-		return isMetricLabel(that) && this.key === that.key && this.value === that.value;
-	}
-	pipe() {
-		return pipeArguments(this, arguments);
-	}
-};
-/** @internal */
-var make$7 = (key, value) => {
-	return new MetricLabelImpl(key, value);
-};
-/** @internal */
-var isMetricLabel = (u) => hasProperty(u, MetricLabelTypeId);
-//#endregion
-//#region node_modules/effect/dist/esm/internal/core-effect.js
-var asSome = (self) => map$3(self, some);
-var try_$1 = (arg) => {
-	let evaluate;
-	let onFailure = void 0;
-	if (typeof arg === "function") evaluate = arg;
-	else {
-		evaluate = arg.try;
-		onFailure = arg.catch;
-	}
-	return suspend$4(() => {
-		try {
-			return succeed$5(internalCall(evaluate));
-		} catch (error) {
-			return fail$3(onFailure ? internalCall(() => onFailure(error)) : new UnknownException(error, "An unknown error occurred in Effect.try"));
-		}
-	});
-};
-var catchTag$1 = /* @__PURE__ */ dual((args) => isEffect$1(args[0]), (self, ...args) => {
-	const f = args[args.length - 1];
-	let predicate;
-	if (args.length === 2) predicate = isTagged(args[0]);
-	else predicate = (e) => {
-		const tag = hasProperty(e, "_tag") ? e["_tag"] : void 0;
-		if (!tag) return false;
-		for (let i = 0; i < args.length - 1; i++) if (args[i] === tag) return true;
-		return false;
-	};
-	return catchIf$1(self, predicate, f);
-});
-/** @internal */
-var catchTags$1 = /* @__PURE__ */ dual(2, (self, cases) => {
-	let keys;
-	return catchIf$1(self, (e) => {
-		keys ??= Object.keys(cases);
-		return hasProperty(e, "_tag") && isString(e["_tag"]) && keys.includes(e["_tag"]);
-	}, (e) => cases[e["_tag"]](e));
-});
-var diffFiberRefs = (self) => summarized(self, fiberRefs, diff$2);
-var match$1 = /* @__PURE__ */ dual(2, (self, options) => matchEffect(self, {
-	onFailure: (e) => succeed$5(options.onFailure(e)),
-	onSuccess: (a) => succeed$5(options.onSuccess(a))
-}));
-var fiberRefs = /* @__PURE__ */ withFiberRuntime((state) => succeed$5(state.getFiberRefs()));
-var ignore$1 = (self) => match$1(self, {
-	onFailure: constVoid,
-	onSuccess: constVoid
-});
-/** @internal */
-var logWithLevel = (level) => (...message) => {
-	const levelOption = fromNullable(level);
-	let cause = void 0;
-	for (let i = 0, len = message.length; i < len; i++) {
-		const msg = message[i];
-		if (isCause(msg)) {
-			if (cause !== void 0) cause = sequential$2(cause, msg);
-			else cause = msg;
-			message = [...message.slice(0, i), ...message.slice(i + 1)];
-			i--;
-		}
-	}
-	if (cause === void 0) cause = empty$6;
-	return withFiberRuntime((fiberState) => {
-		fiberState.log(message, cause, levelOption);
-		return void_$1;
-	});
-};
-/** @internal */
-var logInfo$1 = /* @__PURE__ */ logWithLevel(Info);
-/** @internal */
-var logWarning$1 = /* @__PURE__ */ logWithLevel(Warning);
-/** @internal */
-var logError$1 = /* @__PURE__ */ logWithLevel(Error$3);
-var option$3 = (self) => matchEffect(self, {
-	onFailure: () => succeed$5(none$4()),
-	onSuccess: (a) => succeed$5(some(a))
-});
-var orElseSucceed$1 = /* @__PURE__ */ dual(2, (self, evaluate) => orElse$2(self, () => sync$2(evaluate)));
-var patchFiberRefs = (patch) => updateFiberRefs((fiberId, fiberRefs) => pipe(patch, patch$2(fiberId, fiberRefs)));
-var promise$1 = (evaluate) => evaluate.length >= 1 ? async_((resolve, signal) => {
-	try {
-		evaluate(signal).then((a) => resolve(succeed$5(a)), (e) => resolve(die(e)));
-	} catch (e) {
-		resolve(die(e));
-	}
-}) : async_((resolve) => {
-	try {
-		evaluate().then((a) => resolve(succeed$5(a)), (e) => resolve(die(e)));
-	} catch (e) {
-		resolve(die(e));
-	}
-});
-var provideService = /* @__PURE__ */ dual(3, (self, tag, service) => contextWithEffect((env) => provideContext$1(self, add$2(env, tag, service))));
-var succeedNone = /* @__PURE__ */ succeed$5(/* @__PURE__ */ none$4());
-var summarized = /* @__PURE__ */ dual(3, (self, summary, f) => flatMap$3(summary, (start) => flatMap$3(self, (value) => map$3(summary, (end) => [f(start, end), value]))));
-var tapError$1 = /* @__PURE__ */ dual(2, (self, f) => matchCauseEffect$1(self, {
-	onFailure: (cause) => {
-		const either = failureOrCause(cause);
-		switch (either._tag) {
-			case "Left": return zipRight(f(either.left), failCause$1(cause));
-			case "Right": return failCause$1(cause);
-		}
-	},
-	onSuccess: succeed$5
-}));
-var tryPromise$1 = (arg) => {
-	let evaluate;
-	let catcher = void 0;
-	if (typeof arg === "function") evaluate = arg;
-	else {
-		evaluate = arg.try;
-		catcher = arg.catch;
-	}
-	const fail = (e) => catcher ? failSync(() => catcher(e)) : fail$3(new UnknownException(e, "An unknown error occurred in Effect.tryPromise"));
-	if (evaluate.length >= 1) return async_((resolve, signal) => {
-		try {
-			evaluate(signal).then((a) => resolve(succeed$5(a)), (e) => resolve(fail(e)));
-		} catch (e) {
-			resolve(fail(e));
-		}
-	});
-	return async_((resolve) => {
-		try {
-			evaluate().then((a) => resolve(succeed$5(a)), (e) => resolve(fail(e)));
-		} catch (e) {
-			resolve(fail(e));
-		}
-	});
-};
-var updateFiberRefs = (f) => withFiberRuntime((state) => {
-	state.setFiberRefs(f(state.id(), state.getFiberRefs()));
-	return void_$1;
-});
-var filterDisablePropagation = /* @__PURE__ */ flatMap$5((span) => get$7(span.context, DisablePropagation) ? span._tag === "Span" ? filterDisablePropagation(span.parent) : none$4() : some(span));
 //#endregion
 //#region node_modules/effect/dist/esm/internal/executionStrategy.js
 /** @internal */
@@ -29500,6 +27032,250 @@ var parallel = parallel$1;
 */
 var parallelN = parallelN$1;
 //#endregion
+//#region node_modules/effect/dist/esm/internal/fiberRefs.js
+/** @internal */
+function unsafeMake$5(fiberRefLocals) {
+	return new FiberRefsImpl(fiberRefLocals);
+}
+/** @internal */
+function empty$4() {
+	return unsafeMake$5(/* @__PURE__ */ new Map());
+}
+/** @internal */
+var FiberRefsSym = /*#__PURE__*/ Symbol.for("effect/FiberRefs");
+/** @internal */
+var FiberRefsImpl = class {
+	locals;
+	[FiberRefsSym] = FiberRefsSym;
+	constructor(locals) {
+		this.locals = locals;
+	}
+	pipe() {
+		return pipeArguments(this, arguments);
+	}
+};
+/** @internal */
+var findAncestor = (_ref, _parentStack, _childStack, _childModified = false) => {
+	const ref = _ref;
+	let parentStack = _parentStack;
+	let childStack = _childStack;
+	let childModified = _childModified;
+	let ret = void 0;
+	while (ret === void 0) if (isNonEmptyReadonlyArray(parentStack) && isNonEmptyReadonlyArray(childStack)) {
+		const parentFiberId = headNonEmpty$1(parentStack)[0];
+		const parentAncestors = tailNonEmpty$1(parentStack);
+		const childFiberId = headNonEmpty$1(childStack)[0];
+		const childRefValue = headNonEmpty$1(childStack)[1];
+		const childAncestors = tailNonEmpty$1(childStack);
+		if (parentFiberId.startTimeMillis < childFiberId.startTimeMillis) {
+			childStack = childAncestors;
+			childModified = true;
+		} else if (parentFiberId.startTimeMillis > childFiberId.startTimeMillis) parentStack = parentAncestors;
+		else if (parentFiberId.id < childFiberId.id) {
+			childStack = childAncestors;
+			childModified = true;
+		} else if (parentFiberId.id > childFiberId.id) parentStack = parentAncestors;
+		else ret = [childRefValue, childModified];
+	} else ret = [ref.initial, true];
+	return ret;
+};
+/** @internal */
+var joinAs = /*#__PURE__*/ dual(3, (self, fiberId, that) => {
+	const parentFiberRefs = new Map(self.locals);
+	that.locals.forEach((childStack, fiberRef) => {
+		const childValue = childStack[0][1];
+		if (!childStack[0][0][symbol](fiberId)) {
+			if (!parentFiberRefs.has(fiberRef)) {
+				if (equals$2(childValue, fiberRef.initial)) return;
+				parentFiberRefs.set(fiberRef, [[fiberId, fiberRef.join(fiberRef.initial, childValue)]]);
+				return;
+			}
+			const parentStack = parentFiberRefs.get(fiberRef);
+			const [ancestor, wasModified] = findAncestor(fiberRef, parentStack, childStack);
+			if (wasModified) {
+				const patch = fiberRef.diff(ancestor, childValue);
+				const oldValue = parentStack[0][1];
+				const newValue = fiberRef.join(oldValue, fiberRef.patch(patch)(oldValue));
+				if (!equals$2(oldValue, newValue)) {
+					let newStack;
+					const parentFiberId = parentStack[0][0];
+					if (parentFiberId[symbol](fiberId)) newStack = [[parentFiberId, newValue], ...parentStack.slice(1)];
+					else newStack = [[fiberId, newValue], ...parentStack];
+					parentFiberRefs.set(fiberRef, newStack);
+				}
+			}
+		}
+	});
+	return new FiberRefsImpl(parentFiberRefs);
+});
+/** @internal */
+var forkAs = /*#__PURE__*/ dual(2, (self, childId) => {
+	const map = /* @__PURE__ */ new Map();
+	unsafeForkAs(self, map, childId);
+	return new FiberRefsImpl(map);
+});
+var unsafeForkAs = (self, map, fiberId) => {
+	self.locals.forEach((stack, fiberRef) => {
+		const oldValue = stack[0][1];
+		const newValue = fiberRef.patch(fiberRef.fork)(oldValue);
+		if (equals$2(oldValue, newValue)) map.set(fiberRef, stack);
+		else map.set(fiberRef, [[fiberId, newValue], ...stack]);
+	});
+};
+/** @internal */
+var delete_ = /*#__PURE__*/ dual(2, (self, fiberRef) => {
+	const locals = new Map(self.locals);
+	locals.delete(fiberRef);
+	return new FiberRefsImpl(locals);
+});
+/** @internal */
+var get$3 = /*#__PURE__*/ dual(2, (self, fiberRef) => {
+	if (!self.locals.has(fiberRef)) return none$4();
+	return some(headNonEmpty$1(self.locals.get(fiberRef))[1]);
+});
+/** @internal */
+var getOrDefault$1 = /*#__PURE__*/ dual(2, (self, fiberRef) => pipe(get$3(self, fiberRef), getOrElse(() => fiberRef.initial)));
+/** @internal */
+var updateAs = /*#__PURE__*/ dual(2, (self, { fiberId, fiberRef, value }) => {
+	if (self.locals.size === 0) return new FiberRefsImpl(/* @__PURE__ */ new Map([[fiberRef, [[fiberId, value]]]]));
+	const locals = new Map(self.locals);
+	unsafeUpdateAs(locals, fiberId, fiberRef, value);
+	return new FiberRefsImpl(locals);
+});
+var unsafeUpdateAs = (locals, fiberId, fiberRef, value) => {
+	const oldStack = locals.get(fiberRef) ?? [];
+	let newStack;
+	if (isNonEmptyReadonlyArray(oldStack)) {
+		const [currentId, currentValue] = headNonEmpty$1(oldStack);
+		if (currentId[symbol](fiberId)) if (equals$2(currentValue, value)) return;
+		else newStack = [[fiberId, value], ...oldStack.slice(1)];
+		else newStack = [[fiberId, value], ...oldStack];
+	} else newStack = [[fiberId, value]];
+	locals.set(fiberRef, newStack);
+};
+/** @internal */
+var updateManyAs$1 = /*#__PURE__*/ dual(2, (self, { entries, forkAs }) => {
+	if (self.locals.size === 0) return new FiberRefsImpl(new Map(entries));
+	const locals = new Map(self.locals);
+	if (forkAs !== void 0) unsafeForkAs(self, locals, forkAs);
+	entries.forEach(([fiberRef, values]) => {
+		if (values.length === 1) unsafeUpdateAs(locals, values[0][0], fiberRef, values[0][1]);
+		else values.forEach(([fiberId, value]) => {
+			unsafeUpdateAs(locals, fiberId, fiberRef, value);
+		});
+	});
+	return new FiberRefsImpl(locals);
+});
+//#endregion
+//#region node_modules/effect/dist/esm/FiberRefs.js
+/**
+* Gets the value of the specified `FiberRef` in this collection of `FiberRef`
+* values if it exists or the `initial` value of the `FiberRef` otherwise.
+*
+* @since 2.0.0
+* @category getters
+*/
+var getOrDefault = getOrDefault$1;
+/**
+* Updates the values of the specified `FiberRef` & value pairs using the provided `FiberId`
+*
+* @since 2.0.0
+* @category utils
+*/
+var updateManyAs = updateManyAs$1;
+/**
+* The empty collection of `FiberRef` values.
+*
+* @category constructors
+* @since 2.0.0
+*/
+var empty$3 = empty$4;
+//#endregion
+//#region node_modules/effect/dist/esm/internal/fiberRefs/patch.js
+/** @internal */
+var OP_EMPTY$1 = "Empty";
+/** @internal */
+var OP_REMOVE = "Remove";
+/** @internal */
+var OP_UPDATE = "Update";
+/** @internal */
+var OP_AND_THEN$1 = "AndThen";
+/** @internal */
+var empty$2 = { _tag: OP_EMPTY$1 };
+/** @internal */
+var diff$2 = (oldValue, newValue) => {
+	const missingLocals = new Map(oldValue.locals);
+	let patch = empty$2;
+	for (const [fiberRef, pairs] of newValue.locals.entries()) {
+		const newValue = headNonEmpty$1(pairs)[1];
+		const old = missingLocals.get(fiberRef);
+		if (old !== void 0) {
+			const oldValue = headNonEmpty$1(old)[1];
+			if (!equals$2(oldValue, newValue)) patch = combine$1({
+				_tag: OP_UPDATE,
+				fiberRef,
+				patch: fiberRef.diff(oldValue, newValue)
+			})(patch);
+		} else patch = combine$1({
+			_tag: "Add",
+			fiberRef,
+			value: newValue
+		})(patch);
+		missingLocals.delete(fiberRef);
+	}
+	for (const [fiberRef] of missingLocals.entries()) patch = combine$1({
+		_tag: OP_REMOVE,
+		fiberRef
+	})(patch);
+	return patch;
+};
+/** @internal */
+var combine$1 = /*#__PURE__*/ dual(2, (self, that) => ({
+	_tag: OP_AND_THEN$1,
+	first: self,
+	second: that
+}));
+/** @internal */
+var patch$2 = /*#__PURE__*/ dual(3, (self, fiberId, oldValue) => {
+	let fiberRefs = oldValue;
+	let patches = of$2(self);
+	while (isNonEmptyReadonlyArray(patches)) {
+		const head = headNonEmpty$1(patches);
+		const tail = tailNonEmpty$1(patches);
+		switch (head._tag) {
+			case OP_EMPTY$1:
+				patches = tail;
+				break;
+			case "Add":
+				fiberRefs = updateAs(fiberRefs, {
+					fiberId,
+					fiberRef: head.fiberRef,
+					value: head.value
+				});
+				patches = tail;
+				break;
+			case OP_REMOVE:
+				fiberRefs = delete_(fiberRefs, head.fiberRef);
+				patches = tail;
+				break;
+			case OP_UPDATE: {
+				const value = getOrDefault$1(fiberRefs, head.fiberRef);
+				fiberRefs = updateAs(fiberRefs, {
+					fiberId,
+					fiberRef: head.fiberRef,
+					value: head.fiberRef.patch(head.patch)(value)
+				});
+				patches = tail;
+				break;
+			}
+			case OP_AND_THEN$1:
+				patches = prepend$2(head.first)(prepend$2(head.second)(tail));
+				break;
+		}
+	}
+	return fiberRefs;
+});
+//#endregion
 //#region node_modules/effect/dist/esm/FiberRefsPatch.js
 /**
 * Constructs a patch that describes the changes between the specified
@@ -29521,14 +27297,14 @@ var patch$1 = patch$2;
 //#region node_modules/effect/dist/esm/internal/fiberStatus.js
 var FiberStatusSymbolKey = "effect/FiberStatus";
 /** @internal */
-var FiberStatusTypeId = /* @__PURE__ */ Symbol.for(FiberStatusSymbolKey);
+var FiberStatusTypeId = /*#__PURE__*/ Symbol.for(FiberStatusSymbolKey);
 /** @internal */
 var OP_DONE = "Done";
 /** @internal */
 var OP_RUNNING = "Running";
 /** @internal */
 var OP_SUSPENDED = "Suspended";
-var DoneHash = /* @__PURE__ */ string$2(`${FiberStatusSymbolKey}-${OP_DONE}`);
+var DoneHash = /*#__PURE__*/ string$2(`${FiberStatusSymbolKey}-${OP_DONE}`);
 /** @internal */
 var Done = class {
 	[FiberStatusTypeId] = FiberStatusTypeId;
@@ -29573,7 +27349,7 @@ var Suspended = class {
 	}
 };
 /** @internal */
-var done$1 = /* @__PURE__ */ new Done();
+var done$1 = /*#__PURE__*/ new Done();
 /** @internal */
 var running$1 = (runtimeFlags) => new Running(runtimeFlags);
 /** @internal */
@@ -29607,25 +27383,88 @@ var suspended = suspended$1;
 */
 var isDone = isDone$1;
 //#endregion
+//#region node_modules/effect/dist/esm/LogLevel.js
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var All = logLevelAll;
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var Fatal = logLevelFatal;
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var Error$2 = logLevelError;
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var Warning = logLevelWarning;
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var Info = logLevelInfo;
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var Debug = logLevelDebug;
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var Trace = logLevelTrace;
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var None = logLevelNone;
+/**
+* @since 2.0.0
+* @category ordering
+*/
+var greaterThan$1 = /*#__PURE__*/ greaterThan$2(/* @__PURE__ */ pipe(Order$1, /*#__PURE__*/ mapInput((level) => level.ordinal)));
+/**
+* @since 2.0.0
+* @category conversions
+*/
+var fromLiteral = (literal) => {
+	switch (literal) {
+		case "All": return All;
+		case "Debug": return Debug;
+		case "Error": return Error$2;
+		case "Fatal": return Fatal;
+		case "Info": return Info;
+		case "Trace": return Trace;
+		case "None": return None;
+		case "Warning": return Warning;
+	}
+};
+//#endregion
 //#region node_modules/effect/dist/esm/Micro.js
 /**
 * @since 3.4.0
 * @experimental
 * @category type ids
 */
-var TypeId$3 = /* @__PURE__ */ Symbol.for("effect/Micro");
+var TypeId$6 = /*#__PURE__*/ Symbol.for("effect/Micro");
 /**
 * @since 3.4.0
 * @experimental
 * @category MicroExit
 */
-var MicroExitTypeId = /* @__PURE__ */ Symbol.for("effect/Micro/MicroExit");
+var MicroExitTypeId = /*#__PURE__*/ Symbol.for("effect/Micro/MicroExit");
 /**
 * @since 3.4.6
 * @experimental
 * @category MicroCause
 */
-var MicroCauseTypeId = /* @__PURE__ */ Symbol.for("effect/Micro/MicroCause");
+var MicroCauseTypeId = /*#__PURE__*/ Symbol.for("effect/Micro/MicroCause");
 var microCauseVariance = { _E: identity };
 var MicroCauseImpl = class extends globalThis.Error {
 	_tag;
@@ -29712,7 +27551,7 @@ var causeIsInterrupt = (self) => self._tag === "Interrupt";
 * @experimental
 * @category MicroFiber
 */
-var MicroFiberTypeId = /* @__PURE__ */ Symbol.for("effect/Micro/MicroFiber");
+var MicroFiberTypeId = /*#__PURE__*/ Symbol.for("effect/Micro/MicroFiber");
 var fiberVariance$1 = {
 	_A: identity,
 	_E: identity
@@ -29814,14 +27653,14 @@ var MicroFiberImpl = class {
 		return this._children ??= /* @__PURE__ */ new Set();
 	}
 };
-var fiberMiddleware = /* @__PURE__ */ globalValue("effect/Micro/fiberMiddleware", () => ({ interruptChildren: void 0 }));
-var identifier = /* @__PURE__ */ Symbol.for("effect/Micro/identifier");
-var args = /* @__PURE__ */ Symbol.for("effect/Micro/args");
-var evaluate = /* @__PURE__ */ Symbol.for("effect/Micro/evaluate");
-var successCont = /* @__PURE__ */ Symbol.for("effect/Micro/successCont");
-var failureCont = /* @__PURE__ */ Symbol.for("effect/Micro/failureCont");
-var ensureCont = /* @__PURE__ */ Symbol.for("effect/Micro/ensureCont");
-var Yield = /* @__PURE__ */ Symbol.for("effect/Micro/Yield");
+var fiberMiddleware = /*#__PURE__*/ globalValue("effect/Micro/fiberMiddleware", () => ({ interruptChildren: void 0 }));
+var identifier = /*#__PURE__*/ Symbol.for("effect/Micro/identifier");
+var args = /*#__PURE__*/ Symbol.for("effect/Micro/args");
+var evaluate = /*#__PURE__*/ Symbol.for("effect/Micro/evaluate");
+var successCont = /*#__PURE__*/ Symbol.for("effect/Micro/successCont");
+var failureCont = /*#__PURE__*/ Symbol.for("effect/Micro/failureCont");
+var ensureCont = /*#__PURE__*/ Symbol.for("effect/Micro/ensureCont");
+var Yield = /*#__PURE__*/ Symbol.for("effect/Micro/Yield");
 var microVariance = {
 	_A: identity,
 	_E: identity,
@@ -29830,7 +27669,7 @@ var microVariance = {
 var MicroProto = {
 	...EffectPrototype,
 	_op: "Micro",
-	[TypeId$3]: microVariance,
+	[TypeId$6]: microVariance,
 	pipe() {
 		return pipeArguments(this, arguments);
 	},
@@ -29908,7 +27747,7 @@ var makeExit = (options) => {
 * @experimental
 * @category constructors
 */
-var succeed$4 = /* @__PURE__ */ makeExit({
+var succeed$3 = /*#__PURE__*/ makeExit({
 	op: "Success",
 	prop: "value",
 	eval(fiber) {
@@ -29923,7 +27762,7 @@ var succeed$4 = /* @__PURE__ */ makeExit({
 * @experimental
 * @category constructors
 */
-var failCause = /* @__PURE__ */ makeExit({
+var failCause = /*#__PURE__*/ makeExit({
 	op: "Failure",
 	prop: "cause",
 	eval(fiber) {
@@ -29951,7 +27790,7 @@ var fail$2 = (error) => failCause(causeFail(error));
 * @experimental
 * @category constructors
 */
-var yieldNow$1 = /* @__PURE__ */ (/* @__PURE__ */ makePrimitive({
+var yieldNow$1 = /*#__PURE__*/ (/* @__PURE__ */ makePrimitive({
 	op: "Yield",
 	eval(fiber) {
 		let resumed = false;
@@ -29964,7 +27803,7 @@ var yieldNow$1 = /* @__PURE__ */ (/* @__PURE__ */ makePrimitive({
 		});
 	}
 }))(0);
-var void_ = /* @__PURE__ */ succeed$4(void 0);
+var void_ = /*#__PURE__*/ succeed$3(void 0);
 /**
 * Create a `Micro` effect using the current `MicroFiber`.
 *
@@ -29972,7 +27811,7 @@ var void_ = /* @__PURE__ */ succeed$4(void 0);
 * @experimental
 * @category constructors
 */
-var withMicroFiber = /* @__PURE__ */ makePrimitive({
+var withMicroFiber = /*#__PURE__*/ makePrimitive({
 	op: "WithMicroFiber",
 	eval(fiber) {
 		return this[args](fiber);
@@ -29986,13 +27825,13 @@ var withMicroFiber = /* @__PURE__ */ makePrimitive({
 * @experimental
 * @category mapping & sequencing
 */
-var flatMap$2 = /* @__PURE__ */ dual(2, (self, f) => {
+var flatMap$2 = /*#__PURE__*/ dual(2, (self, f) => {
 	const onSuccess = Object.create(OnSuccessProto);
 	onSuccess[args] = self;
 	onSuccess[successCont] = f;
 	return onSuccess;
 });
-var OnSuccessProto = /* @__PURE__ */ makePrimitiveProto({
+var OnSuccessProto = /*#__PURE__*/ makePrimitiveProto({
 	op: "OnSuccess",
 	eval(fiber) {
 		fiber._stack.push(this);
@@ -30010,7 +27849,7 @@ var isMicroExit = (u) => hasProperty(u, MicroExitTypeId);
 * @experimental
 * @category MicroExit
 */
-var exitSucceed = succeed$4;
+var exitSucceed = succeed$3;
 /**
 * @since 3.4.6
 * @experimental
@@ -30022,7 +27861,7 @@ var exitFailCause = failCause;
 * @experimental
 * @category MicroExit
 */
-var exitInterrupt = /* @__PURE__ */ exitFailCause(/* @__PURE__ */ causeInterrupt());
+var exitInterrupt = /*#__PURE__*/ exitFailCause(/*#__PURE__*/ causeInterrupt());
 /**
 * @since 3.4.6
 * @experimental
@@ -30034,7 +27873,7 @@ var exitDie = (defect) => exitFailCause(causeDie(defect));
 * @experimental
 * @category MicroExit
 */
-var exitVoid = /* @__PURE__ */ exitSucceed(void 0);
+var exitVoid = /*#__PURE__*/ exitSucceed(void 0);
 var setImmediate$1 = "setImmediate" in globalThis ? globalThis.setImmediate : (f) => setTimeout(f, 0);
 /**
 * @since 3.5.9
@@ -30089,7 +27928,7 @@ var MicroSchedulerDefault = class {
 * @experimental
 * @category environment
 */
-var updateContext = /* @__PURE__ */ dual(2, (self, f) => withMicroFiber((fiber) => {
+var updateContext = /*#__PURE__*/ dual(2, (self, f) => withMicroFiber((fiber) => {
 	const prev = fiber.context;
 	fiber.context = f(prev);
 	return onExit(self, () => {
@@ -30104,7 +27943,7 @@ var updateContext = /* @__PURE__ */ dual(2, (self, f) => withMicroFiber((fiber) 
 * @experimental
 * @category environment
 */
-var provideContext = /* @__PURE__ */ dual(2, (self, provided) => updateContext(self, merge$3(provided)));
+var provideContext = /*#__PURE__*/ dual(2, (self, provided) => updateContext(self, merge$3(provided)));
 /**
 * @since 3.11.0
 * @experimental
@@ -30123,14 +27962,14 @@ var CurrentScheduler = class extends Reference()("effect/Micro/currentScheduler"
 * @experimental
 * @category pattern matching
 */
-var matchCauseEffect = /* @__PURE__ */ dual(2, (self, options) => {
+var matchCauseEffect = /*#__PURE__*/ dual(2, (self, options) => {
 	const primitive = Object.create(OnSuccessAndFailureProto);
 	primitive[args] = self;
 	primitive[successCont] = options.onSuccess;
 	primitive[failureCont] = options.onFailure;
 	return primitive;
 });
-var OnSuccessAndFailureProto = /* @__PURE__ */ makePrimitiveProto({
+var OnSuccessAndFailureProto = /*#__PURE__*/ makePrimitiveProto({
 	op: "OnSuccessAndFailure",
 	eval(fiber) {
 		fiber._stack.push(this);
@@ -30145,11 +27984,11 @@ var OnSuccessAndFailureProto = /* @__PURE__ */ makePrimitiveProto({
 * @experimental
 * @category resources & finalization
 */
-var onExit = /* @__PURE__ */ dual(2, (self, f) => uninterruptibleMask((restore) => matchCauseEffect(restore(self), {
+var onExit = /*#__PURE__*/ dual(2, (self, f) => uninterruptibleMask((restore) => matchCauseEffect(restore(self), {
 	onFailure: (cause) => flatMap$2(f(exitFailCause(cause)), () => failCause(cause)),
-	onSuccess: (a) => flatMap$2(f(exitSucceed(a)), () => succeed$4(a))
+	onSuccess: (a) => flatMap$2(f(exitSucceed(a)), () => succeed$3(a))
 })));
-var setInterruptible = /* @__PURE__ */ makePrimitive({
+var setInterruptible = /*#__PURE__*/ makePrimitive({
 	op: "SetInterruptible",
 	ensure(fiber) {
 		fiber.interruptible = this[args];
@@ -30235,7 +28074,7 @@ var runFork$1 = (effect, options) => {
 	}
 	return fiber;
 };
-var YieldableError = /* @__PURE__ */ function() {
+var YieldableError = /*#__PURE__*/ function() {
 	class YieldableError extends globalThis.Error {}
 	Object.assign(YieldableError.prototype, MicroProto, StructuralPrototype, {
 		[identifier]: "Failure",
@@ -30261,7 +28100,7 @@ var YieldableError = /* @__PURE__ */ function() {
 * @experimental
 * @category errors
 */
-var Error$2 = /* @__PURE__ */ function() {
+var Error$1 = /*#__PURE__*/ function() {
 	return class extends YieldableError {
 		constructor(args) {
 			super();
@@ -30274,15 +28113,81 @@ var Error$2 = /* @__PURE__ */ function() {
 * @experimental
 * @category errors
 */
-var TaggedError$2 = (tag) => {
-	class Base extends Error$2 {
+var TaggedError$1 = (tag) => {
+	class Base extends Error$1 {
 		_tag = tag;
 	}
 	Base.prototype.name = tag;
 	return Base;
 };
-TaggedError$2("NoSuchElementException");
-TaggedError$2("TimeoutException");
+TaggedError$1("NoSuchElementException");
+TaggedError$1("TimeoutException");
+//#endregion
+//#region node_modules/effect/dist/esm/Readable.js
+/**
+* @since 2.0.0
+* @category type ids
+*/
+var TypeId$5 = /*#__PURE__*/ Symbol.for("effect/Readable");
+//#endregion
+//#region node_modules/effect/dist/esm/internal/ref.js
+/** @internal */
+var RefTypeId = /*#__PURE__*/ Symbol.for("effect/Ref");
+/** @internal */
+var refVariance = { 
+/* c8 ignore next */
+_A: (_) => _ };
+var RefImpl = class extends Class {
+	ref;
+	commit() {
+		return this.get;
+	}
+	[RefTypeId] = refVariance;
+	[TypeId$5] = TypeId$5;
+	constructor(ref) {
+		super();
+		this.ref = ref;
+		this.get = sync$2(() => get$5(this.ref));
+	}
+	get;
+	modify(f) {
+		return sync$2(() => {
+			const current = get$5(this.ref);
+			const [b, a] = f(current);
+			if (current !== a) set$4(a)(this.ref);
+			return b;
+		});
+	}
+};
+/** @internal */
+var unsafeMake$4 = (value) => new RefImpl(make$18(value));
+/** @internal */
+var make$9 = (value) => sync$2(() => unsafeMake$4(value));
+/** @internal */
+var get$2 = (self) => self.get;
+/** @internal */
+var set$2 = /*#__PURE__*/ dual(2, (self, value) => self.modify(() => [void 0, value]));
+/** @internal */
+var modify = /*#__PURE__*/ dual(2, (self, f) => self.modify(f));
+/** @internal */
+var update$1 = /*#__PURE__*/ dual(2, (self, f) => self.modify((a) => [void 0, f(a)]));
+//#endregion
+//#region node_modules/effect/dist/esm/Ref.js
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var make$8 = make$9;
+/**
+* @since 2.0.0
+* @category getters
+*/
+var get$1 = get$2;
+/**
+* @since 2.0.0
+* @category utils
+*/
+var set$1 = set$2;
 //#endregion
 //#region node_modules/effect/dist/esm/Scheduler.js
 /**
@@ -30292,7 +28197,7 @@ TaggedError$2("TimeoutException");
 var SchedulerRunner = class SchedulerRunner {
 	scheduleDrain;
 	running = false;
-	tasks = /* @__PURE__ */ new PriorityBuckets();
+	tasks = /*#__PURE__*/ new PriorityBuckets();
 	constructor(scheduleDrain) {
 		this.scheduleDrain = scheduleDrain;
 	}
@@ -30360,7 +28265,7 @@ var PriorityBuckets = class {
 */
 var MixedScheduler = class {
 	maxNextTickBeforeTimer;
-	getRunner = /* @__PURE__ */ SchedulerRunner.cached((depth, drain) => {
+	getRunner = /*#__PURE__*/ SchedulerRunner.cached((depth, drain) => {
 		if (depth >= this.maxNextTickBeforeTimer) setTimeout(() => drain(0), 0);
 		else Promise.resolve(void 0).then(() => drain(depth + 1));
 	});
@@ -30384,7 +28289,7 @@ var MixedScheduler = class {
 * @since 2.0.0
 * @category schedulers
 */
-var defaultScheduler = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/Scheduler/defaultScheduler"), () => new MixedScheduler(2048));
+var defaultScheduler = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/Scheduler/defaultScheduler"), () => new MixedScheduler(2048));
 /**
 * @since 2.0.0
 * @category constructors
@@ -30393,7 +28298,7 @@ var SyncScheduler = class {
 	/**
 	* @since 2.0.0
 	*/
-	tasks = /* @__PURE__ */ new PriorityBuckets();
+	tasks = /*#__PURE__*/ new PriorityBuckets();
 	/**
 	* @since 2.0.0
 	*/
@@ -30424,15 +28329,15 @@ var SyncScheduler = class {
 	}
 };
 /** @internal */
-var currentScheduler = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentScheduler"), () => fiberRefUnsafeMake(defaultScheduler));
+var currentScheduler = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentScheduler"), () => fiberRefUnsafeMake(defaultScheduler));
 //#endregion
 //#region node_modules/effect/dist/esm/internal/completedRequestMap.js
 /** @internal */
-var currentRequestMap = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentRequestMap"), () => fiberRefUnsafeMake(/* @__PURE__ */ new Map()));
+var currentRequestMap = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentRequestMap"), () => fiberRefUnsafeMake(/* @__PURE__ */ new Map()));
 //#endregion
 //#region node_modules/effect/dist/esm/internal/concurrency.js
 /** @internal */
-var match = (concurrency, sequential, unbounded, bounded) => {
+var match$1 = (concurrency, sequential, unbounded, bounded) => {
 	switch (concurrency) {
 		case void 0: return sequential();
 		case "unbounded": return unbounded();
@@ -30440,6 +28345,195 @@ var match = (concurrency, sequential, unbounded, bounded) => {
 		default: return concurrency > 1 ? bounded(concurrency) : sequential();
 	}
 };
+//#endregion
+//#region node_modules/effect/dist/esm/internal/logSpan.js
+/**
+* Sanitize a given string by replacing spaces, equal signs, and double quotes with underscores.
+*
+* @internal
+*/
+var formatLabel = (key) => key.replace(/[\s="]/g, "_");
+/** @internal */
+var render = (now) => (self) => {
+	return `${formatLabel(self.label)}=${now - self.startTime}ms`;
+};
+//#endregion
+//#region node_modules/effect/dist/esm/internal/metric/label.js
+/** @internal */
+var MetricLabelSymbolKey = "effect/MetricLabel";
+/** @internal */
+var MetricLabelTypeId = /*#__PURE__*/ Symbol.for(MetricLabelSymbolKey);
+/** @internal */
+var MetricLabelImpl = class {
+	key;
+	value;
+	[MetricLabelTypeId] = MetricLabelTypeId;
+	_hash;
+	constructor(key, value) {
+		this.key = key;
+		this.value = value;
+		this._hash = string$2(MetricLabelSymbolKey + this.key + this.value);
+	}
+	[symbol$1]() {
+		return this._hash;
+	}
+	[symbol](that) {
+		return isMetricLabel(that) && this.key === that.key && this.value === that.value;
+	}
+	pipe() {
+		return pipeArguments(this, arguments);
+	}
+};
+/** @internal */
+var make$7 = (key, value) => {
+	return new MetricLabelImpl(key, value);
+};
+/** @internal */
+var isMetricLabel = (u) => hasProperty(u, MetricLabelTypeId);
+//#endregion
+//#region node_modules/effect/dist/esm/internal/core-effect.js
+var asSome = (self) => map$3(self, some);
+var try_$1 = (arg) => {
+	let evaluate;
+	let onFailure = void 0;
+	if (typeof arg === "function") evaluate = arg;
+	else {
+		evaluate = arg.try;
+		onFailure = arg.catch;
+	}
+	return suspend$4(() => {
+		try {
+			return succeed$5(internalCall(evaluate));
+		} catch (error) {
+			return fail$3(onFailure ? internalCall(() => onFailure(error)) : new UnknownException(error, "An unknown error occurred in Effect.try"));
+		}
+	});
+};
+var catchTag$1 = /*#__PURE__*/ dual((args) => isEffect$1(args[0]), (self, ...args) => {
+	const f = args[args.length - 1];
+	let predicate;
+	if (args.length === 2) predicate = isTagged(args[0]);
+	else predicate = (e) => {
+		const tag = hasProperty(e, "_tag") ? e["_tag"] : void 0;
+		if (!tag) return false;
+		for (let i = 0; i < args.length - 1; i++) if (args[i] === tag) return true;
+		return false;
+	};
+	return catchIf$1(self, predicate, f);
+});
+/** @internal */
+var catchTags$1 = /*#__PURE__*/ dual(2, (self, cases) => {
+	let keys;
+	return catchIf$1(self, (e) => {
+		keys ??= Object.keys(cases);
+		return hasProperty(e, "_tag") && isString(e["_tag"]) && keys.includes(e["_tag"]);
+	}, (e) => cases[e["_tag"]](e));
+});
+var diffFiberRefs = (self) => summarized(self, fiberRefs, diff$2);
+var match = /*#__PURE__*/ dual(2, (self, options) => matchEffect(self, {
+	onFailure: (e) => succeed$5(options.onFailure(e)),
+	onSuccess: (a) => succeed$5(options.onSuccess(a))
+}));
+var fiberRefs = /*#__PURE__*/ withFiberRuntime((state) => succeed$5(state.getFiberRefs()));
+var ignore$1 = (self) => match(self, {
+	onFailure: constVoid,
+	onSuccess: constVoid
+});
+/** @internal */
+var logWithLevel = (level) => (...message) => {
+	const levelOption = fromNullable(level);
+	let cause = void 0;
+	for (let i = 0, len = message.length; i < len; i++) {
+		const msg = message[i];
+		if (isCause(msg)) {
+			if (cause !== void 0) cause = sequential$2(cause, msg);
+			else cause = msg;
+			message = [...message.slice(0, i), ...message.slice(i + 1)];
+			i--;
+		}
+	}
+	if (cause === void 0) cause = empty$14;
+	return withFiberRuntime((fiberState) => {
+		fiberState.log(message, cause, levelOption);
+		return void_$1;
+	});
+};
+/** @internal */
+var logInfo$1 = /*#__PURE__*/ logWithLevel(Info);
+/** @internal */
+var logWarning$1 = /*#__PURE__*/ logWithLevel(Warning);
+/** @internal */
+var logError$1 = /*#__PURE__*/ logWithLevel(Error$2);
+var option$1 = (self) => matchEffect(self, {
+	onFailure: () => succeed$5(none$4()),
+	onSuccess: (a) => succeed$5(some(a))
+});
+var orElseSucceed$1 = /*#__PURE__*/ dual(2, (self, evaluate) => orElse$2(self, () => sync$2(evaluate)));
+var patchFiberRefs = (patch) => updateFiberRefs((fiberId, fiberRefs) => pipe(patch, patch$2(fiberId, fiberRefs)));
+var promise$1 = (evaluate) => evaluate.length >= 1 ? async_((resolve, signal) => {
+	try {
+		evaluate(signal).then((a) => resolve(succeed$5(a)), (e) => resolve(die(e)));
+	} catch (e) {
+		resolve(die(e));
+	}
+}) : async_((resolve) => {
+	try {
+		evaluate().then((a) => resolve(succeed$5(a)), (e) => resolve(die(e)));
+	} catch (e) {
+		resolve(die(e));
+	}
+});
+var provideService = /*#__PURE__*/ dual(3, (self, tag, service) => contextWithEffect((env) => provideContext$1(self, add(env, tag, service))));
+var succeedNone = /*#__PURE__*/ succeed$5(/*#__PURE__*/ none$4());
+var summarized = /*#__PURE__*/ dual(3, (self, summary, f) => flatMap$3(summary, (start) => flatMap$3(self, (value) => map$3(summary, (end) => [f(start, end), value]))));
+var tapError$1 = /*#__PURE__*/ dual(2, (self, f) => matchCauseEffect$1(self, {
+	onFailure: (cause) => {
+		const either = failureOrCause(cause);
+		switch (either._tag) {
+			case "Left": return zipRight(f(either.left), failCause$1(cause));
+			case "Right": return failCause$1(cause);
+		}
+	},
+	onSuccess: succeed$5
+}));
+var tryPromise$1 = (arg) => {
+	let evaluate;
+	let catcher = void 0;
+	if (typeof arg === "function") evaluate = arg;
+	else {
+		evaluate = arg.try;
+		catcher = arg.catch;
+	}
+	const fail = (e) => catcher ? failSync(() => catcher(e)) : fail$3(new UnknownException(e, "An unknown error occurred in Effect.tryPromise"));
+	if (evaluate.length >= 1) return async_((resolve, signal) => {
+		try {
+			evaluate(signal).then((a) => resolve(succeed$5(a)), (e) => resolve(fail(e)));
+		} catch (e) {
+			resolve(fail(e));
+		}
+	});
+	return async_((resolve) => {
+		try {
+			evaluate().then((a) => resolve(succeed$5(a)), (e) => resolve(fail(e)));
+		} catch (e) {
+			resolve(fail(e));
+		}
+	});
+};
+var updateFiberRefs = (f) => withFiberRuntime((state) => {
+	state.setFiberRefs(f(state.id(), state.getFiberRefs()));
+	return void_$1;
+});
+var filterDisablePropagation = /*#__PURE__*/ flatMap$5((span) => get$6(span.context, DisablePropagation) ? span._tag === "Span" ? filterDisablePropagation(span.parent) : none$4() : some(span));
+//#endregion
+//#region node_modules/effect/dist/esm/Exit.js
+/**
+* Returns `true` if the specified `Exit` is a `Success`, `false` otherwise.
+*
+* @since 2.0.0
+* @category refinements
+*/
+var isSuccess = exitIsSuccess;
 //#endregion
 //#region node_modules/effect/dist/esm/internal/fiberMessage.js
 /** @internal */
@@ -30468,12 +28562,12 @@ var resume = (effect) => ({
 /** @internal */
 var yieldNow = () => ({ _tag: OP_YIELD_NOW });
 /** @internal */
-var FiberScopeTypeId = /* @__PURE__ */ Symbol.for("effect/FiberScope");
+var FiberScopeTypeId = /*#__PURE__*/ Symbol.for("effect/FiberScope");
 /** @internal */
 var Global = class {
 	[FiberScopeTypeId] = FiberScopeTypeId;
 	fiberId = none$2;
-	roots = /* @__PURE__ */ new Set();
+	roots = /*#__PURE__*/ new Set();
 	add(_runtimeFlags, child) {
 		this.roots.add(child);
 		child.addObserver(() => {
@@ -30504,9 +28598,9 @@ var unsafeMake$3 = (fiber) => {
 	return new Local(fiber.id(), fiber);
 };
 /** @internal */
-var globalScope = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberScope/Global"), () => new Global());
+var globalScope = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberScope/Global"), () => new Global());
 /** @internal */
-var FiberTypeId = /* @__PURE__ */ Symbol.for("effect/Fiber");
+var FiberTypeId = /*#__PURE__*/ Symbol.for("effect/Fiber");
 /** @internal */
 var fiberVariance = {
 	/* c8 ignore next */
@@ -30522,14 +28616,14 @@ var fiberProto = {
 	}
 };
 /** @internal */
-var RuntimeFiberTypeId = /* @__PURE__ */ Symbol.for("effect/Fiber");
+var RuntimeFiberTypeId = /*#__PURE__*/ Symbol.for("effect/Fiber");
 /** @internal */
-var join = (self) => zipLeft(flatten(self.await), self.inheritAll);
+var join = (self) => zipLeft(flatten$1(self.await), self.inheritAll);
 ({ ...CommitPrototype }), { ...fiberProto };
 /** @internal */
 var currentFiberURI = "effect/FiberCurrent";
 /** @internal */
-var LoggerTypeId = /* @__PURE__ */ Symbol.for("effect/Logger");
+var LoggerTypeId = /*#__PURE__*/ Symbol.for("effect/Logger");
 var loggerVariance = {
 	/* c8 ignore next */
 	_Message: (_) => _,
@@ -30557,7 +28651,7 @@ var textOnly = /^[^\s"=]*$/;
 *
 * @internal
 */
-var format$1 = (quoteValue, whitespace) => ({ annotations, cause, date, fiberId, logLevel, message, spans }) => {
+var format$2 = (quoteValue, whitespace) => ({ annotations, cause, date, fiberId, logLevel, message, spans }) => {
 	const formatValue = (value) => value.match(textOnly) ? value : quoteValue(value);
 	const format = (label, value) => `${formatLabel(label)}=${formatValue(value)}`;
 	const append = (label, value) => " " + format(label, value);
@@ -30574,7 +28668,7 @@ var format$1 = (quoteValue, whitespace) => ({ annotations, cause, date, fiberId,
 /** @internal */
 var escapeDoubleQuotes = (s) => `"${s.replace(/\\([\s\S])|(")/g, "\\$1$2")}"`;
 /** @internal */
-var stringLogger = /* @__PURE__ */ makeLogger(/* @__PURE__ */ format$1(escapeDoubleQuotes));
+var stringLogger = /*#__PURE__*/ makeLogger(/*#__PURE__*/ format$2(escapeDoubleQuotes));
 var colors = {
 	bold: "1",
 	red: "31",
@@ -30596,7 +28690,7 @@ hasProcessStdout || "Deno" in globalThis;
 /** @internal */
 var MetricBoundariesSymbolKey = "effect/MetricBoundaries";
 /** @internal */
-var MetricBoundariesTypeId = /* @__PURE__ */ Symbol.for(MetricBoundariesSymbolKey);
+var MetricBoundariesTypeId = /*#__PURE__*/ Symbol.for(MetricBoundariesSymbolKey);
 /** @internal */
 var MetricBoundariesImpl = class {
 	values;
@@ -30625,21 +28719,21 @@ var fromIterable = (iterable) => {
 /** @internal */
 var exponential = (options) => pipe(makeBy(options.count - 1, (i) => options.start * Math.pow(options.factor, i)), unsafeFromArray, fromIterable);
 /** @internal */
-var MetricKeyTypeTypeId = /* @__PURE__ */ Symbol.for("effect/MetricKeyType");
+var MetricKeyTypeTypeId = /*#__PURE__*/ Symbol.for("effect/MetricKeyType");
 /** @internal */
 var CounterKeyTypeSymbolKey = "effect/MetricKeyType/Counter";
 /** @internal */
-var CounterKeyTypeTypeId = /* @__PURE__ */ Symbol.for(CounterKeyTypeSymbolKey);
+var CounterKeyTypeTypeId = /*#__PURE__*/ Symbol.for(CounterKeyTypeSymbolKey);
 /** @internal */
-var FrequencyKeyTypeTypeId = /* @__PURE__ */ Symbol.for("effect/MetricKeyType/Frequency");
+var FrequencyKeyTypeTypeId = /*#__PURE__*/ Symbol.for("effect/MetricKeyType/Frequency");
 /** @internal */
-var GaugeKeyTypeTypeId = /* @__PURE__ */ Symbol.for("effect/MetricKeyType/Gauge");
+var GaugeKeyTypeTypeId = /*#__PURE__*/ Symbol.for("effect/MetricKeyType/Gauge");
 /** @internal */
 var HistogramKeyTypeSymbolKey = "effect/MetricKeyType/Histogram";
 /** @internal */
-var HistogramKeyTypeTypeId = /* @__PURE__ */ Symbol.for(HistogramKeyTypeSymbolKey);
+var HistogramKeyTypeTypeId = /*#__PURE__*/ Symbol.for(HistogramKeyTypeSymbolKey);
 /** @internal */
-var SummaryKeyTypeTypeId = /* @__PURE__ */ Symbol.for("effect/MetricKeyType/Summary");
+var SummaryKeyTypeTypeId = /*#__PURE__*/ Symbol.for("effect/MetricKeyType/Summary");
 var metricKeyTypeVariance = {
 	/* c8 ignore next */
 	_In: (_) => _,
@@ -30705,11 +28799,11 @@ var isHistogramKey = (u) => hasProperty(u, HistogramKeyTypeTypeId);
 /** @internal */
 var isSummaryKey = (u) => hasProperty(u, SummaryKeyTypeTypeId);
 /** @internal */
-var MetricKeyTypeId = /* @__PURE__ */ Symbol.for("effect/MetricKey");
+var MetricKeyTypeId = /*#__PURE__*/ Symbol.for("effect/MetricKey");
 var metricKeyVariance = { 
 /* c8 ignore next */
 _Type: (_) => _ };
-var arrayEquivilence = /* @__PURE__ */ getEquivalence$2(equals$2);
+var arrayEquivilence = /*#__PURE__*/ getEquivalence$2(equals$2);
 /** @internal */
 var MetricKeyImpl = class {
 	name;
@@ -30742,29 +28836,159 @@ var counter$3 = (name, options) => new MetricKeyImpl(name, counter$4(options), f
 /** @internal */
 var histogram$3 = (name, boundaries, description) => new MetricKeyImpl(name, histogram$4(boundaries), fromNullable(description));
 /** @internal */
-var taggedWithLabels$1 = /* @__PURE__ */ dual(2, (self, extraTags) => extraTags.length === 0 ? self : new MetricKeyImpl(self.name, self.keyType, self.description, union$2(self.tags, extraTags)));
+var taggedWithLabels$1 = /*#__PURE__*/ dual(2, (self, extraTags) => extraTags.length === 0 ? self : new MetricKeyImpl(self.name, self.keyType, self.description, union$2(self.tags, extraTags)));
+//#endregion
+//#region node_modules/effect/dist/esm/MutableHashMap.js
+var TypeId$4 = /*#__PURE__*/ Symbol.for("effect/MutableHashMap");
+var MutableHashMapProto = {
+	[TypeId$4]: TypeId$4,
+	[Symbol.iterator]() {
+		return new MutableHashMapIterator(this);
+	},
+	toString() {
+		return format$4(this.toJSON());
+	},
+	toJSON() {
+		return {
+			_id: "MutableHashMap",
+			values: Array.from(this).map(toJSON)
+		};
+	},
+	[NodeInspectSymbol]() {
+		return this.toJSON();
+	},
+	pipe() {
+		return pipeArguments(this, arguments);
+	}
+};
+var MutableHashMapIterator = class MutableHashMapIterator {
+	self;
+	referentialIterator;
+	bucketIterator;
+	constructor(self) {
+		this.self = self;
+		this.referentialIterator = self.referential[Symbol.iterator]();
+	}
+	next() {
+		if (this.bucketIterator !== void 0) return this.bucketIterator.next();
+		const result = this.referentialIterator.next();
+		if (result.done) {
+			this.bucketIterator = new BucketIterator(this.self.buckets.values());
+			return this.next();
+		}
+		return result;
+	}
+	[Symbol.iterator]() {
+		return new MutableHashMapIterator(this.self);
+	}
+};
+var BucketIterator = class {
+	backing;
+	constructor(backing) {
+		this.backing = backing;
+	}
+	currentBucket;
+	next() {
+		if (this.currentBucket === void 0) {
+			const result = this.backing.next();
+			if (result.done) return result;
+			this.currentBucket = result.value[Symbol.iterator]();
+		}
+		const result = this.currentBucket.next();
+		if (result.done) {
+			this.currentBucket = void 0;
+			return this.next();
+		}
+		return result;
+	}
+};
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var empty$1 = () => {
+	const self = Object.create(MutableHashMapProto);
+	self.referential = /* @__PURE__ */ new Map();
+	self.buckets = /* @__PURE__ */ new Map();
+	self.bucketsSize = 0;
+	return self;
+};
+/**
+* @since 2.0.0
+* @category elements
+*/
+var get = /*#__PURE__*/ dual(2, (self, key) => {
+	if (isEqual(key) === false) return self.referential.has(key) ? some(self.referential.get(key)) : none$4();
+	const hash = key[symbol$1]();
+	const bucket = self.buckets.get(hash);
+	if (bucket === void 0) return none$4();
+	return getFromBucket(self, bucket, key);
+});
+var getFromBucket = (self, bucket, key, remove = false) => {
+	for (let i = 0, len = bucket.length; i < len; i++) if (key[symbol](bucket[i][0])) {
+		const value = bucket[i][1];
+		if (remove) {
+			bucket.splice(i, 1);
+			self.bucketsSize--;
+		}
+		return some(value);
+	}
+	return none$4();
+};
+/**
+* @since 2.0.0
+* @category elements
+*/
+var has = /*#__PURE__*/ dual(2, (self, key) => isSome(get(self, key)));
+/**
+* @since 2.0.0
+*/
+var set = /*#__PURE__*/ dual(3, (self, key, value) => {
+	if (isEqual(key) === false) {
+		self.referential.set(key, value);
+		return self;
+	}
+	const hash = key[symbol$1]();
+	const bucket = self.buckets.get(hash);
+	if (bucket === void 0) {
+		self.buckets.set(hash, [[key, value]]);
+		self.bucketsSize++;
+		return self;
+	}
+	removeFromBucket(self, bucket, key);
+	bucket.push([key, value]);
+	self.bucketsSize++;
+	return self;
+});
+var removeFromBucket = (self, bucket, key) => {
+	for (let i = 0, len = bucket.length; i < len; i++) if (key[symbol](bucket[i][0])) {
+		bucket.splice(i, 1);
+		self.bucketsSize--;
+		return;
+	}
+};
 /** @internal */
-var MetricStateTypeId = /* @__PURE__ */ Symbol.for("effect/MetricState");
+var MetricStateTypeId = /*#__PURE__*/ Symbol.for("effect/MetricState");
 /** @internal */
 var CounterStateSymbolKey = "effect/MetricState/Counter";
 /** @internal */
-var CounterStateTypeId = /* @__PURE__ */ Symbol.for(CounterStateSymbolKey);
+var CounterStateTypeId = /*#__PURE__*/ Symbol.for(CounterStateSymbolKey);
 /** @internal */
 var FrequencyStateSymbolKey = "effect/MetricState/Frequency";
 /** @internal */
-var FrequencyStateTypeId = /* @__PURE__ */ Symbol.for(FrequencyStateSymbolKey);
+var FrequencyStateTypeId = /*#__PURE__*/ Symbol.for(FrequencyStateSymbolKey);
 /** @internal */
 var GaugeStateSymbolKey = "effect/MetricState/Gauge";
 /** @internal */
-var GaugeStateTypeId = /* @__PURE__ */ Symbol.for(GaugeStateSymbolKey);
+var GaugeStateTypeId = /*#__PURE__*/ Symbol.for(GaugeStateSymbolKey);
 /** @internal */
 var HistogramStateSymbolKey = "effect/MetricState/Histogram";
 /** @internal */
-var HistogramStateTypeId = /* @__PURE__ */ Symbol.for(HistogramStateSymbolKey);
+var HistogramStateTypeId = /*#__PURE__*/ Symbol.for(HistogramStateSymbolKey);
 /** @internal */
 var SummaryStateSymbolKey = "effect/MetricState/Summary";
 /** @internal */
-var SummaryStateTypeId = /* @__PURE__ */ Symbol.for(SummaryStateSymbolKey);
+var SummaryStateTypeId = /*#__PURE__*/ Symbol.for(SummaryStateSymbolKey);
 var metricStateVariance = { 
 /* c8 ignore next */
 _A: (_) => _ };
@@ -30786,7 +29010,7 @@ var CounterState = class {
 		return pipeArguments(this, arguments);
 	}
 };
-var arrayEquals = /* @__PURE__ */ getEquivalence$2(equals$2);
+var arrayEquals = /*#__PURE__*/ getEquivalence$2(equals$2);
 /** @internal */
 var FrequencyState = class {
 	occurrences;
@@ -30913,7 +29137,7 @@ var isHistogramState = (u) => hasProperty(u, HistogramStateTypeId);
 */
 var isSummaryState = (u) => hasProperty(u, SummaryStateTypeId);
 /** @internal */
-var MetricHookTypeId = /* @__PURE__ */ Symbol.for("effect/MetricHook");
+var MetricHookTypeId = /*#__PURE__*/ Symbol.for("effect/MetricHook");
 var metricHookVariance = {
 	/* c8 ignore next */
 	_In: (_) => _,
@@ -30928,11 +29152,11 @@ var make$6 = (options) => ({
 	},
 	...options
 });
-var bigint0 = /* @__PURE__ */ BigInt(0);
+var bigint0$1 = /*#__PURE__*/ BigInt(0);
 /** @internal */
 var counter$1 = (key) => {
-	let sum = key.keyType.bigint ? bigint0 : 0;
-	const canUpdate = key.keyType.incremental ? key.keyType.bigint ? (value) => value >= bigint0 : (value) => value >= 0 : (_value) => true;
+	let sum = key.keyType.bigint ? bigint0$1 : 0;
+	const canUpdate = key.keyType.incremental ? key.keyType.bigint ? (value) => value >= bigint0$1 : (value) => value >= 0 : (_value) => true;
 	const update = (value) => {
 		if (canUpdate(value)) sum = sum + value;
 	};
@@ -31039,7 +29263,7 @@ var summary = (key) => {
 			if (item != null) {
 				const [t, v] = item;
 				const age = millis(now - t);
-				if (greaterThanOrEqualTo$1(age, zero) && lessThanOrEqualTo$1(age, maxAge)) builder.push(v);
+				if (greaterThanOrEqualTo$1(age, zero$1) && lessThanOrEqualTo$1(age, maxAge)) builder.push(v);
 			}
 			i = i + 1;
 		}
@@ -31181,7 +29405,7 @@ var resolveQuantile = (error, sampleCount, current, consumed, quantile, rest) =>
 	throw new Error("BUG: MetricHook.resolveQuantiles - please report an issue at https://github.com/Effect-TS/effect/issues");
 };
 /** @internal */
-var MetricPairTypeId = /* @__PURE__ */ Symbol.for("effect/MetricPair");
+var MetricPairTypeId = /*#__PURE__*/ Symbol.for("effect/MetricPair");
 var metricPairVariance = { 
 /* c8 ignore next */
 _Type: (_) => _ };
@@ -31197,18 +29421,18 @@ var unsafeMake$2 = (metricKey, metricState) => {
 	};
 };
 /** @internal */
-var MetricRegistryTypeId = /* @__PURE__ */ Symbol.for("effect/MetricRegistry");
+var MetricRegistryTypeId = /*#__PURE__*/ Symbol.for("effect/MetricRegistry");
 /** @internal */
 var MetricRegistryImpl = class {
 	[MetricRegistryTypeId] = MetricRegistryTypeId;
-	map = /* @__PURE__ */ empty$5();
+	map = /*#__PURE__*/ empty$1();
 	snapshot() {
 		const result = [];
 		for (const [key, hook] of this.map) result.push(unsafeMake$2(key, hook.get()));
 		return result;
 	}
 	get(key) {
-		const hook = pipe(this.map, get$3(key), getOrUndefined);
+		const hook = pipe(this.map, get(key), getOrUndefined);
 		if (hook == null) {
 			if (isCounterKey(key.keyType)) return this.getCounter(key);
 			if (isGaugeKey(key.keyType)) return this.getGauge(key);
@@ -31219,46 +29443,46 @@ var MetricRegistryImpl = class {
 		} else return hook;
 	}
 	getCounter(key) {
-		let value = pipe(this.map, get$3(key), getOrUndefined);
+		let value = pipe(this.map, get(key), getOrUndefined);
 		if (value == null) {
 			const counter = counter$1(key);
-			if (!pipe(this.map, has(key))) pipe(this.map, set$2(key, counter));
+			if (!pipe(this.map, has(key))) pipe(this.map, set(key, counter));
 			value = counter;
 		}
 		return value;
 	}
 	getFrequency(key) {
-		let value = pipe(this.map, get$3(key), getOrUndefined);
+		let value = pipe(this.map, get(key), getOrUndefined);
 		if (value == null) {
 			const frequency$2 = frequency(key);
-			if (!pipe(this.map, has(key))) pipe(this.map, set$2(key, frequency$2));
+			if (!pipe(this.map, has(key))) pipe(this.map, set(key, frequency$2));
 			value = frequency$2;
 		}
 		return value;
 	}
 	getGauge(key) {
-		let value = pipe(this.map, get$3(key), getOrUndefined);
+		let value = pipe(this.map, get(key), getOrUndefined);
 		if (value == null) {
 			const gauge$2 = gauge(key, key.keyType.bigint ? BigInt(0) : 0);
-			if (!pipe(this.map, has(key))) pipe(this.map, set$2(key, gauge$2));
+			if (!pipe(this.map, has(key))) pipe(this.map, set(key, gauge$2));
 			value = gauge$2;
 		}
 		return value;
 	}
 	getHistogram(key) {
-		let value = pipe(this.map, get$3(key), getOrUndefined);
+		let value = pipe(this.map, get(key), getOrUndefined);
 		if (value == null) {
 			const histogram = histogram$1(key);
-			if (!pipe(this.map, has(key))) pipe(this.map, set$2(key, histogram));
+			if (!pipe(this.map, has(key))) pipe(this.map, set(key, histogram));
 			value = histogram;
 		}
 		return value;
 	}
 	getSummary(key) {
-		let value = pipe(this.map, get$3(key), getOrUndefined);
+		let value = pipe(this.map, get(key), getOrUndefined);
 		if (value == null) {
 			const summary$2 = summary(key);
-			if (!pipe(this.map, has(key))) pipe(this.map, set$2(key, summary$2));
+			if (!pipe(this.map, has(key))) pipe(this.map, set(key, summary$2));
 			value = summary$2;
 		}
 		return value;
@@ -31269,7 +29493,7 @@ var make$5 = () => {
 	return new MetricRegistryImpl();
 };
 /** @internal */
-var MetricTypeId = /* @__PURE__ */ Symbol.for("effect/Metric");
+var MetricTypeId = /*#__PURE__*/ Symbol.for("effect/Metric");
 var metricVariance = {
 	/* c8 ignore next */
 	_Type: (_) => _,
@@ -31279,7 +29503,7 @@ var metricVariance = {
 	_Out: (_) => _
 };
 /** @internal */
-var globalMetricRegistry = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/Metric/globalMetricRegistry"), () => make$5());
+var globalMetricRegistry = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/Metric/globalMetricRegistry"), () => make$5());
 /** @internal */
 var make$4 = function(keyType, unsafeUpdate, unsafeValue, unsafeModify) {
 	const metric = Object.assign((effect) => tap(effect, (a) => update(metric, a)), {
@@ -31321,15 +29545,15 @@ var fromMetricKey = (key) => {
 /** @internal */
 var histogram = (name, boundaries, description) => fromMetricKey(histogram$3(name, boundaries, description));
 /** @internal */
-var tagged = /* @__PURE__ */ dual(3, (self, key, value) => taggedWithLabels(self, [make$7(key, value)]));
+var tagged = /*#__PURE__*/ dual(3, (self, key, value) => taggedWithLabels(self, [make$7(key, value)]));
 /** @internal */
-var taggedWithLabels = /* @__PURE__ */ dual(2, (self, extraTags) => {
+var taggedWithLabels = /*#__PURE__*/ dual(2, (self, extraTags) => {
 	return make$4(self.keyType, (input, extraTags1) => self.unsafeUpdate(input, union$2(extraTags, extraTags1)), (extraTags1) => self.unsafeValue(union$2(extraTags, extraTags1)), (input, extraTags1) => self.unsafeModify(input, union$2(extraTags, extraTags1)));
 });
-var update = /* @__PURE__ */ dual(2, (self, input) => fiberRefGetWith(currentMetricLabels, (tags) => sync$2(() => self.unsafeUpdate(input, tags))));
+var update = /*#__PURE__*/ dual(2, (self, input) => fiberRefGetWith(currentMetricLabels, (tags) => sync$2(() => self.unsafeUpdate(input, tags))));
 ({ ...StructuralPrototype });
 /** @internal */
-var complete = /* @__PURE__ */ dual(2, (self, result) => fiberRefGetWith(currentRequestMap, (map) => sync$2(() => {
+var complete = /*#__PURE__*/ dual(2, (self, result) => fiberRefGetWith(currentRequestMap, (map) => sync$2(() => {
 	if (map.has(self)) {
 		const entry = map.get(self);
 		if (!entry.state.completed) {
@@ -31339,7 +29563,7 @@ var complete = /* @__PURE__ */ dual(2, (self, result) => fiberRefGetWith(current
 	}
 })));
 /** @internal */
-var SupervisorTypeId = /* @__PURE__ */ Symbol.for("effect/Supervisor");
+var SupervisorTypeId = /*#__PURE__*/ Symbol.for("effect/Supervisor");
 /** @internal */
 var supervisorVariance = { 
 /* c8 ignore next */
@@ -31450,7 +29674,7 @@ var fromEffect$1 = (effect) => {
 	return new Const(effect);
 };
 /** @internal */
-var none = /* @__PURE__ */ globalValue("effect/Supervisor/none", () => fromEffect$1(void_$1));
+var none = /*#__PURE__*/ globalValue("effect/Supervisor/none", () => fromEffect$1(void_$1));
 //#endregion
 //#region node_modules/effect/dist/esm/Differ.js
 /**
@@ -31459,7 +29683,7 @@ var none = /* @__PURE__ */ globalValue("effect/Supervisor/none", () => fromEffec
 * @since 2.0.0
 * @category constructors
 */
-var make$3 = make$16;
+var make$3 = make$17;
 //#endregion
 //#region node_modules/effect/dist/esm/internal/supervisor/patch.js
 /** @internal */
@@ -31501,7 +29725,7 @@ var patch = (self, supervisor) => {
 var patchLoop = (_supervisor, _patches) => {
 	let supervisor = _supervisor;
 	let patches = _patches;
-	while (isNonEmpty$1(patches)) {
+	while (isNonEmpty$2(patches)) {
 		const head = headNonEmpty(patches);
 		switch (head._tag) {
 			case OP_EMPTY:
@@ -31530,9 +29754,9 @@ var removeSupervisor = (self, that) => {
 };
 /** @internal */
 var toSet = (self) => {
-	if (equals$2(self, none)) return empty$13();
+	if (equals$2(self, none)) return empty$15();
 	else if (isZip(self)) return pipe(toSet(self.left), union(toSet(self.right)));
-	else return make$18(self);
+	else return make$22(self);
 };
 /** @internal */
 var diff = (oldValue, newValue) => {
@@ -31548,7 +29772,7 @@ var diff = (oldValue, newValue) => {
 	}))));
 };
 /** @internal */
-var differ = /* @__PURE__ */ make$3({
+var differ = /*#__PURE__*/ make$3({
 	empty,
 	patch,
 	combine,
@@ -31557,15 +29781,15 @@ var differ = /* @__PURE__ */ make$3({
 //#endregion
 //#region node_modules/effect/dist/esm/internal/fiberRuntime.js
 /** @internal */
-var fiberStarted = /* @__PURE__ */ counter("effect_fiber_started", { incremental: true });
+var fiberStarted = /*#__PURE__*/ counter("effect_fiber_started", { incremental: true });
 /** @internal */
-var fiberActive = /* @__PURE__ */ counter("effect_fiber_active");
+var fiberActive = /*#__PURE__*/ counter("effect_fiber_active");
 /** @internal */
-var fiberSuccesses = /* @__PURE__ */ counter("effect_fiber_successes", { incremental: true });
+var fiberSuccesses = /*#__PURE__*/ counter("effect_fiber_successes", { incremental: true });
 /** @internal */
-var fiberFailures = /* @__PURE__ */ counter("effect_fiber_failures", { incremental: true });
+var fiberFailures = /*#__PURE__*/ counter("effect_fiber_failures", { incremental: true });
 /** @internal */
-var fiberLifetimes = /* @__PURE__ */ tagged(/* @__PURE__ */ histogram("effect_fiber_lifetimes", /* @__PURE__ */ exponential({
+var fiberLifetimes = /*#__PURE__*/ tagged(/*#__PURE__*/ histogram("effect_fiber_lifetimes", /*#__PURE__*/ exponential({
 	start: .5,
 	factor: 2,
 	count: 35
@@ -31585,8 +29809,8 @@ var runtimeFiberVariance = {
 var absurd = (_) => {
 	throw new Error(`BUG: FiberRuntime - ${toStringUnknown(_)} - please report an issue at https://github.com/Effect-TS/effect/issues`);
 };
-var YieldedOp = /* @__PURE__ */ Symbol.for("effect/internal/fiberRuntime/YieldedOp");
-var yieldedOpChannel = /* @__PURE__ */ globalValue("effect/internal/fiberRuntime/yieldedOpChannel", () => ({ currentOp: null }));
+var YieldedOp = /*#__PURE__*/ Symbol.for("effect/internal/fiberRuntime/YieldedOp");
+var yieldedOpChannel = /*#__PURE__*/ globalValue("effect/internal/fiberRuntime/yieldedOpChannel", () => ({ currentOp: null }));
 var contOpSuccess = {
 	[OP_ON_SUCCESS]: (_, cont, value) => {
 		return internalCall(() => cont.effect_instruction_i1(value));
@@ -31641,7 +29865,7 @@ var drainQueueWhileRunningTable = {
 /**
 * Executes all requests, submitting requests to each data source in parallel.
 */
-var runBlockedRequests = (self) => forEachSequentialDiscard(flatten$1(self), (requestsByRequestResolver) => forEachConcurrentDiscard(sequentialCollectionToChunk(requestsByRequestResolver), ([dataSource, sequential]) => {
+var runBlockedRequests = (self) => forEachSequentialDiscard(flatten$2(self), (requestsByRequestResolver) => forEachConcurrentDiscard(sequentialCollectionToChunk(requestsByRequestResolver), ([dataSource, sequential]) => {
 	const map = /* @__PURE__ */ new Map();
 	const arr = [];
 	for (const block of sequential) {
@@ -31653,16 +29877,16 @@ var runBlockedRequests = (self) => forEachSequentialDiscard(flatten$1(self), (re
 		entry.listeners.interrupted = true;
 	})), currentRequestMap, map);
 }, false, false));
-var _version = /* @__PURE__ */ getCurrentVersion();
+var _version = /*#__PURE__*/ getCurrentVersion();
 /** @internal */
 var FiberRuntime = class extends Class {
 	[FiberTypeId] = fiberVariance;
 	[RuntimeFiberTypeId] = runtimeFiberVariance;
 	_fiberRefs;
 	_fiberId;
-	_queue = /* @__PURE__ */ new Array();
+	_queue = /*#__PURE__*/ new Array();
 	_children = null;
-	_observers = /* @__PURE__ */ new Array();
+	_observers = /*#__PURE__*/ new Array();
 	_running = false;
 	_stack = [];
 	_asyncInterruptor = null;
@@ -32007,7 +30231,7 @@ var FiberRuntime = class extends Class {
 	* log annotations and log level) may not be up-to-date.
 	*/
 	isInterrupted() {
-		return !isEmpty(this.getFiberRef(currentInterruptedCause));
+		return !isEmpty$1(this.getFiberRef(currentInterruptedCause));
 	}
 	/**
 	* Adds an interruptor to the set of interruptors that are interrupting this
@@ -32109,7 +30333,7 @@ var FiberRuntime = class extends Class {
 		const loggers = this.getLoggers();
 		const contextMap = this.getFiberRefs();
 		if (size(loggers) > 0) {
-			const clockService = get$7(this.getFiberRef(currentServices), clockTag);
+			const clockService = get$6(this.getFiberRef(currentServices), clockTag);
 			const date = new Date(clockService.unsafeCurrentTimeMillis());
 			withRedactableContext(contextMap, () => {
 				for (const logger of loggers) logger.log({
@@ -32284,7 +30508,7 @@ var FiberRuntime = class extends Class {
 		}
 	}
 	["Tag"](op) {
-		return sync$2(() => unsafeGet$1(this.currentContext, op));
+		return sync$2(() => unsafeGet(this.currentContext, op));
 	}
 	["Left"](op) {
 		return fail$3(op.left);
@@ -32472,7 +30696,7 @@ var FiberRuntime = class extends Class {
 						const level = this.getFiberRef(currentVersionMismatchErrorLogLevel);
 						if (level._tag === "Some") {
 							const effectVersion = cur[EffectTypeId]._V;
-							this.log(`Executing an Effect versioned ${effectVersion} with a Runtime of version ${getCurrentVersion()}, you may want to dedupe the effect dependencies, you can use the language service plugin to detect this at compile time: https://github.com/Effect-TS/language-service`, empty$6, level);
+							this.log(`Executing an Effect versioned ${effectVersion} with a Runtime of version ${getCurrentVersion()}, you may want to dedupe the effect dependencies, you can use the language service plugin to detect this at compile time: https://github.com/Effect-TS/language-service`, empty$14, level);
 						}
 					}
 					return this[cur._op](cur);
@@ -32495,18 +30719,18 @@ var FiberRuntime = class extends Class {
 	};
 };
 /** @internal */
-var currentMinimumLogLevel = /* @__PURE__ */ globalValue("effect/FiberRef/currentMinimumLogLevel", () => fiberRefUnsafeMake(fromLiteral("Info")));
+var currentMinimumLogLevel = /*#__PURE__*/ globalValue("effect/FiberRef/currentMinimumLogLevel", () => fiberRefUnsafeMake(fromLiteral("Info")));
 /** @internal */
 var loggerWithConsoleLog = (self) => makeLogger((opts) => {
-	get$7(getOrDefault(opts.context, currentServices), consoleTag).unsafe.log(self.log(opts));
+	get$6(getOrDefault(opts.context, currentServices), consoleTag).unsafe.log(self.log(opts));
 });
 /** @internal */
-var defaultLogger = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/Logger/defaultLogger"), () => loggerWithConsoleLog(stringLogger));
+var defaultLogger = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/Logger/defaultLogger"), () => loggerWithConsoleLog(stringLogger));
 /** @internal */
-var tracerLogger = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/Logger/tracerLogger"), () => makeLogger(({ annotations, cause, context, fiberId, logLevel, message }) => {
+var tracerLogger = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/Logger/tracerLogger"), () => makeLogger(({ annotations, cause, context, fiberId, logLevel, message }) => {
 	const span = filterDisablePropagation(getOption(getOrDefault$1(context, currentContext), spanTag));
 	if (span._tag === "None" || span.value._tag === "ExternalSpan") return;
-	const clockService = unsafeGet$1(getOrDefault$1(context, currentServices), clockTag);
+	const clockService = unsafeGet(getOrDefault$1(context, currentServices), clockTag);
 	const attributes = {};
 	for (const [key, value] of annotations) attributes[key] = value;
 	attributes["effect.fiberId"] = threadName(fiberId);
@@ -32515,8 +30739,8 @@ var tracerLogger = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effec
 	span.value.event(toStringUnknown(Array.isArray(message) && message.length === 1 ? message[0] : message), clockService.unsafeCurrentTimeNanos(), attributes);
 }));
 /** @internal */
-var currentLoggers = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/FiberRef/currentLoggers"), () => fiberRefUnsafeMakeHashSet(make$18(defaultLogger, tracerLogger)));
-var acquireRelease$1 = /* @__PURE__ */ dual((args) => isEffect$1(args[0]), (acquire, release) => uninterruptible(tap(acquire, (a) => addFinalizer((exit) => release(a, exit)))));
+var currentLoggers = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/FiberRef/currentLoggers"), () => fiberRefUnsafeMakeHashSet(make$22(defaultLogger, tracerLogger)));
+var acquireRelease$1 = /*#__PURE__*/ dual((args) => isEffect$1(args[0]), (acquire, release) => uninterruptible(tap(acquire, (a) => addFinalizer((exit) => release(a, exit)))));
 var addFinalizer = (finalizer) => withFiberRuntime((runtime) => {
 	const acquireRefs = runtime.getFiberRefs();
 	const acquireFlags = disable$1(runtime.currentRuntimeFlags, 1);
@@ -32591,10 +30815,10 @@ var all$1 = (arg, options) => {
 	else if (options?.mode === "either") return allEither(effects, reconcile, options);
 	return options?.discard !== true && reconcile._tag === "Some" ? map$3(forEach$1(effects, identity, options), reconcile.value) : forEach$1(effects, identity, options);
 };
-var forEach$1 = /* @__PURE__ */ dual((args) => isIterable(args[0]), (self, f, options) => withFiberRuntime((r) => {
+var forEach$1 = /*#__PURE__*/ dual((args) => isIterable(args[0]), (self, f, options) => withFiberRuntime((r) => {
 	const isRequestBatchingEnabled = options?.batching === true || options?.batching === "inherit" && r.getFiberRef(currentRequestBatching);
-	if (options?.discard) return match(options.concurrency, () => finalizersMaskInternal(sequential, options?.concurrentFinalizers)((restore) => isRequestBatchingEnabled ? forEachConcurrentDiscard(self, (a, i) => restore(f(a, i)), true, false, 1) : forEachSequentialDiscard(self, (a, i) => restore(f(a, i)))), () => finalizersMaskInternal(parallel, options?.concurrentFinalizers)((restore) => forEachConcurrentDiscard(self, (a, i) => restore(f(a, i)), isRequestBatchingEnabled, false)), (n) => finalizersMaskInternal(parallelN(n), options?.concurrentFinalizers)((restore) => forEachConcurrentDiscard(self, (a, i) => restore(f(a, i)), isRequestBatchingEnabled, false, n)));
-	return match(options?.concurrency, () => finalizersMaskInternal(sequential, options?.concurrentFinalizers)((restore) => isRequestBatchingEnabled ? forEachParN(self, 1, (a, i) => restore(f(a, i)), true) : forEachSequential(self, (a, i) => restore(f(a, i)))), () => finalizersMaskInternal(parallel, options?.concurrentFinalizers)((restore) => forEachParUnbounded(self, (a, i) => restore(f(a, i)), isRequestBatchingEnabled)), (n) => finalizersMaskInternal(parallelN(n), options?.concurrentFinalizers)((restore) => forEachParN(self, n, (a, i) => restore(f(a, i)), isRequestBatchingEnabled)));
+	if (options?.discard) return match$1(options.concurrency, () => finalizersMaskInternal(sequential, options?.concurrentFinalizers)((restore) => isRequestBatchingEnabled ? forEachConcurrentDiscard(self, (a, i) => restore(f(a, i)), true, false, 1) : forEachSequentialDiscard(self, (a, i) => restore(f(a, i)))), () => finalizersMaskInternal(parallel, options?.concurrentFinalizers)((restore) => forEachConcurrentDiscard(self, (a, i) => restore(f(a, i)), isRequestBatchingEnabled, false)), (n) => finalizersMaskInternal(parallelN(n), options?.concurrentFinalizers)((restore) => forEachConcurrentDiscard(self, (a, i) => restore(f(a, i)), isRequestBatchingEnabled, false, n)));
+	return match$1(options?.concurrency, () => finalizersMaskInternal(sequential, options?.concurrentFinalizers)((restore) => isRequestBatchingEnabled ? forEachParN(self, 1, (a, i) => restore(f(a, i)), true) : forEachSequential(self, (a, i) => restore(f(a, i)))), () => finalizersMaskInternal(parallel, options?.concurrentFinalizers)((restore) => forEachParUnbounded(self, (a, i) => restore(f(a, i)), isRequestBatchingEnabled)), (n) => finalizersMaskInternal(parallelN(n), options?.concurrentFinalizers)((restore) => forEachParN(self, n, (a, i) => restore(f(a, i)), isRequestBatchingEnabled)));
 }));
 var forEachParUnbounded = (self, f, batching) => suspend$4(() => {
 	const as = fromIterable$6(self);
@@ -32693,7 +30917,7 @@ var forEachConcurrentDiscard = (self, f, batching, processAll, n) => uninterrupt
 		};
 		for (let i = 0; i < fibersCount; i++) next();
 	}));
-	return asVoid(onExit$1(flatten(restore(join(processingFiber))), exitMatch({
+	return asVoid(onExit$1(flatten$1(restore(join(processingFiber))), exitMatch({
 		onFailure: (cause) => {
 			onInterruptSignal();
 			const target = residual.length + 1;
@@ -32795,15 +31019,15 @@ var sequentialFinalizers = (self) => contextWithEffect((context) => match$4(getO
 		}
 	}
 }));
-var withConfigProviderScoped = (provider) => fiberRefLocallyScopedWith(currentServices, add$2(configProviderTag, provider));
+var withConfigProviderScoped = (provider) => fiberRefLocallyScopedWith(currentServices, add(configProviderTag, provider));
 /** @internal */
-var zipWithOptions = /* @__PURE__ */ dual((args) => isEffect$1(args[1]), (self, that, f, options) => map$3(all$1([self, that], {
+var zipWithOptions = /*#__PURE__*/ dual((args) => isEffect$1(args[1]), (self, that, f, options) => map$3(all$1([self, that], {
 	concurrency: options?.concurrent ? 2 : 1,
 	batching: options?.batching,
 	concurrentFinalizers: options?.concurrentFinalizers
 }), ([a, a2]) => f(a, a2)));
 /** @internal */
-var scopeTag = /* @__PURE__ */ GenericTag("effect/Scope");
+var scopeTag = /*#__PURE__*/ GenericTag("effect/Scope");
 var scope = scopeTag;
 var scopeUnsafeAddFinalizer = (scope, fin) => {
 	if (scope.state._tag === "Open") scope.state.finalizers.set({}, fin);
@@ -32860,21 +31084,21 @@ var scopeUnsafeMake = (strategy = sequential$1) => {
 	return scope;
 };
 var scopeMake = (strategy = sequential$1) => sync$2(() => scopeUnsafeMake(strategy));
-var scopeExtend = /* @__PURE__ */ dual(2, (effect, scope) => mapInputContext(effect, merge$3(make$23(scopeTag, scope))));
-var scopeUse = /* @__PURE__ */ dual(2, (effect, scope) => pipe(effect, scopeExtend(scope), onExit$1((exit) => scope.close(exit))));
+var scopeExtend = /*#__PURE__*/ dual(2, (effect, scope) => mapInputContext(effect, merge$3(make$20(scopeTag, scope))));
+var scopeUse = /*#__PURE__*/ dual(2, (effect, scope) => pipe(effect, scopeExtend(scope), onExit$1((exit) => scope.close(exit))));
 /** @internal */
 var fiberRefUnsafeMakeSupervisor = (initial) => fiberRefUnsafeMakePatch(initial, {
 	differ,
 	fork: empty
 });
-var fiberRefLocallyScoped = /* @__PURE__ */ dual(2, (self, value) => asVoid(acquireRelease$1(flatMap$3(fiberRefGet(self), (oldValue) => as$1(fiberRefSet(self, value), oldValue)), (oldValue) => fiberRefSet(self, oldValue))));
-var fiberRefLocallyScopedWith = /* @__PURE__ */ dual(2, (self, f) => fiberRefGetWith(self, (a) => fiberRefLocallyScoped(self, f(a))));
+var fiberRefLocallyScoped = /*#__PURE__*/ dual(2, (self, value) => asVoid(acquireRelease$1(flatMap$3(fiberRefGet(self), (oldValue) => as$1(fiberRefSet(self, value), oldValue)), (oldValue) => fiberRefSet(self, oldValue))));
+var fiberRefLocallyScopedWith = /*#__PURE__*/ dual(2, (self, f) => fiberRefGetWith(self, (a) => fiberRefLocallyScoped(self, f(a))));
 /** @internal */
-var currentRuntimeFlags = /* @__PURE__ */ fiberRefUnsafeMakeRuntimeFlags(none$1);
+var currentRuntimeFlags = /*#__PURE__*/ fiberRefUnsafeMakeRuntimeFlags(none$1);
 /** @internal */
-var currentSupervisor = /* @__PURE__ */ fiberRefUnsafeMakeSupervisor(none);
+var currentSupervisor = /*#__PURE__*/ fiberRefUnsafeMakeSupervisor(none);
 /** @internal */
-var ensuring = /* @__PURE__ */ dual(2, (self, finalizer) => uninterruptibleMask$1((restore) => matchCauseEffect$1(restore(self), {
+var ensuring = /*#__PURE__*/ dual(2, (self, finalizer) => uninterruptibleMask$1((restore) => matchCauseEffect$1(restore(self), {
 	onFailure: (cause1) => matchCauseEffect$1(finalizer, {
 		onFailure: (cause2) => failCause$1(sequential$2(cause1, cause2)),
 		onSuccess: () => failCause$1(cause1)
@@ -32920,49 +31144,6 @@ var invokeWithInterrupt = (self, entries, onInterrupt) => fiberIdWith((id) => en
 	}), (entry) => complete(entry.request, exitInterrupt$1(id)));
 })));
 //#endregion
-//#region node_modules/effect/dist/esm/Cause.js
-/**
-* Checks if a `Cause` is a `Fail` type.
-*
-* @see {@link fail} Create a new `Fail` cause
-*
-* @since 2.0.0
-* @category Guards
-*/
-var isFailType = isFailType$1;
-/**
-* Creates an error indicating an invalid method argument.
-*
-* **Details**
-*
-* This function constructs an `IllegalArgumentException`. It is typically
-* thrown or returned when an operation receives improper inputs, such as
-* out-of-range values or invalid object states.
-*
-* @since 2.0.0
-* @category Errors
-*/
-var IllegalArgumentException = IllegalArgumentException$1;
-/**
-* Converts a `Cause` into a human-readable string.
-*
-* **Details**
-*
-* This function pretty-prints the entire `Cause`, including any failures,
-* defects, and interruptions. It can be especially helpful for logging,
-* debugging, or displaying structured errors to users.
-*
-* You can optionally pass `options` to configure how the error cause is
-* rendered. By default, it includes essential details of all errors in the
-* `Cause`.
-*
-* @see {@link prettyErrors} Get a list of `PrettyError` objects instead of a single string.
-*
-* @since 2.0.0
-* @category Formatting
-*/
-var pretty = pretty$1;
-//#endregion
 //#region node_modules/effect/dist/esm/Scope.js
 /**
 * @since 2.0.0
@@ -32988,7 +31169,7 @@ var fork = scopeFork;
 /** @internal */
 var Semaphore = class {
 	permits;
-	waiters = /* @__PURE__ */ new Set();
+	waiters = /*#__PURE__*/ new Set();
 	taken = 0;
 	constructor(permits) {
 		this.permits = permits;
@@ -33039,7 +31220,7 @@ var Semaphore = class {
 		return this.updateTakenUnsafe(fiber, (taken) => taken);
 	}));
 	release = (n) => this.updateTaken((taken) => taken - n);
-	releaseAll = /* @__PURE__ */ this.updateTaken((_) => 0);
+	releaseAll = /*#__PURE__*/ this.updateTaken((_) => 0);
 	withPermits = (n) => (self) => uninterruptibleMask$1((restore) => flatMap$3(restore(this.take(n)), (permits) => ensuring(restore(self), this.release(permits))));
 	withPermitsIfAvailable = (n) => (self) => uninterruptibleMask$1((restore) => suspend$4(() => {
 		if (this.free < n) return succeedNone;
@@ -33050,7 +31231,7 @@ var Semaphore = class {
 /** @internal */
 var unsafeMakeSemaphore = (permits) => new Semaphore(permits);
 /** @internal */
-var SynchronizedTypeId = /* @__PURE__ */ Symbol.for("effect/Ref/SynchronizedRef");
+var SynchronizedTypeId = /*#__PURE__*/ Symbol.for("effect/Ref/SynchronizedRef");
 /** @internal */
 var synchronizedVariance = { 
 /* c8 ignore next */
@@ -33061,12 +31242,12 @@ var SynchronizedImpl = class extends Class {
 	withLock;
 	[SynchronizedTypeId] = synchronizedVariance;
 	[RefTypeId] = refVariance;
-	[TypeId$4] = TypeId$4;
+	[TypeId$5] = TypeId$5;
 	constructor(ref, withLock) {
 		super();
 		this.ref = ref;
 		this.withLock = withLock;
-		this.get = get$1(this.ref);
+		this.get = get$2(this.ref);
 	}
 	get;
 	commit() {
@@ -33076,7 +31257,7 @@ var SynchronizedImpl = class extends Class {
 		return this.modifyEffect((a) => succeed$5(f(a)));
 	}
 	modifyEffect(f) {
-		return this.withLock(pipe(flatMap$3(get$1(this.ref), f), flatMap$3(([b, a]) => as$1(set$1(this.ref, a), b))));
+		return this.withLock(pipe(flatMap$3(get$2(this.ref), f), flatMap$3(([b, a]) => as$1(set$2(this.ref, a), b))));
 	}
 };
 /** @internal */
@@ -33088,7 +31269,7 @@ var unsafeMakeSynchronized = (value) => {
 //#endregion
 //#region node_modules/effect/dist/esm/internal/managedRuntime/circular.js
 /** @internal */
-var TypeId$2 = /* @__PURE__ */ Symbol.for("effect/ManagedRuntime");
+var TypeId$3 = /*#__PURE__*/ Symbol.for("effect/ManagedRuntime");
 //#endregion
 //#region node_modules/effect/dist/esm/internal/opCodes/layer.js
 /** @internal */
@@ -33117,7 +31298,7 @@ var makeDual = (f) => function() {
 	return f.apply(this, arguments);
 };
 /** @internal */
-var unsafeFork = /* @__PURE__ */ makeDual((runtime, self, options) => {
+var unsafeFork = /*#__PURE__*/ makeDual((runtime, self, options) => {
 	const fiberId = unsafeMake$6();
 	const fiberRefUpdates = [[currentContext, [[fiberId, runtime.context]]]];
 	if (options?.scheduler) fiberRefUpdates.push([currentScheduler, [[fiberId, options.scheduler]]]);
@@ -33140,7 +31321,7 @@ var unsafeFork = /* @__PURE__ */ makeDual((runtime, self, options) => {
 	return fiberRuntime;
 });
 /** @internal */
-var unsafeRunSync = /* @__PURE__ */ makeDual((runtime, effect) => {
+var unsafeRunSync = /*#__PURE__*/ makeDual((runtime, effect) => {
 	const result = unsafeRunSyncExit(runtime)(effect);
 	if (result._tag === "Failure") throw fiberFailure(result.effect_instruction_i0);
 	return result.effect_instruction_i0;
@@ -33163,9 +31344,9 @@ var asyncFiberException = (fiber) => {
 	return error;
 };
 /** @internal */
-var FiberFailureId = /* @__PURE__ */ Symbol.for("effect/Runtime/FiberFailure");
+var FiberFailureId = /*#__PURE__*/ Symbol.for("effect/Runtime/FiberFailure");
 /** @internal */
-var FiberFailureCauseId = /* @__PURE__ */ Symbol.for("effect/Runtime/FiberFailure/Cause");
+var FiberFailureCauseId = /*#__PURE__*/ Symbol.for("effect/Runtime/FiberFailure/Cause");
 var FiberFailureImpl = class extends Error {
 	[FiberFailureId];
 	[FiberFailureCauseId];
@@ -33210,7 +31391,7 @@ var fastPath = (effect) => {
 	}
 };
 /** @internal */
-var unsafeRunSyncExit = /* @__PURE__ */ makeDual((runtime, effect) => {
+var unsafeRunSyncExit = /*#__PURE__*/ makeDual((runtime, effect) => {
 	const op = fastPath(effect);
 	if (op) return op;
 	const scheduler = new SyncScheduler();
@@ -33221,14 +31402,14 @@ var unsafeRunSyncExit = /* @__PURE__ */ makeDual((runtime, effect) => {
 	return exitDie$1(capture(asyncFiberException(fiberRuntime), currentSpanFromFiber(fiberRuntime)));
 });
 /** @internal */
-var unsafeRunPromise = /* @__PURE__ */ makeDual((runtime, effect, options) => unsafeRunPromiseExit(runtime, effect, options).then((result) => {
+var unsafeRunPromise = /*#__PURE__*/ makeDual((runtime, effect, options) => unsafeRunPromiseExit(runtime, effect, options).then((result) => {
 	switch (result._tag) {
 		case OP_SUCCESS: return result.effect_instruction_i0;
 		case OP_FAILURE: throw fiberFailure(result.effect_instruction_i0);
 	}
 }));
 /** @internal */
-var unsafeRunPromiseExit = /* @__PURE__ */ makeDual((runtime, effect, options) => new Promise((resolve) => {
+var unsafeRunPromiseExit = /*#__PURE__*/ makeDual((runtime, effect, options) => new Promise((resolve) => {
 	const op = fastPath(effect);
 	if (op) resolve(op);
 	const fiber = unsafeFork(runtime)(effect);
@@ -33257,23 +31438,23 @@ var RuntimeImpl = class {
 /** @internal */
 var make$2 = (options) => new RuntimeImpl(options.context, options.runtimeFlags, options.fiberRefs);
 /** @internal */
-var defaultRuntime = /* @__PURE__ */ make$2({
-	context: /* @__PURE__ */ empty$17(),
-	runtimeFlags: /* @__PURE__ */ make$14(1, 32, 4),
-	fiberRefs: /* @__PURE__ */ empty$2()
+var defaultRuntime = /*#__PURE__*/ make$2({
+	context: /*#__PURE__*/ empty$12(),
+	runtimeFlags: /* @__PURE__ */ make$15(1, 32, 4),
+	fiberRefs: /*#__PURE__*/ empty$3()
 });
 /** @internal */
-var unsafeForkEffect = /* @__PURE__ */ unsafeFork(defaultRuntime);
+var unsafeForkEffect = /*#__PURE__*/ unsafeFork(defaultRuntime);
 /** @internal */
-var unsafeRunPromiseEffect = /* @__PURE__ */ unsafeRunPromise(defaultRuntime);
+var unsafeRunPromiseEffect = /*#__PURE__*/ unsafeRunPromise(defaultRuntime);
 /** @internal */
-var unsafeRunSyncEffect = /* @__PURE__ */ unsafeRunSync(defaultRuntime);
+var unsafeRunSyncEffect = /*#__PURE__*/ unsafeRunSync(defaultRuntime);
 //#endregion
 //#region node_modules/effect/dist/esm/internal/synchronizedRef.js
 /** @internal */
-var modifyEffect = /* @__PURE__ */ dual(2, (self, f) => self.modifyEffect(f));
+var modifyEffect = /*#__PURE__*/ dual(2, (self, f) => self.modifyEffect(f));
 /** @internal */
-var LayerTypeId = /* @__PURE__ */ Symbol.for("effect/Layer");
+var LayerTypeId = /*#__PURE__*/ Symbol.for("effect/Layer");
 var layerVariance = {
 	/* c8 ignore next */
 	_RIn: (_) => _,
@@ -33283,16 +31464,16 @@ var layerVariance = {
 	_ROut: (_) => _
 };
 /** @internal */
-var proto$2 = {
+var proto = {
 	[LayerTypeId]: layerVariance,
 	pipe() {
 		return pipeArguments(this, arguments);
 	}
 };
 /** @internal */
-var MemoMapTypeId = /* @__PURE__ */ Symbol.for("effect/Layer/MemoMap");
+var MemoMapTypeId = /*#__PURE__*/ Symbol.for("effect/Layer/MemoMap");
 /** @internal */
-var CurrentMemoMap = /* @__PURE__ */ Reference()("effect/Layer/CurrentMemoMap", { defaultValue: () => unsafeMakeMemoMap() });
+var CurrentMemoMap = /*#__PURE__*/ Reference()("effect/Layer/CurrentMemoMap", { defaultValue: () => unsafeMakeMemoMap() });
 /** @internal */
 var isLayer = (u) => hasProperty(u, LayerTypeId);
 /** @internal */
@@ -33326,26 +31507,26 @@ var MemoMapImpl = class {
 				const resource = uninterruptibleMask$1((restore) => pipe(scopeMake(), flatMap$3((innerScope) => pipe(restore(flatMap$3(makeBuilder(layer, innerScope, true), (f) => diffFiberRefs(f(this)))), exit, flatMap$3((exit) => {
 					switch (exit._tag) {
 						case OP_FAILURE: return pipe(deferredFailCause(deferred, exit.effect_instruction_i0), zipRight(scopeClose(innerScope, exit)), zipRight(failCause$1(exit.effect_instruction_i0)));
-						case OP_SUCCESS: return pipe(set$1(finalizerRef, (exit) => pipe(scopeClose(innerScope, exit), whenEffect(modify(observers, (n) => [n === 1, n - 1])), asVoid)), zipRight(update$1(observers, (n) => n + 1)), zipRight(scopeAddFinalizerExit(scope, (exit) => pipe(sync$2(() => map.delete(layer)), zipRight(get$1(finalizerRef)), flatMap$3((finalizer) => finalizer(exit))))), zipRight(deferredSucceed(deferred, exit.effect_instruction_i0)), as$1(exit.effect_instruction_i0[1]));
+						case OP_SUCCESS: return pipe(set$2(finalizerRef, (exit) => pipe(scopeClose(innerScope, exit), whenEffect(modify(observers, (n) => [n === 1, n - 1])), asVoid)), zipRight(update$1(observers, (n) => n + 1)), zipRight(scopeAddFinalizerExit(scope, (exit) => pipe(sync$2(() => map.delete(layer)), zipRight(get$2(finalizerRef)), flatMap$3((finalizer) => finalizer(exit))))), zipRight(deferredSucceed(deferred, exit.effect_instruction_i0)), as$1(exit.effect_instruction_i0[1]));
 					}
 				})))));
 				const memoized = [pipe(deferredAwait(deferred), onExit$1(exitMatchEffect({
 					onFailure: () => void_$1,
 					onSuccess: () => update$1(observers, (n) => n + 1)
-				}))), (exit) => pipe(get$1(finalizerRef), flatMap$3((finalizer) => finalizer(exit)))];
+				}))), (exit) => pipe(get$2(finalizerRef), flatMap$3((finalizer) => finalizer(exit)))];
 				return [resource, isFresh(layer) ? map : map.set(layer, memoized)];
 			}))))));
-		}), flatten);
+		}), flatten$1);
 	}
 };
 /** @internal */
-var makeMemoMap = /* @__PURE__ */ suspend$4(() => map$3(makeSynchronized(/* @__PURE__ */ new Map()), (ref) => new MemoMapImpl(ref)));
+var makeMemoMap = /*#__PURE__*/ suspend$4(() => map$3(makeSynchronized(/* @__PURE__ */ new Map()), (ref) => new MemoMapImpl(ref)));
 /** @internal */
 var unsafeMakeMemoMap = () => new MemoMapImpl(unsafeMakeSynchronized(/* @__PURE__ */ new Map()));
 /** @internal */
-var buildWithScope = /* @__PURE__ */ dual(2, (self, scope) => flatMap$3(makeMemoMap, (memoMap) => buildWithMemoMap(self, memoMap, scope)));
+var buildWithScope = /*#__PURE__*/ dual(2, (self, scope) => flatMap$3(makeMemoMap, (memoMap) => buildWithMemoMap(self, memoMap, scope)));
 /** @internal */
-var buildWithMemoMap = /* @__PURE__ */ dual(3, (self, memoMap, scope) => flatMap$3(makeBuilder(self, scope), (run) => provideService(run(memoMap), CurrentMemoMap, memoMap)));
+var buildWithMemoMap = /*#__PURE__*/ dual(3, (self, memoMap, scope) => flatMap$3(makeBuilder(self, scope), (run) => provideService(run(memoMap), CurrentMemoMap, memoMap)));
 var makeBuilder = (self, scope, inMemoMap = false) => {
 	const op = self;
 	switch (op._op_layer) {
@@ -33382,66 +31563,66 @@ var makeBuilder = (self, scope, inMemoMap = false) => {
 /** @internal */
 var context = () => fromEffectContext(context$1());
 /** @internal */
-var fromEffect = /* @__PURE__ */ dual(2, (a, b) => {
+var fromEffect = /*#__PURE__*/ dual(2, (a, b) => {
 	const tagFirst = isTag(a);
 	const tag = tagFirst ? a : b;
-	return fromEffectContext(map$3(tagFirst ? b : a, (service) => make$23(tag, service)));
+	return fromEffectContext(map$3(tagFirst ? b : a, (service) => make$20(tag, service)));
 });
 /** @internal */
 function fromEffectContext(effect) {
-	const fromEffect = Object.create(proto$2);
+	const fromEffect = Object.create(proto);
 	fromEffect._op_layer = OP_FROM_EFFECT;
 	fromEffect.effect = effect;
 	return fromEffect;
 }
 /** @internal */
-var merge$1 = /* @__PURE__ */ dual(2, (self, that) => zipWith(self, that, (a, b) => merge$3(a, b)));
+var merge$1 = /*#__PURE__*/ dual(2, (self, that) => zipWith(self, that, (a, b) => merge$3(a, b)));
 /** @internal */
 var mergeAll$1 = (...layers) => {
-	const mergeAll = Object.create(proto$2);
+	const mergeAll = Object.create(proto);
 	mergeAll._op_layer = OP_MERGE_ALL;
 	mergeAll.layers = layers;
 	return mergeAll;
 };
 /** @internal */
-var scoped$1 = /* @__PURE__ */ dual(2, (a, b) => {
+var scoped$1 = /*#__PURE__*/ dual(2, (a, b) => {
 	const tagFirst = isTag(a);
 	const tag = tagFirst ? a : b;
-	return scopedContext(map$3(tagFirst ? b : a, (service) => make$23(tag, service)));
+	return scopedContext(map$3(tagFirst ? b : a, (service) => make$20(tag, service)));
 });
 /** @internal */
-var scopedDiscard = (effect) => scopedContext(pipe(effect, as$1(empty$17())));
+var scopedDiscard = (effect) => scopedContext(pipe(effect, as$1(empty$12())));
 /** @internal */
 var scopedContext = (effect) => {
-	const scoped = Object.create(proto$2);
+	const scoped = Object.create(proto);
 	scoped._op_layer = OP_SCOPED;
 	scoped.effect = effect;
 	return scoped;
 };
 /** @internal */
-var succeed$3 = /* @__PURE__ */ dual(2, (a, b) => {
+var succeed$2 = /*#__PURE__*/ dual(2, (a, b) => {
 	const tagFirst = isTag(a);
-	return fromEffectContext(succeed$5(make$23(tagFirst ? a : b, tagFirst ? b : a)));
+	return fromEffectContext(succeed$5(make$20(tagFirst ? a : b, tagFirst ? b : a)));
 });
 /** @internal */
-var suspend$3 = (evaluate) => {
-	const suspend = Object.create(proto$2);
+var suspend$2 = (evaluate) => {
+	const suspend = Object.create(proto);
 	suspend._op_layer = OP_SUSPEND;
 	suspend.evaluate = evaluate;
 	return suspend;
 };
 /** @internal */
-var sync$1 = /* @__PURE__ */ dual(2, (a, b) => {
+var sync$1 = /*#__PURE__*/ dual(2, (a, b) => {
 	const tagFirst = isTag(a);
 	const tag = tagFirst ? a : b;
 	const evaluate = tagFirst ? b : a;
-	return fromEffectContext(sync$2(() => make$23(tag, evaluate())));
+	return fromEffectContext(sync$2(() => make$20(tag, evaluate())));
 });
 /** @internal */
-var provide$1 = /* @__PURE__ */ dual(2, (self, that) => suspend$3(() => {
-	const provideTo = Object.create(proto$2);
+var provide$1 = /*#__PURE__*/ dual(2, (self, that) => suspend$2(() => {
+	const provideTo = Object.create(proto);
 	provideTo._op_layer = OP_PROVIDE;
-	provideTo.first = Object.create(proto$2, {
+	provideTo.first = Object.create(proto, {
 		_op_layer: {
 			value: OP_PROVIDE_MERGE,
 			enumerable: true
@@ -33457,16 +31638,16 @@ var provide$1 = /* @__PURE__ */ dual(2, (self, that) => suspend$3(() => {
 	return provideTo;
 }));
 /** @internal */
-var zipWith = /* @__PURE__ */ dual(3, (self, that, f) => suspend$3(() => {
-	const zipWith = Object.create(proto$2);
+var zipWith = /*#__PURE__*/ dual(3, (self, that, f) => suspend$2(() => {
+	const zipWith = Object.create(proto);
 	zipWith._op_layer = OP_ZIP_WITH;
 	zipWith.first = self;
 	zipWith.second = that;
 	zipWith.zipK = f;
 	return zipWith;
 }));
-var provideSomeLayer = /* @__PURE__ */ dual(2, (self, layer) => scopedWith((scope) => flatMap$3(buildWithScope(layer, scope), (context) => provideSomeContext(self, context))));
-var provideSomeRuntime = /* @__PURE__ */ dual(2, (self, rt) => {
+var provideSomeLayer = /*#__PURE__*/ dual(2, (self, layer) => scopedWith((scope) => flatMap$3(buildWithScope(layer, scope), (context) => provideSomeContext(self, context))));
+var provideSomeRuntime = /*#__PURE__*/ dual(2, (self, rt) => {
 	const patchRefs = diff$1(defaultRuntime.fiberRefs, rt.fiberRefs);
 	const patchFlags = diff$3(defaultRuntime.runtimeFlags, rt.runtimeFlags);
 	return uninterruptibleMask$1((restore) => withFiberRuntime((fiber) => {
@@ -33487,61 +31668,21 @@ var provideSomeRuntime = /* @__PURE__ */ dual(2, (self, rt) => {
 	}));
 });
 /** @internal */
-var effect_provide = /* @__PURE__ */ dual(2, (self, source) => {
+var effect_provide = /*#__PURE__*/ dual(2, (self, source) => {
 	if (Array.isArray(source)) return provideSomeLayer(self, mergeAll$1(...source));
 	else if (isLayer(source)) return provideSomeLayer(self, source);
 	else if (isContext(source)) return provideSomeContext(self, source);
-	else if (TypeId$2 in source) return flatMap$3(source.runtimeEffect, (rt) => provideSomeRuntime(self, rt));
+	else if (TypeId$3 in source) return flatMap$3(source.runtimeEffect, (rt) => provideSomeRuntime(self, rt));
 	else return provideSomeRuntime(self, source);
 });
 //#endregion
-//#region node_modules/effect/dist/esm/Data.js
-/**
-* Provides a constructor for a Case Class.
-*
-* @since 2.0.0
-* @category constructors
-*/
-var Error$1 = /* @__PURE__ */ function() {
-	const plainArgsSymbol = /* @__PURE__ */ Symbol.for("effect/Data/Error/plainArgs");
-	return { BaseEffectError: class extends YieldableError$1 {
-		constructor(args) {
-			super(args?.message, args?.cause ? { cause: args.cause } : void 0);
-			if (args) {
-				Object.assign(this, args);
-				Object.defineProperty(this, plainArgsSymbol, {
-					value: args,
-					enumerable: false
-				});
-			}
-		}
-		toJSON() {
-			return {
-				...this[plainArgsSymbol],
-				...this
-			};
-		}
-	} }.BaseEffectError;
-}();
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var TaggedError$1 = (tag) => {
-	const O = { BaseEffectError: class extends Error$1 {
-		_tag = tag;
-	} };
-	O.BaseEffectError.prototype.name = tag;
-	return O.BaseEffectError;
-};
-//#endregion
 //#region node_modules/effect/dist/esm/internal/dateTime.js
 /** @internal */
-var TypeId$1 = /* @__PURE__ */ Symbol.for("effect/DateTime");
+var TypeId$2 = /*#__PURE__*/ Symbol.for("effect/DateTime");
 /** @internal */
-var TimeZoneTypeId = /* @__PURE__ */ Symbol.for("effect/DateTime/TimeZone");
+var TimeZoneTypeId = /*#__PURE__*/ Symbol.for("effect/DateTime/TimeZone");
 var Proto = {
-	[TypeId$1]: TypeId$1,
+	[TypeId$2]: TypeId$2,
 	pipe() {
 		return pipeArguments(this, arguments);
 	},
@@ -33647,7 +31788,7 @@ var makeZonedProto = (epochMillis, zone, partsUtc) => {
 	return self;
 };
 /** @internal */
-var isDateTime$1 = (u) => hasProperty(u, TypeId$1);
+var isDateTime$1 = (u) => hasProperty(u, TypeId$2);
 /** @internal */
 var isTimeZone = (u) => hasProperty(u, TimeZoneTypeId);
 /** @internal */
@@ -33659,7 +31800,7 @@ var isUtc$1 = (self) => self._tag === "Utc";
 /** @internal */
 var isZoned$1 = (self) => self._tag === "Zoned";
 /** @internal */
-var Equivalence$1 = /* @__PURE__ */ make$29((a, b) => a.epochMillis === b.epochMillis);
+var Equivalence$2 = /*#__PURE__*/ make$29((a, b) => a.epochMillis === b.epochMillis);
 var makeUtc = (epochMillis) => {
 	const self = Object.create(ProtoUtc);
 	self.epochMillis = epochMillis;
@@ -33708,7 +31849,7 @@ var unsafeMakeZoned$1 = (input, options) => {
 	return makeZonedFromAdjusted(self.epochMillis, zone, options?.disambiguation ?? "compatible");
 };
 /** @internal */
-var makeZoned = /* @__PURE__ */ liftThrowable(unsafeMakeZoned$1);
+var makeZoned = /*#__PURE__*/ liftThrowable(unsafeMakeZoned$1);
 var zonedStringRegex = /^(.{17,35})\[(.+)\]$/;
 /** @internal */
 var makeZonedFromString$1 = (input) => {
@@ -33720,7 +31861,7 @@ var makeZonedFromString$1 = (input) => {
 	const [, isoString, timeZone] = match;
 	return makeZoned(isoString, { timeZone });
 };
-var validZoneCache = /* @__PURE__ */ globalValue("effect/DateTime/validZoneCache", () => /* @__PURE__ */ new Map());
+var validZoneCache = /*#__PURE__*/ globalValue("effect/DateTime/validZoneCache", () => /* @__PURE__ */ new Map());
 var formatOptions = {
 	day: "numeric",
 	month: "numeric",
@@ -33760,7 +31901,7 @@ var zoneMakeOffset$1 = (offset) => {
 	return zone;
 };
 /** @internal */
-var zoneMakeNamed = /* @__PURE__ */ liftThrowable(zoneUnsafeMakeNamed$1);
+var zoneMakeNamed = /*#__PURE__*/ liftThrowable(zoneUnsafeMakeNamed$1);
 var offsetZoneRegex = /^(?:GMT|[+-])/;
 /** @internal */
 var zoneFromString$1 = (zone) => {
@@ -33936,7 +32077,7 @@ var uncapitalize = (self) => {
 *
 * @since 2.0.0
 */
-var isNonEmpty = (self) => self.length > 0;
+var isNonEmpty$1 = (self) => self.length > 0;
 //#endregion
 //#region node_modules/effect/dist/esm/Effect.js
 /**
@@ -34393,7 +32534,7 @@ var promise = promise$1;
 * @since 2.0.0
 * @category Creating Effects
 */
-var succeed$2 = succeed$5;
+var succeed$1 = succeed$5;
 /**
 * Delays the creation of an `Effect` until it is actually needed.
 *
@@ -34492,7 +32633,7 @@ var succeed$2 = succeed$5;
 * @since 2.0.0
 * @category Creating Effects
 */
-var suspend$2 = suspend$4;
+var suspend$1 = suspend$4;
 /**
 * Creates an `Effect` that represents a synchronous side-effectful computation.
 *
@@ -34971,7 +33112,7 @@ var as = as$1;
 * @since 2.0.0
 * @category Mapping
 */
-var map$2 = map$3;
+var map$1 = map$3;
 /**
 * Applies transformations to both the success and error channels of an effect.
 *
@@ -35253,7 +33394,7 @@ var provide = effect_provide;
 * @since 2.0.0
 * @category Outcome Encapsulation
 */
-var option$2 = option$3;
+var option = option$1;
 /**
 * Encapsulates both success and failure of an `Effect` into an `Either` type.
 *
@@ -35880,23 +34021,23 @@ var Service = function() {
 			isFunction = typeof maker.effect === "function";
 			Object.defineProperty(TagClass, layerName, { get() {
 				if (isFunction) return function() {
-					return fromEffect(TagClass, map$2(maker.effect.apply(null, arguments), (_) => new this(_)));
+					return fromEffect(TagClass, map$1(maker.effect.apply(null, arguments), (_) => new this(_)));
 				}.bind(this);
-				return layerCache ??= fromEffect(TagClass, map$2(maker.effect, (_) => new this(_)));
+				return layerCache ??= fromEffect(TagClass, map$1(maker.effect, (_) => new this(_)));
 			} });
 		} else if ("scoped" in maker) {
 			isFunction = typeof maker.scoped === "function";
 			Object.defineProperty(TagClass, layerName, { get() {
 				if (isFunction) return function() {
-					return scoped$1(TagClass, map$2(maker.scoped.apply(null, arguments), (_) => new this(_)));
+					return scoped$1(TagClass, map$1(maker.scoped.apply(null, arguments), (_) => new this(_)));
 				}.bind(this);
-				return layerCache ??= scoped$1(TagClass, map$2(maker.scoped, (_) => new this(_)));
+				return layerCache ??= scoped$1(TagClass, map$1(maker.scoped, (_) => new this(_)));
 			} });
 		} else if ("sync" in maker) Object.defineProperty(TagClass, layerName, { get() {
 			return layerCache ??= sync$1(TagClass, () => new this(maker.sync()));
 		} });
 		else Object.defineProperty(TagClass, layerName, { get() {
-			return layerCache ??= succeed$3(TagClass, new this(maker.succeed));
+			return layerCache ??= succeed$2(TagClass, new this(maker.succeed));
 		} });
 		if (hasDeps) {
 			let layerWithDepsCache;
@@ -35938,206 +34079,479 @@ var mergeAll = mergeAll$1;
 */
 var setConfigProvider = setConfigProvider$1;
 //#endregion
-//#region node_modules/effect/dist/esm/ConfigError.js
+//#region node_modules/effect/dist/esm/Redacted.js
 /**
-* @since 2.0.0
-* @category constructors
-*/
-var InvalidData = InvalidData$1;
-/**
-* Returns `true` if the specified value is a `ConfigError`, `false` otherwise.
+* Retrieves the original value from a `Redacted` instance. Use this function
+* with caution, as it exposes the sensitive data.
 *
-* @since 2.0.0
-* @category refinements
-*/
-var isConfigError = isConfigError$1;
-/**
-* Returns `true` if the specified `ConfigError` contains only `MissingData` errors, `false` otherwise.
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { Redacted } from "effect"
 *
-* @since 2.0.0
-* @categer getters
+* const API_KEY = Redacted.make("1234567890")
+*
+* assert.equal(Redacted.value(API_KEY), "1234567890")
+* ```
+*
+* @since 3.3.0
+* @category getters
 */
-var isMissingDataOnly = isMissingDataOnly$1;
+var value = value$1;
 //#endregion
-//#region node_modules/effect/dist/esm/internal/redacted.js
-/** @internal */
-var RedactedSymbolKey = "effect/Redacted";
-/** @internal */
-var redactedRegistry = /* @__PURE__ */ globalValue("effect/Redacted/redactedRegistry", () => /* @__PURE__ */ new WeakMap());
-/** @internal */
-var RedactedTypeId = /* @__PURE__ */ Symbol.for(RedactedSymbolKey);
-/** @internal */
-var proto$1 = {
-	[RedactedTypeId]: { _A: (_) => _ },
-	pipe() {
-		return pipeArguments(this, arguments);
-	},
-	toString() {
-		return "<redacted>";
-	},
-	toJSON() {
-		return "<redacted>";
-	},
-	[NodeInspectSymbol]() {
-		return "<redacted>";
-	},
+//#region node_modules/effect/dist/esm/BigDecimal.js
+/**
+* This module provides utility functions and type class instances for working with the `BigDecimal` type in TypeScript.
+* It includes functions for basic arithmetic operations, as well as type class instances for `Equivalence` and `Order`.
+*
+* A `BigDecimal` allows storing any real number to arbitrary precision; which avoids common floating point errors
+* (such as 0.1 + 0.2 ≠ 0.3) at the cost of complexity.
+*
+* Internally, `BigDecimal` uses a `BigInt` object, paired with a 64-bit integer which determines the position of the
+* decimal point. Therefore, the precision *is not* actually arbitrary, but limited to 2<sup>63</sup> decimal places.
+*
+* It is not recommended to convert a floating point number to a decimal directly, as the floating point representation
+* may be unexpected.
+*
+* @module BigDecimal
+* @since 2.0.0
+* @see {@link module:BigInt} for more similar operations on `bigint` types
+* @see {@link module:Number} for more similar operations on `number` types
+*/
+var FINITE_INT_REGEX = /^[+-]?\d+$/;
+/**
+* @since 2.0.0
+* @category symbols
+*/
+var TypeId$1 = /*#__PURE__*/ Symbol.for("effect/BigDecimal");
+var BigDecimalProto = {
+	[TypeId$1]: TypeId$1,
 	[symbol$1]() {
-		return pipe(hash(RedactedSymbolKey), combine$5(hash(redactedRegistry.get(this))), cached(this));
+		const normalized = normalize$1(this);
+		return pipe(hash(normalized.value), combine$5(number$1(normalized.scale)), cached(this));
 	},
 	[symbol](that) {
-		return isRedacted(that) && equals$2(redactedRegistry.get(this), redactedRegistry.get(that));
+		return isBigDecimal(that) && equals(this, that);
+	},
+	toString() {
+		return `BigDecimal(${format$1(this)})`;
+	},
+	toJSON() {
+		return {
+			_id: "BigDecimal",
+			value: String(this.value),
+			scale: this.scale
+		};
+	},
+	[NodeInspectSymbol]() {
+		return this.toJSON();
+	},
+	pipe() {
+		return pipeArguments(this, arguments);
 	}
 };
-/** @internal */
-var isRedacted = (u) => hasProperty(u, RedactedTypeId);
-/** @internal */
-var make$1 = (value) => {
-	const redacted = Object.create(proto$1);
-	redactedRegistry.set(redacted, value);
-	return redacted;
+/**
+* Checks if a given value is a `BigDecimal`.
+*
+* @since 2.0.0
+* @category guards
+*/
+var isBigDecimal = (u) => hasProperty(u, TypeId$1);
+/**
+* Creates a `BigDecimal` from a `bigint` value and a scale.
+*
+* @since 2.0.0
+* @category constructors
+*/
+var make$1 = (value, scale) => {
+	const o = Object.create(BigDecimalProto);
+	o.value = value;
+	o.scale = scale;
+	return o;
 };
-/** @internal */
-var value$1 = (self) => {
-	if (redactedRegistry.has(self)) return redactedRegistry.get(self);
-	else throw new Error("Unable to get redacted value");
+/**
+* Internal function used to create pre-normalized `BigDecimal`s.
+*
+* @internal
+*/
+var unsafeMakeNormalized = (value, scale) => {
+	if (value !== bigint0 && value % bigint10 === bigint0) throw new RangeError("Value must be normalized");
+	const o = make$1(value, scale);
+	o.normalized = o;
+	return o;
 };
-/** @internal */
-var ConfigTypeId = /* @__PURE__ */ Symbol.for("effect/Config");
-var configVariance = { 
-/* c8 ignore next */
-_A: (_) => _ };
-var proto = {
-	...CommitPrototype,
-	[ConfigTypeId]: configVariance,
-	commit() {
-		return config(this);
+var bigint0 = /*#__PURE__*/ BigInt(0);
+var bigint10 = /*#__PURE__*/ BigInt(10);
+var zero = /*#__PURE__*/ unsafeMakeNormalized(bigint0, 0);
+/**
+* Normalizes a given `BigDecimal` by removing trailing zeros.
+*
+* **Example**
+*
+* ```ts
+* import * as assert from "node:assert"
+* import { normalize, make, unsafeFromString } from "effect/BigDecimal"
+*
+* assert.deepStrictEqual(normalize(unsafeFromString("123.00000")), normalize(make(123n, 0)))
+* assert.deepStrictEqual(normalize(unsafeFromString("12300000")), normalize(make(123n, -5)))
+* ```
+*
+* @since 2.0.0
+* @category scaling
+*/
+var normalize$1 = (self) => {
+	if (self.normalized === void 0) if (self.value === bigint0) self.normalized = zero;
+	else {
+		const digits = `${self.value}`;
+		let trail = 0;
+		for (let i = digits.length - 1; i >= 0; i--) if (digits[i] === "0") trail++;
+		else break;
+		if (trail === 0) self.normalized = self;
+		self.normalized = unsafeMakeNormalized(BigInt(digits.substring(0, digits.length - trail)), self.scale - trail);
 	}
+	return self.normalized;
 };
-/** @internal */
-var boolean$1 = (name) => {
-	const config = primitive("a boolean property", (text) => {
-		switch (text) {
-			case "true":
-			case "yes":
-			case "on":
-			case "1": return right(true);
-			case "false":
-			case "no":
-			case "off":
-			case "0": return right(false);
-			default: return left(InvalidData$1([], `Expected a boolean value but received ${formatUnknown(text)}`));
+/**
+* Scales a given `BigDecimal` to the specified scale.
+*
+* If the given scale is smaller than the current scale, the value will be rounded down to
+* the nearest integer.
+*
+* @since 2.0.0
+* @category scaling
+*/
+var scale = /*#__PURE__*/ dual(2, (self, scale) => {
+	if (scale > self.scale) return make$1(self.value * bigint10 ** BigInt(scale - self.scale), scale);
+	if (scale < self.scale) return make$1(self.value / bigint10 ** BigInt(self.scale - scale), scale);
+	return self;
+});
+/**
+* Determines the absolute value of a given `BigDecimal`.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { abs, unsafeFromString } from "effect/BigDecimal"
+*
+* assert.deepStrictEqual(abs(unsafeFromString("-5")), unsafeFromString("5"))
+* assert.deepStrictEqual(abs(unsafeFromString("0")), unsafeFromString("0"))
+* assert.deepStrictEqual(abs(unsafeFromString("5")), unsafeFromString("5"))
+* ```
+*
+* @since 2.0.0
+* @category math
+*/
+var abs = (n) => n.value < bigint0 ? make$1(-n.value, n.scale) : n;
+/**
+* @category instances
+* @since 2.0.0
+*/
+var Equivalence$1 = /*#__PURE__*/ make$29((self, that) => {
+	if (self.scale > that.scale) return scale(that, self.scale).value === self.value;
+	if (self.scale < that.scale) return scale(self, that.scale).value === that.value;
+	return self.value === that.value;
+});
+/**
+* Checks if two `BigDecimal`s are equal.
+*
+* @since 2.0.0
+* @category predicates
+*/
+var equals = /*#__PURE__*/ dual(2, (self, that) => Equivalence$1(self, that));
+/**
+* Creates a `BigDecimal` from a `number` value.
+*
+* It is not recommended to convert a floating point number to a decimal directly,
+* as the floating point representation may be unexpected.
+*
+* Throws a `RangeError` if the number is not finite (`NaN`, `+Infinity` or `-Infinity`).
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { unsafeFromNumber, make } from "effect/BigDecimal"
+*
+* assert.deepStrictEqual(unsafeFromNumber(123), make(123n, 0))
+* assert.deepStrictEqual(unsafeFromNumber(123.456), make(123456n, 3))
+* ```
+*
+* @since 3.11.0
+* @category constructors
+*/
+var unsafeFromNumber = (n) => getOrThrowWith(safeFromNumber(n), () => /* @__PURE__ */ new RangeError(`Number must be finite, got ${n}`));
+/**
+* Creates a `BigDecimal` from a `number` value.
+*
+* It is not recommended to convert a floating point number to a decimal directly,
+* as the floating point representation may be unexpected.
+*
+* Returns `None` if the number is not finite (`NaN`, `+Infinity` or `-Infinity`).
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { BigDecimal, Option } from "effect"
+*
+* assert.deepStrictEqual(BigDecimal.safeFromNumber(123), Option.some(BigDecimal.make(123n, 0)))
+* assert.deepStrictEqual(BigDecimal.safeFromNumber(123.456), Option.some(BigDecimal.make(123456n, 3)))
+* assert.deepStrictEqual(BigDecimal.safeFromNumber(Infinity), Option.none())
+* ```
+*
+* @since 3.11.0
+* @category constructors
+*/
+var safeFromNumber = (n) => {
+	if (!Number.isFinite(n)) return none$4();
+	const string = `${n}`;
+	if (string.includes("e")) return fromString$1(string);
+	const [lead, trail = ""] = string.split(".");
+	return some(make$1(BigInt(`${lead}${trail}`), trail.length));
+};
+/**
+* Parses a numerical `string` into a `BigDecimal`.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { BigDecimal, Option } from "effect"
+*
+* assert.deepStrictEqual(BigDecimal.fromString("123"), Option.some(BigDecimal.make(123n, 0)))
+* assert.deepStrictEqual(BigDecimal.fromString("123.456"), Option.some(BigDecimal.make(123456n, 3)))
+* assert.deepStrictEqual(BigDecimal.fromString("123.abc"), Option.none())
+* ```
+*
+* @since 2.0.0
+* @category constructors
+*/
+var fromString$1 = (s) => {
+	if (s === "") return some(zero);
+	let base;
+	let exp;
+	const seperator = s.search(/[eE]/);
+	if (seperator !== -1) {
+		const trail = s.slice(seperator + 1);
+		base = s.slice(0, seperator);
+		exp = Number(trail);
+		if (base === "" || !Number.isSafeInteger(exp) || !FINITE_INT_REGEX.test(trail)) return none$4();
+	} else {
+		base = s;
+		exp = 0;
+	}
+	let digits;
+	let offset;
+	const dot = base.search(/\./);
+	if (dot !== -1) {
+		const lead = base.slice(0, dot);
+		const trail = base.slice(dot + 1);
+		digits = `${lead}${trail}`;
+		offset = trail.length;
+	} else {
+		digits = base;
+		offset = 0;
+	}
+	if (!FINITE_INT_REGEX.test(digits)) return none$4();
+	const scale = offset - exp;
+	if (!Number.isSafeInteger(scale)) return none$4();
+	return some(make$1(BigInt(digits), scale));
+};
+/**
+* Formats a given `BigDecimal` as a `string`.
+*
+* If the scale of the `BigDecimal` is greater than or equal to 16, the `BigDecimal` will
+* be formatted in scientific notation.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { format, unsafeFromString } from "effect/BigDecimal"
+*
+* assert.deepStrictEqual(format(unsafeFromString("-5")), "-5")
+* assert.deepStrictEqual(format(unsafeFromString("123.456")), "123.456")
+* assert.deepStrictEqual(format(unsafeFromString("-0.00000123")), "-0.00000123")
+* ```
+*
+* @since 2.0.0
+* @category conversions
+*/
+var format$1 = (n) => {
+	const normalized = normalize$1(n);
+	if (Math.abs(normalized.scale) >= 16) return toExponential(normalized);
+	const negative = normalized.value < bigint0;
+	const absolute = negative ? `${normalized.value}`.substring(1) : `${normalized.value}`;
+	let before;
+	let after;
+	if (normalized.scale >= absolute.length) {
+		before = "0";
+		after = "0".repeat(normalized.scale - absolute.length) + absolute;
+	} else {
+		const location = absolute.length - normalized.scale;
+		if (location > absolute.length) {
+			const zeros = location - absolute.length;
+			before = `${absolute}${"0".repeat(zeros)}`;
+			after = "";
+		} else {
+			after = absolute.slice(location);
+			before = absolute.slice(0, location);
 		}
-	});
-	return name === void 0 ? config : nested(config, name);
+	}
+	const complete = after === "" ? before : `${before}.${after}`;
+	return negative ? `-${complete}` : complete;
 };
-/** @internal */
-var map$1 = /* @__PURE__ */ dual(2, (self, f) => mapOrFail$1(self, (a) => right(f(a))));
-/** @internal */
-var mapOrFail$1 = /* @__PURE__ */ dual(2, (self, f) => {
-	const mapOrFail = Object.create(proto);
-	mapOrFail._tag = OP_MAP_OR_FAIL;
-	mapOrFail.original = self;
-	mapOrFail.mapOrFail = f;
-	return mapOrFail;
-});
-/** @internal */
-var nested = /* @__PURE__ */ dual(2, (self, name) => {
-	const nested = Object.create(proto);
-	nested._tag = OP_NESTED;
-	nested.name = name;
-	nested.config = self;
-	return nested;
-});
-/** @internal */
-var orElseIf = /* @__PURE__ */ dual(2, (self, options) => {
-	const fallback = Object.create(proto);
-	fallback._tag = OP_FALLBACK;
-	fallback.first = self;
-	fallback.second = suspend$1(options.orElse);
-	fallback.condition = options.if;
-	return fallback;
-});
-/** @internal */
-var option$1 = (self) => {
-	return pipe(self, map$1(some), orElseIf({
-		orElse: () => succeed$1(none$4()),
-		if: isMissingDataOnly
-	}));
+/**
+* Formats a given `BigDecimal` as a `string` in scientific notation.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { toExponential, make } from "effect/BigDecimal"
+*
+* assert.deepStrictEqual(toExponential(make(123456n, -5)), "1.23456e+10")
+* ```
+*
+* @since 3.11.0
+* @category conversions
+*/
+var toExponential = (n) => {
+	if (isZero(n)) return "0e+0";
+	const normalized = normalize$1(n);
+	const digits = `${abs(normalized).value}`;
+	const head = digits.slice(0, 1);
+	const tail = digits.slice(1);
+	let output = `${isNegative(normalized) ? "-" : ""}${head}`;
+	if (tail !== "") output += `.${tail}`;
+	const exp = tail.length - normalized.scale;
+	return `${output}e${exp >= 0 ? "+" : ""}${exp}`;
 };
-/** @internal */
-var primitive = (description, parse) => {
-	const primitive = Object.create(proto);
-	primitive._tag = OP_PRIMITIVE;
-	primitive.description = description;
-	primitive.parse = parse;
-	return primitive;
-};
-/** @internal */
-var redacted$1 = (nameOrConfig) => {
-	return map$1(isConfig(nameOrConfig) ? nameOrConfig : string$1(nameOrConfig), make$1);
-};
-/** @internal */
-var string$1 = (name) => {
-	const config = primitive("a text property", right);
-	return name === void 0 ? config : nested(config, name);
-};
-/** @internal */
-var succeed$1 = (value) => {
-	const constant = Object.create(proto);
-	constant._tag = OP_CONSTANT;
-	constant.value = value;
-	constant.parse = () => right(value);
-	return constant;
-};
-/** @internal */
-var suspend$1 = (config) => {
-	const lazy = Object.create(proto);
-	lazy._tag = OP_LAZY;
-	lazy.config = config;
-	return lazy;
-};
-/** @internal */
-var isConfig = (u) => hasProperty(u, ConfigTypeId);
+/**
+* Converts a `BigDecimal` to a `number`.
+*
+* This function will produce incorrect results if the `BigDecimal` exceeds the 64-bit range of a `number`.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { unsafeToNumber, unsafeFromString } from "effect/BigDecimal"
+*
+* assert.deepStrictEqual(unsafeToNumber(unsafeFromString("123.456")), 123.456)
+* ```
+*
+* @since 2.0.0
+* @category conversions
+*/
+var unsafeToNumber = (n) => Number(format$1(n));
+/**
+* Checks if a given `BigDecimal` is `0`.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { isZero, unsafeFromString } from "effect/BigDecimal"
+*
+* assert.deepStrictEqual(isZero(unsafeFromString("0")), true)
+* assert.deepStrictEqual(isZero(unsafeFromString("1")), false)
+* ```
+*
+* @since 2.0.0
+* @category predicates
+*/
+var isZero = (n) => n.value === bigint0;
+/**
+* Checks if a given `BigDecimal` is negative.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { isNegative, unsafeFromString } from "effect/BigDecimal"
+*
+* assert.deepStrictEqual(isNegative(unsafeFromString("-1")), true)
+* assert.deepStrictEqual(isNegative(unsafeFromString("0")), false)
+* assert.deepStrictEqual(isNegative(unsafeFromString("1")), false)
+* ```
+*
+* @since 2.0.0
+* @category predicates
+*/
+var isNegative = (n) => n.value < bigint0;
 //#endregion
-//#region node_modules/effect/dist/esm/Config.js
+//#region node_modules/effect/dist/esm/BigInt.js
 /**
-* Constructs a config for a boolean value.
+* Takes a `bigint` and returns an `Option` of `number`.
 *
+* If the `bigint` is outside the safe integer range for JavaScript (`Number.MAX_SAFE_INTEGER`
+* and `Number.MIN_SAFE_INTEGER`), it returns `Option.none()`. Otherwise, it converts the `bigint`
+* to a number and returns `Option.some(number)`.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { BigInt as BI, Option } from "effect"
+*
+* assert.deepStrictEqual(BI.toNumber(BigInt(42)), Option.some(42))
+* assert.deepStrictEqual(BI.toNumber(BigInt(Number.MAX_SAFE_INTEGER) + BigInt(1)), Option.none())
+* assert.deepStrictEqual(BI.toNumber(BigInt(Number.MIN_SAFE_INTEGER) - BigInt(1)), Option.none())
+* ```
+*
+* @category conversions
 * @since 2.0.0
-* @category constructors
 */
-var boolean = boolean$1;
+var toNumber = (b) => {
+	if (b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)) return none$4();
+	return some(Number(b));
+};
 /**
-* Returns a new config whose structure is the samea as this one, but which
-* may produce a different value, constructed using the specified fallible
-* function.
+* Takes a string and returns an `Option` of `bigint`.
 *
-* @since 2.0.0
-* @category utils
+* If the string is empty or contains characters that cannot be converted into a `bigint`,
+* it returns `Option.none()`, otherwise, it returns `Option.some(bigint)`.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { BigInt as BI, Option } from "effect"
+*
+* assert.deepStrictEqual(BI.fromString("42"), Option.some(BigInt(42)))
+* assert.deepStrictEqual(BI.fromString(" "), Option.none())
+* assert.deepStrictEqual(BI.fromString("a"), Option.none())
+* ```
+*
+* @category conversions
+* @since 2.4.12
 */
-var mapOrFail = mapOrFail$1;
+var fromString = (s) => {
+	try {
+		return s.trim() === "" ? none$4() : some(BigInt(s));
+	} catch {
+		return none$4();
+	}
+};
 /**
-* Returns an optional version of this config, which will be `None` if the
-* data is missing from configuration, and `Some` otherwise.
+* Takes a number and returns an `Option` of `bigint`.
 *
-* @since 2.0.0
-* @category utils
-*/
-var option = option$1;
-/**
-* Constructs a config for a redacted value.
+* If the number is outside the safe integer range for JavaScript (`Number.MAX_SAFE_INTEGER`
+* and `Number.MIN_SAFE_INTEGER`), it returns `Option.none()`. Otherwise, it attempts to
+* convert the number to a `bigint` and returns `Option.some(bigint)`.
 *
-* @since 2.0.0
-* @category constructors
-*/
-var redacted = redacted$1;
-/**
-* Constructs a config for a string value.
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { BigInt as BI, Option } from "effect"
 *
-* @since 2.0.0
-* @category constructors
+* assert.deepStrictEqual(BI.fromNumber(42), Option.some(BigInt(42)))
+* assert.deepStrictEqual(BI.fromNumber(Number.MAX_SAFE_INTEGER + 1), Option.none())
+* assert.deepStrictEqual(BI.fromNumber(Number.MIN_SAFE_INTEGER - 1), Option.none())
+* ```
+*
+* @category conversions
+* @since 2.4.12
 */
-var string = string$1;
+var fromNumber = (n) => {
+	if (n > Number.MAX_SAFE_INTEGER || n < Number.MIN_SAFE_INTEGER) return none$4();
+	try {
+		return some(BigInt(n));
+	} catch {
+		return none$4();
+	}
+};
 //#endregion
 //#region node_modules/effect/dist/esm/DateTime.js
 /**
@@ -36169,7 +34583,7 @@ var isZoned = isZoned$1;
 * @since 3.6.0
 * @category instances
 */
-var Equivalence = Equivalence$1;
+var Equivalence = Equivalence$2;
 /**
 * Create a `DateTime` from a `Date`.
 *
@@ -36309,6 +34723,1588 @@ var formatIso = formatIso$1;
 * @category formatting
 */
 var formatIsoZoned = formatIsoZoned$1;
+//#endregion
+//#region node_modules/effect/dist/esm/internal/schema/util.js
+/** @internal */
+var getKeysForIndexSignature = (input, parameter) => {
+	switch (parameter._tag) {
+		case "StringKeyword":
+		case "TemplateLiteral": return Object.keys(input);
+		case "SymbolKeyword": return Object.getOwnPropertySymbols(input);
+		case "Refinement": return getKeysForIndexSignature(input, parameter.from);
+	}
+};
+/** @internal */
+var memoizeThunk = (f) => {
+	let done = false;
+	let a;
+	return () => {
+		if (done) return a;
+		a = f();
+		done = true;
+		return a;
+	};
+};
+/** @internal */
+var isNonEmpty = (x) => Array.isArray(x);
+/** @internal */
+var isSingle = (x) => !Array.isArray(x);
+/** @internal */
+var formatPathKey = (key) => `[${formatPropertyKey$1(key)}]`;
+/** @internal */
+var formatPath = (path) => isNonEmpty(path) ? path.map(formatPathKey).join("") : formatPathKey(path);
+//#endregion
+//#region node_modules/effect/dist/esm/internal/schema/errors.js
+var getErrorMessage$1 = (reason, details, path, ast) => {
+	let out = reason;
+	if (path && isNonEmptyReadonlyArray(path)) out += `\nat path: ${formatPath(path)}`;
+	if (details !== void 0) out += `\ndetails: ${details}`;
+	if (ast) out += `\nschema (${ast._tag}): ${ast}`;
+	return out;
+};
+/** @internal */
+var getSchemaExtendErrorMessage = (x, y, path) => getErrorMessage$1("Unsupported schema or overlapping types", `cannot extend ${x} with ${y}`, path);
+/** @internal */
+var getASTUnsupportedKeySchemaErrorMessage = (ast) => getErrorMessage$1("Unsupported key schema", void 0, void 0, ast);
+/** @internal */
+var getASTUnsupportedLiteralErrorMessage = (literal) => getErrorMessage$1("Unsupported literal", `literal value: ${formatUnknown(literal)}`);
+/** @internal */
+var getASTDuplicateIndexSignatureErrorMessage = (type) => getErrorMessage$1("Duplicate index signature", `${type} index signature`);
+/** @internal */
+var getASTIndexSignatureParameterErrorMessage = /*#__PURE__*/ getErrorMessage$1("Unsupported index signature parameter", "An index signature parameter type must be `string`, `symbol`, a template literal type or a refinement of the previous types");
+/** @internal */
+var getASTRequiredElementFollowinAnOptionalElementErrorMessage = /*#__PURE__*/ getErrorMessage$1("Invalid element", "A required element cannot follow an optional element. ts(1257)");
+/** @internal */
+var getASTDuplicatePropertySignatureTransformationErrorMessage = (key) => getErrorMessage$1("Duplicate property signature transformation", `Duplicate key ${formatUnknown(key)}`);
+/** @internal */
+var getASTDuplicatePropertySignatureErrorMessage = (key) => getErrorMessage$1("Duplicate property signature", `Duplicate key ${formatUnknown(key)}`);
+//#endregion
+//#region node_modules/effect/dist/esm/internal/schema/schemaId.js
+/** @internal */
+var DateFromSelfSchemaId$1 = /*#__PURE__*/ Symbol.for("effect/SchemaId/DateFromSelf");
+/** @internal */
+var GreaterThanSchemaId$1 = /*#__PURE__*/ Symbol.for("effect/SchemaId/GreaterThan");
+/** @internal */
+var GreaterThanOrEqualToSchemaId$1 = /*#__PURE__*/ Symbol.for("effect/SchemaId/GreaterThanOrEqualTo");
+/** @internal */
+var LessThanSchemaId$1 = /*#__PURE__*/ Symbol.for("effect/SchemaId/LessThan");
+/** @internal */
+var LessThanOrEqualToSchemaId$1 = /*#__PURE__*/ Symbol.for("effect/SchemaId/LessThanOrEqualTo");
+/** @internal */
+var IntSchemaId$1 = /*#__PURE__*/ Symbol.for("effect/SchemaId/Int");
+/** @internal */
+var NonNaNSchemaId$1 = /*#__PURE__*/ Symbol.for("effect/SchemaId/NonNaN");
+/** @internal */
+var FiniteSchemaId$1 = /*#__PURE__*/ Symbol.for("effect/SchemaId/Finite");
+/** @internal */
+var JsonNumberSchemaId$1 = /*#__PURE__*/ Symbol.for("effect/SchemaId/JsonNumber");
+/** @internal */
+var BetweenSchemaId$1 = /*#__PURE__*/ Symbol.for("effect/SchemaId/Between");
+/** @internal */
+var GreaterThanOrEqualToBigIntSchemaId$1 = /*#__PURE__*/ Symbol.for("effect/SchemaId/GreaterThanOrEqualToBigint");
+/** @internal */
+var BetweenBigintSchemaId = /*#__PURE__*/ Symbol.for("effect/SchemaId/BetweenBigint");
+/** @internal */
+var MinLengthSchemaId$1 = /*#__PURE__*/ Symbol.for("effect/SchemaId/MinLength");
+/** @internal */
+var LengthSchemaId$1 = /*#__PURE__*/ Symbol.for("effect/SchemaId/Length");
+//#endregion
+//#region node_modules/effect/dist/esm/SchemaAST.js
+/**
+* @since 3.10.0
+*/
+/**
+* @category annotations
+* @since 3.19.0
+* @experimental
+*/
+var TypeConstructorAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/TypeConstructor");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var BrandAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/Brand");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var SchemaIdAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/SchemaId");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var MessageAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/Message");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var MissingMessageAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/MissingMessage");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var IdentifierAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/Identifier");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var TitleAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/Title");
+/** @internal */
+var AutoTitleAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/AutoTitle");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var DescriptionAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/Description");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var ExamplesAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/Examples");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var DefaultAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/Default");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var JSONSchemaAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/JSONSchema");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var ArbitraryAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/Arbitrary");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var PrettyAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/Pretty");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var EquivalenceAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/Equivalence");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var DocumentationAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/Documentation");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var ConcurrencyAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/Concurrency");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var BatchingAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/Batching");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var ParseIssueTitleAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/ParseIssueTitle");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var ParseOptionsAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/ParseOptions");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var DecodingFallbackAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/DecodingFallback");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var SurrogateAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/Surrogate");
+/** @internal */
+var StableFilterAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/StableFilter");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getAnnotation = /*#__PURE__*/ dual(2, (annotated, key) => Object.prototype.hasOwnProperty.call(annotated.annotations, key) ? some(annotated.annotations[key]) : none$4());
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getBrandAnnotation = /*#__PURE__*/ getAnnotation(BrandAnnotationId);
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getMessageAnnotation = /*#__PURE__*/ getAnnotation(MessageAnnotationId);
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getMissingMessageAnnotation = /*#__PURE__*/ getAnnotation(MissingMessageAnnotationId);
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getTitleAnnotation = /*#__PURE__*/ getAnnotation(TitleAnnotationId);
+/** @internal */
+var getAutoTitleAnnotation = /*#__PURE__*/ getAnnotation(AutoTitleAnnotationId);
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getIdentifierAnnotation = /*#__PURE__*/ getAnnotation(IdentifierAnnotationId);
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getDescriptionAnnotation = /*#__PURE__*/ getAnnotation(DescriptionAnnotationId);
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getConcurrencyAnnotation = /*#__PURE__*/ getAnnotation(ConcurrencyAnnotationId);
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getBatchingAnnotation = /*#__PURE__*/ getAnnotation(BatchingAnnotationId);
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getParseIssueTitleAnnotation$1 = /*#__PURE__*/ getAnnotation(ParseIssueTitleAnnotationId);
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getParseOptionsAnnotation = /*#__PURE__*/ getAnnotation(ParseOptionsAnnotationId);
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getDecodingFallbackAnnotation = /*#__PURE__*/ getAnnotation(DecodingFallbackAnnotationId);
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getSurrogateAnnotation = /*#__PURE__*/ getAnnotation(SurrogateAnnotationId);
+var getStableFilterAnnotation = /*#__PURE__*/ getAnnotation(StableFilterAnnotationId);
+/** @internal */
+var hasStableFilter = (annotated) => exists(getStableFilterAnnotation(annotated), (b) => b === true);
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var JSONIdentifierAnnotationId = /*#__PURE__*/ Symbol.for("effect/annotation/JSONIdentifier");
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getJSONIdentifierAnnotation = /*#__PURE__*/ getAnnotation(JSONIdentifierAnnotationId);
+/**
+* @category annotations
+* @since 3.10.0
+*/
+var getJSONIdentifier = (annotated) => orElse$3(getJSONIdentifierAnnotation(annotated), () => getIdentifierAnnotation(annotated));
+/**
+* @category model
+* @since 3.10.0
+*/
+var Declaration = class {
+	typeParameters;
+	decodeUnknown;
+	encodeUnknown;
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "Declaration";
+	constructor(typeParameters, decodeUnknown, encodeUnknown, annotations = {}) {
+		this.typeParameters = typeParameters;
+		this.decodeUnknown = decodeUnknown;
+		this.encodeUnknown = encodeUnknown;
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return getOrElse(getExpected(this), () => "<declaration schema>");
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			typeParameters: this.typeParameters.map((ast) => ast.toJSON()),
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+var createASTGuard = (tag) => (ast) => ast._tag === tag;
+/**
+* @category model
+* @since 3.10.0
+*/
+var Literal$1 = class {
+	literal;
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "Literal";
+	constructor(literal, annotations = {}) {
+		this.literal = literal;
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return getOrElse(getExpected(this), () => formatUnknown(this.literal));
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			literal: isBigInt(this.literal) ? String(this.literal) : this.literal,
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+/**
+* @category guards
+* @since 3.10.0
+*/
+var isLiteral = /*#__PURE__*/ createASTGuard("Literal");
+/**
+* @category model
+* @since 3.10.0
+*/
+var UniqueSymbol = class {
+	symbol;
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "UniqueSymbol";
+	constructor(symbol, annotations = {}) {
+		this.symbol = symbol;
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return getOrElse(getExpected(this), () => formatUnknown(this.symbol));
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			symbol: String(this.symbol),
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+/**
+* @category model
+* @since 3.10.0
+*/
+var NeverKeyword = class {
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "NeverKeyword";
+	constructor(annotations = {}) {
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return formatKeyword(this);
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+/**
+* @category constructors
+* @since 3.10.0
+*/
+var neverKeyword = /*#__PURE__*/ new NeverKeyword({ [TitleAnnotationId]: "never" });
+/**
+* @category model
+* @since 3.10.0
+*/
+var UnknownKeyword = class {
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "UnknownKeyword";
+	constructor(annotations = {}) {
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return formatKeyword(this);
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+/**
+* @category constructors
+* @since 3.10.0
+*/
+var unknownKeyword = /*#__PURE__*/ new UnknownKeyword({ [TitleAnnotationId]: "unknown" });
+/**
+* @category model
+* @since 3.10.0
+*/
+var AnyKeyword = class {
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "AnyKeyword";
+	constructor(annotations = {}) {
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return formatKeyword(this);
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+/**
+* @category constructors
+* @since 3.10.0
+*/
+var anyKeyword = /*#__PURE__*/ new AnyKeyword({ [TitleAnnotationId]: "any" });
+/**
+* @category model
+* @since 3.10.0
+*/
+var StringKeyword = class {
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "StringKeyword";
+	constructor(annotations = {}) {
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return formatKeyword(this);
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+/**
+* @category constructors
+* @since 3.10.0
+*/
+var stringKeyword = /*#__PURE__*/ new StringKeyword({
+	[TitleAnnotationId]: "string",
+	[DescriptionAnnotationId]: "a string"
+});
+/**
+* @category guards
+* @since 3.10.0
+*/
+var isStringKeyword = /*#__PURE__*/ createASTGuard("StringKeyword");
+/**
+* @category model
+* @since 3.10.0
+*/
+var NumberKeyword = class {
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "NumberKeyword";
+	constructor(annotations = {}) {
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return formatKeyword(this);
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+/**
+* @category constructors
+* @since 3.10.0
+*/
+var numberKeyword = /*#__PURE__*/ new NumberKeyword({
+	[TitleAnnotationId]: "number",
+	[DescriptionAnnotationId]: "a number"
+});
+/**
+* @category guards
+* @since 3.10.0
+*/
+var isNumberKeyword = /*#__PURE__*/ createASTGuard("NumberKeyword");
+/**
+* @category model
+* @since 3.10.0
+*/
+var BooleanKeyword = class {
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "BooleanKeyword";
+	constructor(annotations = {}) {
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return formatKeyword(this);
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+/**
+* @category constructors
+* @since 3.10.0
+*/
+var booleanKeyword = /*#__PURE__*/ new BooleanKeyword({
+	[TitleAnnotationId]: "boolean",
+	[DescriptionAnnotationId]: "a boolean"
+});
+/**
+* @category guards
+* @since 3.10.0
+*/
+var isBooleanKeyword = /*#__PURE__*/ createASTGuard("BooleanKeyword");
+/**
+* @category model
+* @since 3.10.0
+*/
+var BigIntKeyword = class {
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "BigIntKeyword";
+	constructor(annotations = {}) {
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return formatKeyword(this);
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+/**
+* @category constructors
+* @since 3.10.0
+*/
+var bigIntKeyword = /*#__PURE__*/ new BigIntKeyword({
+	[TitleAnnotationId]: "bigint",
+	[DescriptionAnnotationId]: "a bigint"
+});
+/**
+* @category model
+* @since 3.10.0
+*/
+var SymbolKeyword = class {
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "SymbolKeyword";
+	constructor(annotations = {}) {
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return formatKeyword(this);
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+/**
+* @category constructors
+* @since 3.10.0
+*/
+var symbolKeyword = /*#__PURE__*/ new SymbolKeyword({
+	[TitleAnnotationId]: "symbol",
+	[DescriptionAnnotationId]: "a symbol"
+});
+/**
+* @category guards
+* @since 3.10.0
+*/
+var isSymbolKeyword = /*#__PURE__*/ createASTGuard("SymbolKeyword");
+/**
+* @category model
+* @since 3.10.0
+*/
+var Type$1 = class {
+	type;
+	annotations;
+	constructor(type, annotations = {}) {
+		this.type = type;
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			type: this.type.toJSON(),
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return String(this.type);
+	}
+};
+/**
+* @category model
+* @since 3.10.0
+*/
+var OptionalType = class extends Type$1 {
+	isOptional;
+	constructor(type, isOptional, annotations = {}) {
+		super(type, annotations);
+		this.isOptional = isOptional;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			type: this.type.toJSON(),
+			isOptional: this.isOptional,
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return String(this.type) + (this.isOptional ? "?" : "");
+	}
+};
+var getRestASTs = (rest) => rest.map((annotatedAST) => annotatedAST.type);
+/**
+* @category model
+* @since 3.10.0
+*/
+var TupleType = class {
+	elements;
+	rest;
+	isReadonly;
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "TupleType";
+	constructor(elements, rest, isReadonly, annotations = {}) {
+		this.elements = elements;
+		this.rest = rest;
+		this.isReadonly = isReadonly;
+		this.annotations = annotations;
+		let hasOptionalElement = false;
+		let hasIllegalRequiredElement = false;
+		for (const e of elements) if (e.isOptional) hasOptionalElement = true;
+		else if (hasOptionalElement) {
+			hasIllegalRequiredElement = true;
+			break;
+		}
+		if (hasIllegalRequiredElement || hasOptionalElement && rest.length > 1) throw new Error(getASTRequiredElementFollowinAnOptionalElementErrorMessage);
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return getOrElse(getExpected(this), () => formatTuple(this));
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			elements: this.elements.map((e) => e.toJSON()),
+			rest: this.rest.map((ast) => ast.toJSON()),
+			isReadonly: this.isReadonly,
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+var formatTuple = (ast) => {
+	const formattedElements = ast.elements.map(String).join(", ");
+	return matchLeft(ast.rest, {
+		onEmpty: () => `readonly [${formattedElements}]`,
+		onNonEmpty: (head, tail) => {
+			const formattedHead = String(head);
+			const wrappedHead = formattedHead.includes(" | ") ? `(${formattedHead})` : formattedHead;
+			if (tail.length > 0) {
+				const formattedTail = tail.map(String).join(", ");
+				if (ast.elements.length > 0) return `readonly [${formattedElements}, ...${wrappedHead}[], ${formattedTail}]`;
+				else return `readonly [...${wrappedHead}[], ${formattedTail}]`;
+			} else if (ast.elements.length > 0) return `readonly [${formattedElements}, ...${wrappedHead}[]]`;
+			else return `ReadonlyArray<${formattedHead}>`;
+		}
+	});
+};
+/**
+* @category model
+* @since 3.10.0
+*/
+var PropertySignature = class extends OptionalType {
+	name;
+	isReadonly;
+	constructor(name, type, isOptional, isReadonly, annotations) {
+		super(type, isOptional, annotations);
+		this.name = name;
+		this.isReadonly = isReadonly;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return (this.isReadonly ? "readonly " : "") + String(this.name) + (this.isOptional ? "?" : "") + ": " + this.type;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			name: String(this.name),
+			type: this.type.toJSON(),
+			isOptional: this.isOptional,
+			isReadonly: this.isReadonly,
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+/**
+* @since 3.10.0
+*/
+var isParameter = (ast) => {
+	switch (ast._tag) {
+		case "StringKeyword":
+		case "SymbolKeyword":
+		case "TemplateLiteral": return true;
+		case "Refinement": return isParameter(ast.from);
+	}
+	return false;
+};
+/**
+* @category model
+* @since 3.10.0
+*/
+var IndexSignature = class {
+	type;
+	isReadonly;
+	/**
+	* @since 3.10.0
+	*/
+	parameter;
+	constructor(parameter, type, isReadonly) {
+		this.type = type;
+		this.isReadonly = isReadonly;
+		if (isParameter(parameter)) this.parameter = parameter;
+		else throw new Error(getASTIndexSignatureParameterErrorMessage);
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return (this.isReadonly ? "readonly " : "") + `[x: ${this.parameter}]: ${this.type}`;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			parameter: this.parameter.toJSON(),
+			type: this.type.toJSON(),
+			isReadonly: this.isReadonly
+		};
+	}
+};
+/**
+* @category model
+* @since 3.10.0
+*/
+var TypeLiteral = class {
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "TypeLiteral";
+	/**
+	* @since 3.10.0
+	*/
+	propertySignatures;
+	/**
+	* @since 3.10.0
+	*/
+	indexSignatures;
+	constructor(propertySignatures, indexSignatures, annotations = {}) {
+		this.annotations = annotations;
+		const keys = {};
+		for (let i = 0; i < propertySignatures.length; i++) {
+			const name = propertySignatures[i].name;
+			if (Object.prototype.hasOwnProperty.call(keys, name)) throw new Error(getASTDuplicatePropertySignatureErrorMessage(name));
+			keys[name] = null;
+		}
+		const parameters = {
+			string: false,
+			symbol: false
+		};
+		for (let i = 0; i < indexSignatures.length; i++) {
+			const encodedParameter = getEncodedParameter(indexSignatures[i].parameter);
+			if (isStringKeyword(encodedParameter)) {
+				if (parameters.string) throw new Error(getASTDuplicateIndexSignatureErrorMessage("string"));
+				parameters.string = true;
+			} else if (isSymbolKeyword(encodedParameter)) {
+				if (parameters.symbol) throw new Error(getASTDuplicateIndexSignatureErrorMessage("symbol"));
+				parameters.symbol = true;
+			}
+		}
+		this.propertySignatures = propertySignatures;
+		this.indexSignatures = indexSignatures;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return getOrElse(getExpected(this), () => formatTypeLiteral(this));
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			propertySignatures: this.propertySignatures.map((ps) => ps.toJSON()),
+			indexSignatures: this.indexSignatures.map((ps) => ps.toJSON()),
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+var formatIndexSignatures = (iss) => iss.map(String).join("; ");
+var formatTypeLiteral = (ast) => {
+	if (ast.propertySignatures.length > 0) {
+		const pss = ast.propertySignatures.map(String).join("; ");
+		if (ast.indexSignatures.length > 0) return `{ ${pss}; ${formatIndexSignatures(ast.indexSignatures)} }`;
+		else return `{ ${pss} }`;
+	} else if (ast.indexSignatures.length > 0) return `{ ${formatIndexSignatures(ast.indexSignatures)} }`;
+	else return "{}";
+};
+/**
+* @category guards
+* @since 3.10.0
+*/
+var isTypeLiteral = /*#__PURE__*/ createASTGuard("TypeLiteral");
+var sortCandidates = /*#__PURE__*/ sort(/*#__PURE__*/ mapInput(Order$1, (ast) => {
+	switch (ast._tag) {
+		case "AnyKeyword": return 0;
+		case "UnknownKeyword": return 1;
+		case "ObjectKeyword": return 2;
+		case "StringKeyword":
+		case "NumberKeyword":
+		case "BooleanKeyword":
+		case "BigIntKeyword":
+		case "SymbolKeyword": return 3;
+	}
+	return 4;
+}));
+var literalMap = {
+	string: "StringKeyword",
+	number: "NumberKeyword",
+	boolean: "BooleanKeyword",
+	bigint: "BigIntKeyword"
+};
+/** @internal */
+var flatten = (candidates) => flatMap$4(candidates, (ast) => isUnion(ast) ? flatten(ast.types) : [ast]);
+/** @internal */
+var unify = (candidates) => {
+	const cs = sortCandidates(candidates);
+	const out = [];
+	const uniques = {};
+	const literals = [];
+	for (const ast of cs) switch (ast._tag) {
+		case "NeverKeyword": break;
+		case "AnyKeyword": return [anyKeyword];
+		case "UnknownKeyword": return [unknownKeyword];
+		case "ObjectKeyword":
+		case "UndefinedKeyword":
+		case "VoidKeyword":
+		case "StringKeyword":
+		case "NumberKeyword":
+		case "BooleanKeyword":
+		case "BigIntKeyword":
+		case "SymbolKeyword":
+			if (!uniques[ast._tag]) {
+				uniques[ast._tag] = ast;
+				out.push(ast);
+			}
+			break;
+		case "Literal": {
+			const type = typeof ast.literal;
+			switch (type) {
+				case "string":
+				case "number":
+				case "bigint":
+				case "boolean":
+					if (!uniques[literalMap[type]] && !literals.includes(ast.literal)) {
+						literals.push(ast.literal);
+						out.push(ast);
+					}
+					break;
+				case "object":
+					if (!literals.includes(ast.literal)) {
+						literals.push(ast.literal);
+						out.push(ast);
+					}
+					break;
+			}
+			break;
+		}
+		case "UniqueSymbol":
+			if (!uniques["SymbolKeyword"] && !literals.includes(ast.symbol)) {
+				literals.push(ast.symbol);
+				out.push(ast);
+			}
+			break;
+		case "TupleType":
+			if (!uniques["ObjectKeyword"]) out.push(ast);
+			break;
+		case "TypeLiteral":
+			if (ast.propertySignatures.length === 0 && ast.indexSignatures.length === 0) {
+				if (!uniques["{}"]) {
+					uniques["{}"] = ast;
+					out.push(ast);
+				}
+			} else if (!uniques["ObjectKeyword"]) out.push(ast);
+			break;
+		default: out.push(ast);
+	}
+	return out;
+};
+/**
+* @category model
+* @since 3.10.0
+*/
+var Union$1 = class Union$1 {
+	types;
+	annotations;
+	static make = (types, annotations) => {
+		return isMembers(types) ? new Union$1(types, annotations) : types.length === 1 ? types[0] : neverKeyword;
+	};
+	/** @internal */
+	static unify = (candidates, annotations) => {
+		return Union$1.make(unify(flatten(candidates)), annotations);
+	};
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "Union";
+	constructor(types, annotations = {}) {
+		this.types = types;
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return getOrElse(getExpected(this), () => this.types.map(String).join(" | "));
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			types: this.types.map((ast) => ast.toJSON()),
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+/** @internal */
+var mapMembers = (members, f) => members.map(f);
+/** @internal */
+var isMembers = (as) => as.length > 1;
+/**
+* @category guards
+* @since 3.10.0
+*/
+var isUnion = /*#__PURE__*/ createASTGuard("Union");
+var toJSONMemoMap = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/Schema/AST/toJSONMemoMap"), () => /* @__PURE__ */ new WeakMap());
+/**
+* @category model
+* @since 3.10.0
+*/
+var Suspend = class {
+	f;
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "Suspend";
+	constructor(f, annotations = {}) {
+		this.f = f;
+		this.annotations = annotations;
+		this.f = memoizeThunk(f);
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return getExpected(this).pipe(orElse$3(() => flatMap$5(liftThrowable(this.f)(), (ast) => getExpected(ast))), getOrElse(() => "<suspended schema>"));
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		const ast = this.f();
+		let out = toJSONMemoMap.get(ast);
+		if (out) return out;
+		toJSONMemoMap.set(ast, { _tag: this._tag });
+		out = {
+			_tag: this._tag,
+			ast: ast.toJSON(),
+			annotations: toJSONAnnotations(this.annotations)
+		};
+		toJSONMemoMap.set(ast, out);
+		return out;
+	}
+};
+/**
+* @category model
+* @since 3.10.0
+*/
+var Refinement$1 = class {
+	from;
+	filter;
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "Refinement";
+	constructor(from, filter, annotations = {}) {
+		this.from = from;
+		this.filter = filter;
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return getIdentifierAnnotation(this).pipe(getOrElse(() => match$4(getOrElseExpected(this), {
+			onNone: () => `{ ${this.from} | filter }`,
+			onSome: (expected) => isRefinement$1(this.from) ? String(this.from) + " & " + expected : expected
+		})));
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			from: this.from.toJSON(),
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+/**
+* @category guards
+* @since 3.10.0
+*/
+var isRefinement$1 = /*#__PURE__*/ createASTGuard("Refinement");
+/**
+* @since 3.10.0
+*/
+var defaultParseOption = {};
+/**
+* @category model
+* @since 3.10.0
+*/
+var Transformation$1 = class {
+	from;
+	to;
+	transformation;
+	annotations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "Transformation";
+	constructor(from, to, transformation, annotations = {}) {
+		this.from = from;
+		this.to = to;
+		this.transformation = transformation;
+		this.annotations = annotations;
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toString() {
+		return getOrElse(getExpected(this), () => `(${String(this.from)} <-> ${String(this.to)})`);
+	}
+	/**
+	* @since 3.10.0
+	*/
+	toJSON() {
+		return {
+			_tag: this._tag,
+			from: this.from.toJSON(),
+			to: this.to.toJSON(),
+			annotations: toJSONAnnotations(this.annotations)
+		};
+	}
+};
+/**
+* @category guards
+* @since 3.10.0
+*/
+var isTransformation$1 = /*#__PURE__*/ createASTGuard("Transformation");
+/**
+* @category model
+* @since 3.10.0
+*/
+var FinalTransformation = class {
+	decode;
+	encode;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "FinalTransformation";
+	constructor(decode, encode) {
+		this.decode = decode;
+		this.encode = encode;
+	}
+};
+var createTransformationGuard = (tag) => (ast) => ast._tag === tag;
+/**
+* @category model
+* @since 3.10.0
+*/
+var ComposeTransformation = class {
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "ComposeTransformation";
+};
+/**
+* @category constructors
+* @since 3.10.0
+*/
+var composeTransformation = /*#__PURE__*/ new ComposeTransformation();
+/**
+* Represents a `PropertySignature -> PropertySignature` transformation
+*
+* The semantic of `decode` is:
+* - `none()` represents the absence of the key/value pair
+* - `some(value)` represents the presence of the key/value pair
+*
+* The semantic of `encode` is:
+* - `none()` you don't want to output the key/value pair
+* - `some(value)` you want to output the key/value pair
+*
+* @category model
+* @since 3.10.0
+*/
+var PropertySignatureTransformation$1 = class {
+	from;
+	to;
+	decode;
+	encode;
+	constructor(from, to, decode, encode) {
+		this.from = from;
+		this.to = to;
+		this.decode = decode;
+		this.encode = encode;
+	}
+};
+/**
+* @category model
+* @since 3.10.0
+*/
+var TypeLiteralTransformation = class {
+	propertySignatureTransformations;
+	/**
+	* @since 3.10.0
+	*/
+	_tag = "TypeLiteralTransformation";
+	constructor(propertySignatureTransformations) {
+		this.propertySignatureTransformations = propertySignatureTransformations;
+		const fromKeys = {};
+		const toKeys = {};
+		for (const pst of propertySignatureTransformations) {
+			const from = pst.from;
+			if (fromKeys[from]) throw new Error(getASTDuplicatePropertySignatureTransformationErrorMessage(from));
+			fromKeys[from] = true;
+			const to = pst.to;
+			if (toKeys[to]) throw new Error(getASTDuplicatePropertySignatureTransformationErrorMessage(to));
+			toKeys[to] = true;
+		}
+	}
+};
+/**
+* @category guards
+* @since 3.10.0
+*/
+var isTypeLiteralTransformation = /*#__PURE__*/ createTransformationGuard("TypeLiteralTransformation");
+/**
+* Merges a set of new annotations with existing ones, potentially overwriting
+* any duplicates.
+*
+* Any previously existing identifier annotations are deleted.
+*
+* @since 3.10.0
+*/
+var annotations = (ast, overrides) => {
+	const d = Object.getOwnPropertyDescriptors(ast);
+	const base = { ...ast.annotations };
+	delete base[IdentifierAnnotationId];
+	const value = {
+		...base,
+		...overrides
+	};
+	const surrogate = getSurrogateAnnotation(ast);
+	if (isSome(surrogate)) value[SurrogateAnnotationId] = annotations(surrogate.value, overrides);
+	d.annotations.value = value;
+	return Object.create(Object.getPrototypeOf(ast), d);
+};
+var STRING_KEYWORD_PATTERN = "[\\s\\S]*?";
+var NUMBER_KEYWORD_PATTERN = "[+-]?\\d*\\.?\\d+(?:[Ee][+-]?\\d+)?";
+var getTemplateLiteralSpanTypePattern = (type, capture) => {
+	switch (type._tag) {
+		case "Literal": return escape(String(type.literal));
+		case "StringKeyword": return STRING_KEYWORD_PATTERN;
+		case "NumberKeyword": return NUMBER_KEYWORD_PATTERN;
+		case "TemplateLiteral": return getTemplateLiteralPattern(type, capture, false);
+		case "Union": return type.types.map((type) => getTemplateLiteralSpanTypePattern(type, capture)).join("|");
+	}
+};
+var handleTemplateLiteralSpanTypeParens = (type, s, capture, top) => {
+	if (isUnion(type)) {
+		if (capture && !top) return `(?:${s})`;
+	} else if (!capture || !top) return s;
+	return `(${s})`;
+};
+var getTemplateLiteralPattern = (ast, capture, top) => {
+	let pattern = ``;
+	if (ast.head !== "") {
+		const head = escape(ast.head);
+		pattern += capture && top ? `(${head})` : head;
+	}
+	for (const span of ast.spans) {
+		const spanPattern = getTemplateLiteralSpanTypePattern(span.type, capture);
+		pattern += handleTemplateLiteralSpanTypeParens(span.type, spanPattern, capture, top);
+		if (span.literal !== "") {
+			const literal = escape(span.literal);
+			pattern += capture && top ? `(${literal})` : literal;
+		}
+	}
+	return pattern;
+};
+/**
+* Generates a regular expression from a `TemplateLiteral` AST node.
+*
+* @see {@link getTemplateLiteralCapturingRegExp} for a variant that captures the pattern.
+*
+* @since 3.10.0
+*/
+var getTemplateLiteralRegExp = (ast) => new RegExp(`^${getTemplateLiteralPattern(ast, false, true)}$`);
+/** @internal */
+var record = (key, value) => {
+	const propertySignatures = [];
+	const indexSignatures = [];
+	const go = (key) => {
+		switch (key._tag) {
+			case "NeverKeyword": break;
+			case "StringKeyword":
+			case "SymbolKeyword":
+			case "TemplateLiteral":
+			case "Refinement":
+				indexSignatures.push(new IndexSignature(key, value, true));
+				break;
+			case "Literal":
+				if (isString(key.literal) || isNumber(key.literal)) propertySignatures.push(new PropertySignature(key.literal, value, false, true));
+				else throw new Error(getASTUnsupportedLiteralErrorMessage(key.literal));
+				break;
+			case "Enums":
+				for (const [_, name] of key.enums) propertySignatures.push(new PropertySignature(name, value, false, true));
+				break;
+			case "UniqueSymbol":
+				propertySignatures.push(new PropertySignature(key.symbol, value, false, true));
+				break;
+			case "Union":
+				key.types.forEach(go);
+				break;
+			default: throw new Error(getASTUnsupportedKeySchemaErrorMessage(key));
+		}
+	};
+	go(key);
+	return {
+		propertySignatures,
+		indexSignatures
+	};
+};
+/** @internal */
+var pickAnnotations = (annotationIds) => (annotated) => {
+	let out = void 0;
+	for (const id of annotationIds) if (Object.prototype.hasOwnProperty.call(annotated.annotations, id)) {
+		if (out === void 0) out = {};
+		out[id] = annotated.annotations[id];
+	}
+	return out;
+};
+/** @internal */
+var omitAnnotations = (annotationIds) => (annotated) => {
+	const out = { ...annotated.annotations };
+	for (const id of annotationIds) delete out[id];
+	return out;
+};
+var preserveTransformationAnnotations = /*#__PURE__*/ pickAnnotations([
+	ExamplesAnnotationId,
+	DefaultAnnotationId,
+	JSONSchemaAnnotationId,
+	ArbitraryAnnotationId,
+	PrettyAnnotationId,
+	EquivalenceAnnotationId
+]);
+/**
+* @since 3.10.0
+*/
+var typeAST = (ast) => {
+	switch (ast._tag) {
+		case "Declaration": {
+			const typeParameters = changeMap(ast.typeParameters, typeAST);
+			return typeParameters === ast.typeParameters ? ast : new Declaration(typeParameters, ast.decodeUnknown, ast.encodeUnknown, ast.annotations);
+		}
+		case "TupleType": {
+			const elements = changeMap(ast.elements, (e) => {
+				const type = typeAST(e.type);
+				return type === e.type ? e : new OptionalType(type, e.isOptional);
+			});
+			const restASTs = getRestASTs(ast.rest);
+			const rest = changeMap(restASTs, typeAST);
+			return elements === ast.elements && rest === restASTs ? ast : new TupleType(elements, rest.map((type) => new Type$1(type)), ast.isReadonly, ast.annotations);
+		}
+		case "TypeLiteral": {
+			const propertySignatures = changeMap(ast.propertySignatures, (p) => {
+				const type = typeAST(p.type);
+				return type === p.type ? p : new PropertySignature(p.name, type, p.isOptional, p.isReadonly);
+			});
+			const indexSignatures = changeMap(ast.indexSignatures, (is) => {
+				const type = typeAST(is.type);
+				return type === is.type ? is : new IndexSignature(is.parameter, type, is.isReadonly);
+			});
+			return propertySignatures === ast.propertySignatures && indexSignatures === ast.indexSignatures ? ast : new TypeLiteral(propertySignatures, indexSignatures, ast.annotations);
+		}
+		case "Union": {
+			const types = changeMap(ast.types, typeAST);
+			return types === ast.types ? ast : Union$1.make(types, ast.annotations);
+		}
+		case "Suspend": return new Suspend(() => typeAST(ast.f()), ast.annotations);
+		case "Refinement": {
+			const from = typeAST(ast.from);
+			return from === ast.from ? ast : new Refinement$1(from, ast.filter, ast.annotations);
+		}
+		case "Transformation": {
+			const preserve = preserveTransformationAnnotations(ast);
+			return typeAST(preserve !== void 0 ? annotations(ast.to, preserve) : ast.to);
+		}
+	}
+	return ast;
+};
+function changeMap(as, f) {
+	let changed = false;
+	const out = allocate(as.length);
+	for (let i = 0; i < as.length; i++) {
+		const a = as[i];
+		const fa = f(a);
+		if (fa !== a) changed = true;
+		out[i] = fa;
+	}
+	return changed ? out : as;
+}
+/**
+* Returns the from part of a transformation if it exists
+*
+* @internal
+*/
+var getTransformationFrom = (ast) => {
+	switch (ast._tag) {
+		case "Transformation": return ast.from;
+		case "Refinement": return getTransformationFrom(ast.from);
+		case "Suspend": return getTransformationFrom(ast.f());
+	}
+};
+var encodedAST_ = (ast, isBound) => {
+	switch (ast._tag) {
+		case "Declaration": {
+			const typeParameters = changeMap(ast.typeParameters, (ast) => encodedAST_(ast, isBound));
+			return typeParameters === ast.typeParameters ? ast : new Declaration(typeParameters, ast.decodeUnknown, ast.encodeUnknown);
+		}
+		case "TupleType": {
+			const elements = changeMap(ast.elements, (e) => {
+				const type = encodedAST_(e.type, isBound);
+				return type === e.type ? e : new OptionalType(type, e.isOptional);
+			});
+			const restASTs = getRestASTs(ast.rest);
+			const rest = changeMap(restASTs, (ast) => encodedAST_(ast, isBound));
+			return elements === ast.elements && rest === restASTs ? ast : new TupleType(elements, rest.map((ast) => new Type$1(ast)), ast.isReadonly);
+		}
+		case "TypeLiteral": {
+			const propertySignatures = changeMap(ast.propertySignatures, (ps) => {
+				const type = encodedAST_(ps.type, isBound);
+				return type === ps.type ? ps : new PropertySignature(ps.name, type, ps.isOptional, ps.isReadonly);
+			});
+			const indexSignatures = changeMap(ast.indexSignatures, (is) => {
+				const type = encodedAST_(is.type, isBound);
+				return type === is.type ? is : new IndexSignature(is.parameter, type, is.isReadonly);
+			});
+			return propertySignatures === ast.propertySignatures && indexSignatures === ast.indexSignatures ? ast : new TypeLiteral(propertySignatures, indexSignatures);
+		}
+		case "Union": {
+			const types = changeMap(ast.types, (ast) => encodedAST_(ast, isBound));
+			return types === ast.types ? ast : Union$1.make(types);
+		}
+		case "Suspend": {
+			let borrowedAnnotations = void 0;
+			const identifier = getJSONIdentifier(ast);
+			if (isSome(identifier)) {
+				const suffix = isBound ? "Bound" : "";
+				borrowedAnnotations = { [JSONIdentifierAnnotationId]: `${identifier.value}Encoded${suffix}` };
+			}
+			return new Suspend(() => encodedAST_(ast.f(), isBound), borrowedAnnotations);
+		}
+		case "Refinement": {
+			const from = encodedAST_(ast.from, isBound);
+			if (isBound) {
+				if (from === ast.from) return ast;
+				if (getTransformationFrom(ast.from) === void 0 && hasStableFilter(ast)) return new Refinement$1(from, ast.filter, ast.annotations);
+				return from;
+			} else return from;
+		}
+		case "Transformation": return encodedAST_(ast.from, isBound);
+	}
+	return ast;
+};
+/**
+* @since 3.10.0
+*/
+var encodedAST = (ast) => encodedAST_(ast, false);
+var toJSONAnnotations = (annotations) => {
+	const out = {};
+	for (const k of Object.getOwnPropertySymbols(annotations)) out[String(k)] = annotations[k];
+	return out;
+};
+/** @internal */
+var getEncodedParameter = (ast) => {
+	switch (ast._tag) {
+		case "StringKeyword":
+		case "SymbolKeyword":
+		case "TemplateLiteral": return ast;
+		case "Refinement": return getEncodedParameter(ast.from);
+	}
+};
+var formatKeyword = (ast) => getOrElse(getExpected(ast), () => ast._tag);
+function getBrands(ast) {
+	return match$4(getBrandAnnotation(ast), {
+		onNone: () => "",
+		onSome: (brands) => brands.map((brand) => ` & Brand<${formatUnknown(brand)}>`).join("")
+	});
+}
+var getOrElseExpected = (ast) => getTitleAnnotation(ast).pipe(orElse$3(() => getDescriptionAnnotation(ast)), orElse$3(() => getAutoTitleAnnotation(ast)), map$7((s) => s + getBrands(ast)));
+var getExpected = (ast) => orElse$3(getIdentifierAnnotation(ast), () => getOrElseExpected(ast));
 //#endregion
 //#region node_modules/effect/dist/esm/ParseResult.js
 /**
@@ -36483,11 +36479,11 @@ var Forbidden = class {
 * @category type id
 * @since 3.10.0
 */
-var ParseErrorTypeId = /* @__PURE__ */ Symbol.for("effect/Schema/ParseErrorTypeId");
+var ParseErrorTypeId = /*#__PURE__*/ Symbol.for("effect/Schema/ParseErrorTypeId");
 /**
 * @since 3.10.0
 */
-var ParseError = class extends TaggedError$1("ParseError") {
+var ParseError = class extends TaggedError$2("ParseError") {
 	/**
 	* @since 3.10.0
 	*/
@@ -36543,7 +36539,7 @@ var isEither = isEither$1;
 * @category optimisation
 * @since 3.10.0
 */
-var flatMap = /* @__PURE__ */ dual(2, (self, f) => {
+var flatMap = /*#__PURE__*/ dual(2, (self, f) => {
 	return isEither(self) ? match$5(self, {
 		onLeft: left,
 		onRight: f
@@ -36553,21 +36549,21 @@ var flatMap = /* @__PURE__ */ dual(2, (self, f) => {
 * @category optimisation
 * @since 3.10.0
 */
-var map = /* @__PURE__ */ dual(2, (self, f) => {
-	return isEither(self) ? map$8(self, f) : map$2(self, f);
+var map = /*#__PURE__*/ dual(2, (self, f) => {
+	return isEither(self) ? map$8(self, f) : map$1(self, f);
 });
 /**
 * @category optimisation
 * @since 3.10.0
 */
-var mapError = /* @__PURE__ */ dual(2, (self, f) => {
+var mapError = /*#__PURE__*/ dual(2, (self, f) => {
 	return isEither(self) ? mapLeft(self, f) : mapError$1(self, f);
 });
 /**
 * @category optimisation
 * @since 3.10.0
 */
-var mapBoth = /* @__PURE__ */ dual(2, (self, options) => {
+var mapBoth = /*#__PURE__*/ dual(2, (self, options) => {
 	return isEither(self) ? mapBoth$3(self, {
 		onLeft: options.onFailure,
 		onRight: options.onSuccess
@@ -36577,7 +36573,7 @@ var mapBoth = /* @__PURE__ */ dual(2, (self, options) => {
 * @category optimisation
 * @since 3.10.0
 */
-var orElse = /* @__PURE__ */ dual(2, (self, f) => {
+var orElse = /*#__PURE__*/ dual(2, (self, f) => {
 	return isEither(self) ? match$5(self, {
 		onLeft: f,
 		onRight: right
@@ -36641,8 +36637,8 @@ var is = (schema, options) => {
 		...mergeInternalOptions(options, overrideOptions)
 	}));
 };
-var decodeMemoMap = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/ParseResult/decodeMemoMap"), () => /* @__PURE__ */ new WeakMap());
-var encodeMemoMap = /* @__PURE__ */ globalValue(/* @__PURE__ */ Symbol.for("effect/ParseResult/encodeMemoMap"), () => /* @__PURE__ */ new WeakMap());
+var decodeMemoMap = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/ParseResult/decodeMemoMap"), () => /* @__PURE__ */ new WeakMap());
+var encodeMemoMap = /*#__PURE__*/ globalValue(/*#__PURE__*/ Symbol.for("effect/ParseResult/encodeMemoMap"), () => /* @__PURE__ */ new WeakMap());
 var goMemo = (ast, isDecoding) => {
 	const memoMap = isDecoding ? decodeMemoMap : encodeMemoMap;
 	const memo = memoMap.get(ast);
@@ -36836,7 +36832,7 @@ var go = (ast, isDecoding) => {
 				const computeResult = ({ es, output }) => isNonEmptyArray(es) ? left(new Composite(ast, input, sortByIndex(es), sortByIndex(output))) : right(sortByIndex(output));
 				if (queue && queue.length > 0) {
 					const cqueue = queue;
-					return suspend$2(() => {
+					return suspend$1(() => {
 						const state = {
 							es: copy$1(es),
 							output: copy$1(output)
@@ -36989,7 +36985,7 @@ var go = (ast, isDecoding) => {
 				};
 				if (queue && queue.length > 0) {
 					const cqueue = queue;
-					return suspend$2(() => {
+					return suspend$1(() => {
 						const state = {
 							es: copy$1(es),
 							output: Object.assign({}, output)
@@ -37053,7 +37049,7 @@ var go = (ast, isDecoding) => {
 					else {
 						const nk = stepKey++;
 						if (!queue) queue = [];
-						queue.push((state) => suspend$2(() => {
+						queue.push((state) => suspend$1(() => {
 							if ("finalResult" in state) return _void;
 							else return flatMap$1(either(pr), (t) => {
 								if (isRight(t)) state.finalResult = t;
@@ -37066,7 +37062,7 @@ var go = (ast, isDecoding) => {
 				const computeResult = (es) => isNonEmptyArray(es) ? es.length === 1 && es[0][1]._tag === "Type" ? left(es[0][1]) : left(new Composite(ast, input, sortByIndex(es))) : left(new Type(ast, input));
 				if (queue && queue.length > 0) {
 					const cqueue = queue;
-					return suspend$2(() => {
+					return suspend$1(() => {
 						const state = { es: copy$1(es) };
 						return flatMap$1(forEach(cqueue, (f) => f(state), {
 							concurrency,
@@ -37261,7 +37257,7 @@ var formatRefinementKind = (kind) => {
 	}
 };
 var getAnnotated = (issue) => "ast" in issue ? some(issue.ast) : none$4();
-var Either_void = /* @__PURE__ */ right(void 0);
+var Either_void = /*#__PURE__*/ right(void 0);
 var getCurrentMessage = (issue) => getAnnotated(issue).pipe(flatMap$5(getMessageAnnotation), match$4({
 	onNone: () => Either_void,
 	onSome: (messageAnnotation) => {
@@ -37270,7 +37266,7 @@ var getCurrentMessage = (issue) => getAnnotated(issue).pipe(flatMap$5(getMessage
 			message: union,
 			override: false
 		});
-		if (isEffect(union)) return map$2(union, (message) => ({
+		if (isEffect(union)) return map$1(union, (message) => ({
 			message,
 			override: false
 		}));
@@ -37278,7 +37274,7 @@ var getCurrentMessage = (issue) => getAnnotated(issue).pipe(flatMap$5(getMessage
 			message: union.message,
 			override: union.override
 		});
-		return map$2(union.message, (message) => ({
+		return map$1(union.message, (message) => ({
 			message,
 			override: union.override
 		}));
@@ -37291,9 +37287,9 @@ var createParseIssueGuard = (tag) => (issue) => issue._tag === tag;
 * @category guards
 * @since 3.10.0
 */
-var isComposite = /* @__PURE__ */ createParseIssueGuard("Composite");
-var isRefinement = /* @__PURE__ */ createParseIssueGuard("Refinement");
-var isTransformation = /* @__PURE__ */ createParseIssueGuard("Transformation");
+var isComposite = /*#__PURE__*/ createParseIssueGuard("Composite");
+var isRefinement = /*#__PURE__*/ createParseIssueGuard("Refinement");
+var isTransformation = /*#__PURE__*/ createParseIssueGuard("Transformation");
 var getMessage = (issue) => flatMap(getCurrentMessage(issue), (currentMessage) => {
 	if (currentMessage !== void 0) return !currentMessage.override && (isComposite(issue) || isRefinement(issue) && issue.kind === "From" || isTransformation(issue) && issue.kind !== "Transformation") ? isTransformation(issue) || isRefinement(issue) ? getMessage(issue.issue) : Either_void : right(currentMessage.message);
 	return Either_void;
@@ -37337,30 +37333,10 @@ var formatTree = (issue) => {
 		case "Composite": return flatMap(getMessage(issue), (message) => {
 			if (message !== void 0) return right(makeTree(message));
 			const parseIssueTitle = getParseIssueTitle(issue);
-			return isNonEmpty$2(issue.issues) ? map(forEach(issue.issues, formatTree), (forest) => makeTree(parseIssueTitle, forest)) : map(formatTree(issue.issues), (tree) => makeTree(parseIssueTitle, [tree]));
+			return isNonEmpty(issue.issues) ? map(forEach(issue.issues, formatTree), (forest) => makeTree(parseIssueTitle, forest)) : map(formatTree(issue.issues), (tree) => makeTree(parseIssueTitle, [tree]));
 		});
 	}
 };
-//#endregion
-//#region node_modules/effect/dist/esm/Redacted.js
-/**
-* Retrieves the original value from a `Redacted` instance. Use this function
-* with caution, as it exposes the sensitive data.
-*
-* @example
-* ```ts
-* import * as assert from "node:assert"
-* import { Redacted } from "effect"
-*
-* const API_KEY = Redacted.make("1234567890")
-*
-* assert.equal(Redacted.value(API_KEY), "1234567890")
-* ```
-*
-* @since 3.3.0
-* @category getters
-*/
-var value = value$1;
 //#endregion
 //#region node_modules/effect/dist/esm/Struct.js
 /**
@@ -37377,7 +37353,7 @@ var value = value$1;
 *
 * @since 2.0.0
 */
-var pick = /* @__PURE__ */ dual((args) => isObject(args[0]), (s, ...keys) => {
+var pick = /*#__PURE__*/ dual((args) => isObject(args[0]), (s, ...keys) => {
 	const out = {};
 	for (const k of keys) if (k in s) out[k] = s[k];
 	return out;
@@ -37396,7 +37372,7 @@ var pick = /* @__PURE__ */ dual((args) => isObject(args[0]), (s, ...keys) => {
 *
 * @since 2.0.0
 */
-var omit = /* @__PURE__ */ dual((args) => isObject(args[0]), (s, ...keys) => {
+var omit = /*#__PURE__*/ dual((args) => isObject(args[0]), (s, ...keys) => {
 	const out = { ...s };
 	for (const k of keys) delete out[k];
 	return out;
@@ -37410,7 +37386,7 @@ var omit = /* @__PURE__ */ dual((args) => isObject(args[0]), (s, ...keys) => {
 * @since 3.10.0
 * @category symbol
 */
-var TypeId = /* @__PURE__ */ Symbol.for("effect/Schema");
+var TypeId = /*#__PURE__*/ Symbol.for("effect/Schema");
 /**
 * @category constructors
 * @since 3.10.0
@@ -37473,7 +37449,7 @@ var toASTAnnotations = (annotations) => {
 	}
 	return out;
 };
-var mergeSchemaAnnotations = (ast, annotations$3) => annotations(ast, toASTAnnotations(annotations$3));
+var mergeSchemaAnnotations = (ast, annotations$1) => annotations(ast, toASTAnnotations(annotations$1));
 /**
 * @category formatting
 * @since 3.10.0
@@ -37561,7 +37537,7 @@ var declare = function() {
 * @category schema id
 * @since 3.10.0
 */
-var InstanceOfSchemaId = /* @__PURE__ */ Symbol.for("effect/SchemaId/InstanceOf");
+var InstanceOfSchemaId = /*#__PURE__*/ Symbol.for("effect/SchemaId/InstanceOf");
 /**
 * @category constructors
 * @since 3.10.0
@@ -37743,7 +37719,7 @@ var mergeSignatureAnnotations = (ast, annotations) => {
 * @since 3.10.0
 * @category symbol
 */
-var PropertySignatureTypeId = /* @__PURE__ */ Symbol.for("effect/PropertySignature");
+var PropertySignatureTypeId = /*#__PURE__*/ Symbol.for("effect/PropertySignature");
 /**
 * @since 3.10.0
 * @category guards
@@ -37798,14 +37774,14 @@ var propertySignature = (self) => new PropertySignatureWithFromImpl(new Property
 * @category PropertySignature
 * @since 3.10.0
 */
-var withConstructorDefault = /* @__PURE__ */ dual(2, (self, defaultValue) => {
+var withConstructorDefault = /*#__PURE__*/ dual(2, (self, defaultValue) => {
 	const ast = self.ast;
 	switch (ast._tag) {
 		case "PropertySignatureDeclaration": return makePropertySignature(new PropertySignatureDeclaration(ast.type, ast.isOptional, ast.isReadonly, ast.annotations, defaultValue));
 		case "PropertySignatureTransformation": return makePropertySignature(new PropertySignatureTransformation(ast.from, new ToPropertySignature(ast.to.type, ast.to.isOptional, ast.to.isReadonly, ast.to.annotations, defaultValue), ast.decode, ast.encode));
 	}
 });
-var preserveMissingMessageAnnotation = /* @__PURE__ */ pickAnnotations([MissingMessageAnnotationId]);
+var preserveMissingMessageAnnotation = /*#__PURE__*/ pickAnnotations([MissingMessageAnnotationId]);
 var getDefaultTypeLiteralAST = (fields, records) => {
 	const ownKeys = Reflect.ownKeys(fields);
 	const pss = [];
@@ -37966,7 +37942,7 @@ var intersectTypeLiterals = (x, y, path) => {
 	}
 	throw new Error(getSchemaExtendErrorMessage(x, y, path));
 };
-var preserveRefinementAnnotations = /* @__PURE__ */ omitAnnotations([IdentifierAnnotationId]);
+var preserveRefinementAnnotations = /*#__PURE__*/ omitAnnotations([IdentifierAnnotationId]);
 var addRefinementToMembers = (refinement, asts) => asts.map((ast) => new Refinement$1(ast, refinement.filter, preserveRefinementAnnotations(refinement)));
 var extendAST = (x, y, path) => Union$1.make(intersectUnionMembers([x], [y], path));
 var getTypes = (ast) => isUnion(ast) ? ast.types : [ast];
@@ -38075,7 +38051,7 @@ var intersectUnionMembers = (xs, ys, path) => flatMap$4(xs, (x) => flatMap$4(ys,
 * @category combinators
 * @since 3.10.0
 */
-var extend = /* @__PURE__ */ dual(2, (self, that) => make(extendAST(self.ast, that.ast, [])));
+var extend = /*#__PURE__*/ dual(2, (self, that) => make(extendAST(self.ast, that.ast, [])));
 /**
 * @category constructors
 * @since 3.10.0
@@ -38085,7 +38061,7 @@ var suspend = (f) => make(new Suspend(() => f().ast));
 * @since 3.10.0
 * @category symbol
 */
-var RefineSchemaId = /* @__PURE__ */ Symbol.for("effect/SchemaId/Refine");
+var RefineSchemaId = /*#__PURE__*/ Symbol.for("effect/SchemaId/Refine");
 function makeRefineClass(from, filter, ast) {
 	return class RefineClass extends make(ast) {
 		static annotations(annotations) {
@@ -38141,7 +38117,7 @@ function makeTransformationClass(from, to, ast) {
 * @category transformations
 * @since 3.10.0
 */
-var transformOrFail = /* @__PURE__ */ dual((args) => isSchema(args[0]) && isSchema(args[1]), (from, to, options) => makeTransformationClass(from, to, new Transformation$1(from.ast, to.ast, new FinalTransformation(options.decode, options.encode))));
+var transformOrFail = /*#__PURE__*/ dual((args) => isSchema(args[0]) && isSchema(args[1]), (from, to, options) => makeTransformationClass(from, to, new Transformation$1(from.ast, to.ast, new FinalTransformation(options.decode, options.encode))));
 /**
 * Create a new `Schema` by transforming the input and output of an existing `Schema`
 * using the provided mapping functions.
@@ -38149,7 +38125,7 @@ var transformOrFail = /* @__PURE__ */ dual((args) => isSchema(args[0]) && isSche
 * @category transformations
 * @since 3.10.0
 */
-var transform = /* @__PURE__ */ dual((args) => isSchema(args[0]) && isSchema(args[1]), (from, to, options) => transformOrFail(from, to, {
+var transform = /*#__PURE__*/ dual((args) => isSchema(args[0]) && isSchema(args[1]), (from, to, options) => transformOrFail(from, to, {
 	strict: true,
 	decode: (fromA, _options, _ast, toA) => succeed(options.decode(fromA, toA)),
 	encode: (toI, _options, _ast, toA) => succeed(options.encode(toI, toA))
@@ -38158,7 +38134,7 @@ var transform = /* @__PURE__ */ dual((args) => isSchema(args[0]) && isSchema(arg
 * @category schema id
 * @since 3.10.0
 */
-var TrimmedSchemaId = /* @__PURE__ */ Symbol.for("effect/SchemaId/Trimmed");
+var TrimmedSchemaId = /*#__PURE__*/ Symbol.for("effect/SchemaId/Trimmed");
 /**
 * Verifies that a string contains no leading or trailing whitespaces.
 *
@@ -38228,7 +38204,7 @@ var length = (length, annotations) => (self) => {
 * @category schema id
 * @since 3.10.0
 */
-var PatternSchemaId = /* @__PURE__ */ Symbol.for("effect/SchemaId/Pattern");
+var PatternSchemaId = /*#__PURE__*/ Symbol.for("effect/SchemaId/Pattern");
 /**
 * @category string filters
 * @since 3.10.0
@@ -38250,7 +38226,7 @@ var pattern = (regex, annotations) => (self) => {
 * @category schema id
 * @since 3.10.0
 */
-var LowercasedSchemaId = /* @__PURE__ */ Symbol.for("effect/SchemaId/Lowercased");
+var LowercasedSchemaId = /*#__PURE__*/ Symbol.for("effect/SchemaId/Lowercased");
 /**
 * Verifies that a string is lowercased.
 *
@@ -38268,12 +38244,12 @@ var lowercased = (annotations) => (self) => self.pipe(filter((a) => a === a.toLo
 * @category string constructors
 * @since 3.10.0
 */
-var Lowercased = class extends String$.pipe(/* @__PURE__ */ lowercased({ identifier: "Lowercased" })) {};
+var Lowercased = class extends String$.pipe(/*#__PURE__*/ lowercased({ identifier: "Lowercased" })) {};
 /**
 * @category schema id
 * @since 3.10.0
 */
-var UppercasedSchemaId = /* @__PURE__ */ Symbol.for("effect/SchemaId/Uppercased");
+var UppercasedSchemaId = /*#__PURE__*/ Symbol.for("effect/SchemaId/Uppercased");
 /**
 * Verifies that a string is uppercased.
 *
@@ -38291,12 +38267,12 @@ var uppercased = (annotations) => (self) => self.pipe(filter((a) => a === a.toUp
 * @category string constructors
 * @since 3.10.0
 */
-var Uppercased = class extends String$.pipe(/* @__PURE__ */ uppercased({ identifier: "Uppercased" })) {};
+var Uppercased = class extends String$.pipe(/*#__PURE__*/ uppercased({ identifier: "Uppercased" })) {};
 /**
 * @category schema id
 * @since 3.10.0
 */
-var CapitalizedSchemaId = /* @__PURE__ */ Symbol.for("effect/SchemaId/Capitalized");
+var CapitalizedSchemaId = /*#__PURE__*/ Symbol.for("effect/SchemaId/Capitalized");
 /**
 * Verifies that a string is capitalized.
 *
@@ -38314,12 +38290,12 @@ var capitalized = (annotations) => (self) => self.pipe(filter((a) => a[0]?.toUpp
 * @category string constructors
 * @since 3.10.0
 */
-var Capitalized = class extends String$.pipe(/* @__PURE__ */ capitalized({ identifier: "Capitalized" })) {};
+var Capitalized = class extends String$.pipe(/*#__PURE__*/ capitalized({ identifier: "Capitalized" })) {};
 /**
 * @category schema id
 * @since 3.10.0
 */
-var UncapitalizedSchemaId = /* @__PURE__ */ Symbol.for("effect/SchemaId/Uncapitalized");
+var UncapitalizedSchemaId = /*#__PURE__*/ Symbol.for("effect/SchemaId/Uncapitalized");
 /**
 * Verifies that a string is uncapitalized.
 *
@@ -38337,8 +38313,8 @@ var uncapitalized = (annotations) => (self) => self.pipe(filter((a) => a[0]?.toL
 * @category string constructors
 * @since 3.10.0
 */
-var Uncapitalized = class extends String$.pipe(/* @__PURE__ */ uncapitalized({ identifier: "Uncapitalized" })) {};
-String$.pipe(/* @__PURE__ */ length(1, { identifier: "Char" }));
+var Uncapitalized = class extends String$.pipe(/*#__PURE__*/ uncapitalized({ identifier: "Uncapitalized" })) {};
+String$.pipe(/*#__PURE__*/ length(1, { identifier: "Char" }));
 /**
 * @category string filters
 * @since 3.10.0
@@ -38372,7 +38348,7 @@ transform(String$.annotations({ description: "a string that will be converted to
 * @category string constructors
 * @since 3.10.0
 */
-var Trimmed = class extends String$.pipe(/* @__PURE__ */ trimmed({ identifier: "Trimmed" })) {};
+var Trimmed = class extends String$.pipe(/*#__PURE__*/ trimmed({ identifier: "Trimmed" })) {};
 /**
 * Useful for validating strings that must contain meaningful characters without
 * leading or trailing whitespace.
@@ -38389,7 +38365,7 @@ var Trimmed = class extends String$.pipe(/* @__PURE__ */ trimmed({ identifier: "
 * @category string constructors
 * @since 3.10.0
 */
-var NonEmptyTrimmedString = class extends Trimmed.pipe(/* @__PURE__ */ nonEmptyString({ identifier: "NonEmptyTrimmedString" })) {};
+var NonEmptyTrimmedString = class extends Trimmed.pipe(/*#__PURE__*/ nonEmptyString({ identifier: "NonEmptyTrimmedString" })) {};
 transform(String$.annotations({ description: "a string that will be trimmed" }), Trimmed, {
 	strict: true,
 	decode: (i) => i.trim(),
@@ -38400,14 +38376,14 @@ var getErrorMessage = (e) => e instanceof Error ? e.message : String(e);
 * @category string constructors
 * @since 3.10.0
 */
-var NonEmptyString = class extends String$.pipe(/* @__PURE__ */ nonEmptyString({ identifier: "NonEmptyString" })) {};
+var NonEmptyString = class extends String$.pipe(/*#__PURE__*/ nonEmptyString({ identifier: "NonEmptyString" })) {};
 /**
 * @category schema id
 * @since 3.10.0
 */
-var UUIDSchemaId = /* @__PURE__ */ Symbol.for("effect/SchemaId/UUID");
+var UUIDSchemaId = /*#__PURE__*/ Symbol.for("effect/SchemaId/UUID");
 var uuidRegexp = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i;
-String$.pipe(/* @__PURE__ */ pattern(uuidRegexp, {
+String$.pipe(/*#__PURE__*/ pattern(uuidRegexp, {
 	schemaId: UUIDSchemaId,
 	identifier: "UUID",
 	jsonSchema: {
@@ -38421,8 +38397,8 @@ String$.pipe(/* @__PURE__ */ pattern(uuidRegexp, {
 * @category schema id
 * @since 3.10.0
 */
-var ULIDSchemaId = /* @__PURE__ */ Symbol.for("effect/SchemaId/ULID");
-String$.pipe(/* @__PURE__ */ pattern(/^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i, {
+var ULIDSchemaId = /*#__PURE__*/ Symbol.for("effect/SchemaId/ULID");
+String$.pipe(/*#__PURE__*/ pattern(/^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i, {
 	schemaId: ULIDSchemaId,
 	identifier: "ULID",
 	description: "a Universally Unique Lexicographically Sortable Identifier",
@@ -38648,31 +38624,31 @@ function parseNumber(self) {
 	});
 }
 parseNumber(String$.annotations({ description: "a string to be decoded into a number" })).annotations({ identifier: "NumberFromString" });
-Number$.pipe(/* @__PURE__ */ finite({ identifier: "Finite" }));
+Number$.pipe(/*#__PURE__*/ finite({ identifier: "Finite" }));
 /**
 * @category number constructors
 * @since 3.10.0
 */
-var Int = class extends Number$.pipe(/* @__PURE__ */ int({ identifier: "Int" })) {};
-Number$.pipe(/* @__PURE__ */ nonNaN({ identifier: "NonNaN" }));
-Number$.pipe(/* @__PURE__ */ positive({ identifier: "Positive" }));
-Number$.pipe(/* @__PURE__ */ negative({ identifier: "Negative" }));
-Number$.pipe(/* @__PURE__ */ nonPositive({ identifier: "NonPositive" }));
+var Int = class extends Number$.pipe(/*#__PURE__*/ int({ identifier: "Int" })) {};
+Number$.pipe(/*#__PURE__*/ nonNaN({ identifier: "NonNaN" }));
+Number$.pipe(/*#__PURE__*/ positive({ identifier: "Positive" }));
+Number$.pipe(/*#__PURE__*/ negative({ identifier: "Negative" }));
+Number$.pipe(/*#__PURE__*/ nonPositive({ identifier: "NonPositive" }));
 /**
 * @category number constructors
 * @since 3.10.0
 */
-var NonNegative = class extends Number$.pipe(/* @__PURE__ */ nonNegative({ identifier: "NonNegative" })) {};
+var NonNegative = class extends Number$.pipe(/*#__PURE__*/ nonNegative({ identifier: "NonNegative" })) {};
 /**
 * @category schema id
 * @since 3.10.0
 */
 var JsonNumberSchemaId = JsonNumberSchemaId$1;
-Number$.pipe(/* @__PURE__ */ finite({
+Number$.pipe(/*#__PURE__*/ finite({
 	schemaId: JsonNumberSchemaId,
 	identifier: "JsonNumber"
 }));
-transform(/* @__PURE__ */ Boolean$.annotations({ description: "a boolean that will be negated" }), Boolean$, {
+transform(/*#__PURE__*/ Boolean$.annotations({ description: "a boolean that will be negated" }), Boolean$, {
 	strict: true,
 	decode: (i) => not(i),
 	encode: (a) => not(a)
@@ -38740,7 +38716,7 @@ var BigInt$ = class extends transformOrFail(String$.annotations({ description: "
 * @category bigint constructors
 * @since 3.10.0
 */
-var NonNegativeBigIntFromSelf = /* @__PURE__ */ BigIntFromSelf.pipe(/* @__PURE__ */ nonNegativeBigInt({ identifier: "NonNegativeBigintFromSelf" }));
+var NonNegativeBigIntFromSelf = /*#__PURE__*/ BigIntFromSelf.pipe(/*#__PURE__*/ nonNegativeBigInt({ identifier: "NonNegativeBigintFromSelf" }));
 transformOrFail(Number$.annotations({ description: "a number to be decoded into a bigint" }), BigIntFromSelf.pipe(betweenBigInt(BigInt(Number.MIN_SAFE_INTEGER), BigInt(Number.MAX_SAFE_INTEGER))), {
 	strict: true,
 	decode: (i, _, ast) => fromOption(fromNumber(i), () => new Type(ast, i, `Unable to decode ${i} into a bigint`)),
@@ -38759,7 +38735,7 @@ var DurationFromSelf = class extends declare(isDuration, {
 	identifier: "DurationFromSelf",
 	pretty: () => String,
 	arbitrary: () => (fc) => fc.oneof(fc.constant(infinity), fc.bigInt({ min: 0n }).map((_) => nanos(_)), fc.maxSafeNat().map((_) => millis(_))),
-	equivalence: () => Equivalence$2
+	equivalence: () => Equivalence$3
 }) {};
 transformOrFail(NonNegativeBigIntFromSelf.annotations({ description: "a bigint to be decoded into a Duration" }), DurationFromSelf.pipe(filter((duration) => isFinite(duration), { description: "a finite duration" })), {
 	strict: true,
@@ -38775,21 +38751,21 @@ transformOrFail(NonNegativeBigIntFromSelf.annotations({ description: "a bigint t
 * @category number constructors
 * @since 3.11.10
 */
-var NonNegativeInt = /* @__PURE__ */ NonNegative.pipe(int()).annotations({ identifier: "NonNegativeInt" });
+var NonNegativeInt = /*#__PURE__*/ NonNegative.pipe(int()).annotations({ identifier: "NonNegativeInt" });
 transform(NonNegative.annotations({ description: "a non-negative number to be decoded into a Duration" }), DurationFromSelf, {
 	strict: true,
 	decode: (i) => millis(i),
 	encode: (a) => toMillis(a)
 }).annotations({ identifier: "DurationFromMillis" });
-var DurationValueMillis = /* @__PURE__ */ TaggedStruct("Millis", { millis: NonNegativeInt });
-var DurationValueNanos = /* @__PURE__ */ TaggedStruct("Nanos", { nanos: BigInt$ });
-var DurationValueInfinity = /* @__PURE__ */ TaggedStruct("Infinity", {});
-var durationValueInfinity = /* @__PURE__ */ DurationValueInfinity.make({});
-var DurationValue = /* @__PURE__ */ Union(DurationValueMillis, DurationValueNanos, DurationValueInfinity).annotations({
+var DurationValueMillis = /*#__PURE__*/ TaggedStruct("Millis", { millis: NonNegativeInt });
+var DurationValueNanos = /*#__PURE__*/ TaggedStruct("Nanos", { nanos: BigInt$ });
+var DurationValueInfinity = /*#__PURE__*/ TaggedStruct("Infinity", {});
+var durationValueInfinity = /*#__PURE__*/ DurationValueInfinity.make({});
+var DurationValue = /*#__PURE__*/ Union(DurationValueMillis, DurationValueNanos, DurationValueInfinity).annotations({
 	identifier: "DurationValue",
 	description: "an JSON-compatible tagged union to be decoded into a Duration"
 });
-var HRTime = /* @__PURE__ */ Union(/* @__PURE__ */ Tuple(element(NonNegativeInt).annotations({ title: "seconds" }), element(NonNegativeInt).annotations({ title: "nanos" })).annotations({ identifier: "FiniteHRTime" }), /* @__PURE__ */ Tuple(Literal(-1), Literal(0)).annotations({ identifier: "InfiniteHRTime" })).annotations({
+var HRTime = /*#__PURE__*/ Union(/* @__PURE__ */ Tuple(element(NonNegativeInt).annotations({ title: "seconds" }), element(NonNegativeInt).annotations({ title: "nanos" })).annotations({ identifier: "FiniteHRTime" }), /* @__PURE__ */ Tuple(Literal(-1), Literal(0)).annotations({ identifier: "InfiniteHRTime" })).annotations({
 	identifier: "HRTime",
 	description: "a tuple of seconds and nanos to be decoded into a Duration"
 });
@@ -38828,7 +38804,7 @@ var Uint8ArrayFromSelf = class extends declare(isUint8Array, {
 * @category number constructors
 * @since 3.11.10
 */
-var Uint8 = class extends Number$.pipe(/* @__PURE__ */ between(0, 255, {
+var Uint8 = class extends Number$.pipe(/*#__PURE__*/ between(0, 255, {
 	identifier: "Uint8",
 	description: "a 8-bit unsigned integer"
 })) {};
@@ -38841,7 +38817,7 @@ transform(Array$(Uint8).annotations({ description: "an array of 8-bit unsigned i
 * @category schema id
 * @since 3.10.0
 */
-var ValidDateSchemaId = /* @__PURE__ */ Symbol.for("effect/SchemaId/ValidDate");
+var ValidDateSchemaId = /*#__PURE__*/ Symbol.for("effect/SchemaId/ValidDate");
 /**
 * Defines a filter that specifically rejects invalid dates, such as `new
 * Date("Invalid Date")`. This filter ensures that only properly formatted and
@@ -38880,7 +38856,7 @@ var DateFromSelf = class extends declare(isDate, {
 	arbitrary: () => (fc) => fc.date({ noInvalidDate: false }),
 	equivalence: () => Date$1
 }) {};
-DateFromSelf.pipe(/* @__PURE__ */ validDate({
+DateFromSelf.pipe(/*#__PURE__*/ validDate({
 	identifier: "ValidDateFromSelf",
 	description: "a valid Date instance"
 }));
@@ -38898,7 +38874,7 @@ var DateFromString = class extends transform(String$.annotations({ description: 
 	decode: (i) => new Date(i),
 	encode: (a) => formatDate(a)
 }).annotations({ identifier: "DateFromString" }) {};
-DateFromString.pipe(/* @__PURE__ */ validDate({ identifier: "Date" }));
+DateFromString.pipe(/*#__PURE__*/ validDate({ identifier: "Date" }));
 transform(Number$.annotations({ description: "a number to be decoded into a Date" }), DateFromSelf, {
 	strict: true,
 	decode: (i) => new Date(i),
@@ -39048,16 +39024,16 @@ var OptionFromSelf_ = (value) => {
 var OptionFromSelf = (value) => {
 	return OptionFromSelf_(value).annotations({ description: `Option<${format(value)}>` });
 };
-transform(String$, /* @__PURE__ */ OptionFromSelf(NonEmptyTrimmedString), {
+transform(String$, /*#__PURE__*/ OptionFromSelf(NonEmptyTrimmedString), {
 	strict: true,
-	decode: (i) => filter$1(some(i.trim()), isNonEmpty),
+	decode: (i) => filter$1(some(i.trim()), isNonEmpty$1),
 	encode: (a) => getOrElse(a, () => "")
 });
-var bigDecimalPretty = () => (val) => `BigDecimal(${format$3(normalize$1(val))})`;
+var bigDecimalPretty = () => (val) => `BigDecimal(${format$1(normalize$1(val))})`;
 var bigDecimalArbitrary = () => (fc) => fc.tuple(fc.bigInt(), fc.integer({
 	min: -18,
 	max: 18
-})).map(([value, scale]) => make$25(value, scale));
+})).map(([value, scale]) => make$1(value, scale));
 /**
 * @category BigDecimal constructors
 * @since 3.10.0
@@ -39067,7 +39043,7 @@ var BigDecimalFromSelf = class extends declare(isBigDecimal, {
 	identifier: "BigDecimalFromSelf",
 	pretty: bigDecimalPretty,
 	arbitrary: bigDecimalArbitrary,
-	equivalence: () => Equivalence$3
+	equivalence: () => Equivalence$1
 }) {};
 transformOrFail(String$.annotations({ description: "a string to be decoded into a BigDecimal" }), BigDecimalFromSelf, {
 	strict: true,
@@ -39075,7 +39051,7 @@ transformOrFail(String$.annotations({ description: "a string to be decoded into 
 		onNone: () => fail(new Type(ast, i, `Unable to decode ${JSON.stringify(i)} into a BigDecimal`)),
 		onSome: (val) => succeed(normalize$1(val))
 	})),
-	encode: (a) => succeed(format$3(normalize$1(a)))
+	encode: (a) => succeed(format$1(normalize$1(a)))
 }).annotations({ identifier: "BigDecimal" });
 transform(Number$.annotations({ description: "a number to be decoded into a BigDecimal" }), BigDecimalFromSelf, {
 	strict: true,
@@ -39111,7 +39087,7 @@ var getClassTag = (tag) => withConstructorDefault(propertySignature(Literal(tag)
 * @since 3.10.0
 */
 var TaggedError = (identifier) => (tag, fieldsOr, annotations) => {
-	class Base extends Error$1 {}
+	class Base extends Error$3 {}
 	Base.prototype.name = tag;
 	const fields = getFieldsFromFieldsOr(fieldsOr);
 	const schema = getSchemaFromFieldsOr(fieldsOr);
@@ -39149,7 +39125,7 @@ var extendFields = (a, b) => {
 function getDisableValidationMakeOption(options) {
 	return isBoolean(options) ? options : options?.disableValidation ?? false;
 }
-var astCache = /* @__PURE__ */ globalValue("effect/Schema/astCache", () => /* @__PURE__ */ new WeakMap());
+var astCache = /*#__PURE__*/ globalValue("effect/Schema/astCache", () => /* @__PURE__ */ new WeakMap());
 var getClassAnnotations = (annotations) => {
 	if (annotations === void 0) return [];
 	else if (Array.isArray(annotations)) return annotations;
@@ -39282,7 +39258,7 @@ var makeClass = ({ Base, annotations, disableToString, fields, identifier, kind,
 	});
 	return klass;
 };
-var FiberIdEncoded = /* @__PURE__ */ Union(/* @__PURE__ */ Struct({ _tag: Literal("None") }).annotations({ identifier: "FiberIdNoneEncoded" }), /* @__PURE__ */ Struct({
+var FiberIdEncoded = /*#__PURE__*/ Union(/* @__PURE__ */ Struct({ _tag: Literal("None") }).annotations({ identifier: "FiberIdNoneEncoded" }), /* @__PURE__ */ Struct({
 	_tag: Literal("Runtime"),
 	id: Int,
 	startTimeMillis: Int
@@ -39383,11 +39359,11 @@ transform(Literal("true", "false").annotations({ description: "a string to be de
 * @since 3.10.0
 */
 var Config = (name, schema) => {
-	const decodeUnknownEither$1 = decodeUnknownEither(schema);
-	return string(name).pipe(mapOrFail((s) => decodeUnknownEither$1(s).pipe(mapLeft((error) => InvalidData([], TreeFormatter.formatIssueSync(error))))));
+	const decodeUnknownEither$3 = decodeUnknownEither(schema);
+	return string(name).pipe(mapOrFail((s) => decodeUnknownEither$3(s).pipe(mapLeft((error) => InvalidData([], TreeFormatter.formatIssueSync(error))))));
 };
-var SymbolStruct = /* @__PURE__ */ TaggedStruct("symbol", { key: String$ }).annotations({ description: "an object to be decoded into a globally shared symbol" });
-var SymbolFromStruct = /* @__PURE__ */ transformOrFail(SymbolStruct, SymbolFromSelf, {
+var SymbolStruct = /*#__PURE__*/ TaggedStruct("symbol", { key: String$ }).annotations({ description: "an object to be decoded into a globally shared symbol" });
+var SymbolFromStruct = /*#__PURE__*/ transformOrFail(SymbolStruct, SymbolFromSelf, {
 	strict: true,
 	decode: (i) => decodeSymbol(i.key),
 	encode: (a, _, ast) => map(encodeSymbol(a, ast), (key) => SymbolStruct.make({ key }))
@@ -39506,6 +39482,6 @@ var GitService = class extends Service()("GitService", { succeed: { createWorktr
 	}));
 } } }) {};
 //#endregion
-export { runPromise as $, Service as A, warning as At, fail$1 as B, __require as Bt, option as C, error as Ct, merge as D, setFailed as Dt, isConfigError as E, info as Et, catchAll as F, require_undici as Ft, logInfo as G, forEach as H, __toESM as Ht, catchAllCause as I, require_tunnel as It, mapError$1 as J, logWarning as K, catchIf as L, __commonJSMin as Lt, all as M, BearerCredentialHandler as Mt, andThen as N, HttpClient as Nt, mergeAll as O, setOutput as Ot, as as P, HttpCodes as Pt, provide as Q, catchTag as R, __esmMin as Rt, boolean as S, debug as St, string as T, getState as Tt, gen as U, flatMap$1 as V, __toCommonJS as Vt, logError as W, orElseSucceed as X, option$2 as Y, promise as Z, Struct as _, getOrUndefined as _t, GitHubApiError as a, try_ as at, pattern as b, match$4 as bt, MissingAttributesError as c, get as ct, NixPathInfoError as d, fromEnv as dt, scoped as et, NotPullRequestContextError as f, fromMap as ft, NonEmptyString as g, getOrElse as gt, Literal as h, fromNullable as ht, AttributeParseError as i, tryPromise as it, acquireRelease as j, exec as jt, setConfigProvider as k, setSecret as kt, NixBuildError as l, make$8 as lt, Config as m, flatMap$5 as mt, removeWorktree as n, sync as nt, InvalidCommentStrategyError as o, TaggedError$1 as ot, Array$ as p, orElse$1 as pt, map$2 as q, ArtifactError as r, tapError as rt, InvalidDirectoryError as s, pretty as st, GitService as t, succeed$2 as tt, NixDixError as u, set as ut, decodeUnknown as v, isNone as vt, redacted as w, getInput as wt, value as x, pipe as xt, filter as y, map$7 as yt, catchTags as z, __exportAll as zt };
+export { tryPromise as $, catchAll as A, warning as At, logInfo as B, __require as Bt, mergeAll as C, error as Ct, all as D, setFailed as Dt, acquireRelease as E, info as Et, fail$1 as F, require_undici as Ft, orElseSucceed as G, map$1 as H, __toESM as Ht, flatMap$1 as I, require_tunnel as It, runPromise as J, promise as K, forEach as L, __commonJSMin as Lt, catchIf as M, BearerCredentialHandler as Mt, catchTag as N, HttpClient as Nt, andThen as O, setOutput as Ot, catchTags as P, HttpCodes as Pt, tapError as Q, gen as R, __esmMin as Rt, merge as S, debug as St, Service as T, getState as Tt, mapError$1 as U, logWarning as V, __toCommonJS as Vt, option as W, succeed$1 as X, scoped as Y, sync as Z, Struct as _, getOrUndefined as _t, GitHubApiError as a, boolean as at, pattern as b, match$4 as bt, MissingAttributesError as c, string as ct, NixPathInfoError as d, orElse$1 as dt, try_ as et, NotPullRequestContextError as f, isConfigError as ft, NonEmptyString as g, getOrElse as gt, Literal as h, fromNullable as ht, AttributeParseError as i, TaggedError$2 as it, catchAllCause as j, exec as jt, as as k, setSecret as kt, NixBuildError as l, fromEnv as lt, Config as m, flatMap$5 as mt, removeWorktree as n, make$8 as nt, InvalidCommentStrategyError as o, option$2 as ot, Array$ as p, pretty as pt, provide as q, ArtifactError as r, set$1 as rt, InvalidDirectoryError as s, redacted as st, GitService as t, get$1 as tt, NixDixError as u, fromMap as ut, decodeUnknown as v, isNone as vt, setConfigProvider as w, getInput as wt, value as x, pipe as xt, filter as y, map$7 as yt, logError as z, __exportAll as zt };
 
-//# sourceMappingURL=git-HrE0GXIJ.js.map
+//# sourceMappingURL=git-BIKueTWS.js.map
