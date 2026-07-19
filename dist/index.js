@@ -1,4 +1,5 @@
-import { $ as tryPromise, A as catchAll, At as warning, B as logInfo, Bt as __require, C as mergeAll, Ct as error, D as all, Dt as setFailed$1, E as acquireRelease, Et as info, F as fail, Ft as require_undici, G as orElseSucceed, H as map$2, Ht as __toESM, I as flatMap, It as require_tunnel, J as runPromise, K as promise, L as forEach, Lt as __commonJSMin, M as catchIf, Mt as BearerCredentialHandler, N as catchTag, Nt as HttpClient, O as andThen, Ot as setOutput, P as catchTags, Pt as HttpCodes, Q as tapError, R as gen, Rt as __esmMin, S as merge$1, St as debug, T as Service, U as mapError, V as logWarning, Vt as __toCommonJS, W as option, X as succeed, Y as scoped, Z as sync, _ as Struct, _t as getOrUndefined, a as GitHubApiError, at as boolean, b as pattern, bt as match, c as MissingAttributesError, ct as string, d as NixPathInfoError, dt as orElse$1, et as try_, f as NotPullRequestContextError, ft as isConfigError, g as NonEmptyString, gt as getOrElse, h as Literal, ht as fromNullable, i as AttributeParseError, it as TaggedError, j as catchAllCause, jt as exec, k as as, kt as setSecret, l as NixBuildError, lt as fromEnv$1, m as Config, mt as flatMap$1, nt as make, o as InvalidCommentStrategyError, ot as option$1, p as Array$, pt as pretty, q as provide, r as ArtifactError, rt as set, s as InvalidDirectoryError, st as redacted, t as GitService, tt as get, u as NixDixError, ut as fromMap$1, v as decodeUnknown, vt as isNone, w as setConfigProvider, wt as getInput, x as value, xt as pipe, y as filter$2, yt as map$3, z as logError, zt as __exportAll } from "./assets/git-DIvoUPor.js";
+import { a as __toCommonJS, i as __require, n as __esmMin, o as __toESM, r as __exportAll, t as __commonJSMin } from "./assets/rolldown-runtime-CE-6LUnI.js";
+import { $ as sync, A as andThen, At as setSecret, B as gen, C as redacted, Ct as debug, D as Service, Dt as info, E as isConfigError, F as catchTag, Ft as HttpCodes, G as mapError, H as logInfo, I as catchTags, It as require_undici, J as promise, K as option, L as fail, Lt as require_tunnel, M as catchAll, Mt as exec, N as catchAllCause, Nt as BearerCredentialHandler, O as acquireRelease, Ot as setFailed$1, P as catchIf, Pt as HttpClient, Q as succeed, R as flatMap, S as option$1, St as pipe, T as value$1, Tt as getInput, U as logWarning, V as logError, W as map$2, X as runPromise, Y as provide, Z as scoped, _ as Struct, _t as getOrElse, a as GitHubApiError, at as mergeAll$1, b as pattern, bt as map$3, c as MissingAttributesError, ct as withConfigProviderScoped, d as NixPathInfoError, dt as set$1, et as tapError, f as NotPullRequestContextError, ft as fromEnv$1, g as NonEmptyString, gt as fromNullable, h as Literal, ht as flatMap$1, i as AttributeParseError, it as merge$2, j as as, jt as warning, k as all, kt as setOutput, l as NixBuildError, lt as get$1, m as Config, mt as orElse$1, nt as try_, o as InvalidCommentStrategyError, ot as scopedDiscard, p as Array$, pt as fromMap$1, q as orElseSucceed, r as ArtifactError, rt as TaggedError, s as InvalidDirectoryError, st as pretty, t as GitService, tt as tryPromise, u as NixDixError, ut as make$1, v as decodeUnknown, vt as getOrUndefined, w as string, wt as error, x as boolean, xt as match, y as filter$2, yt as isNone, z as forEach } from "./assets/git-DbQjqvH3.js";
 import * as os$2 from "os";
 import os, { EOL } from "os";
 import * as crypto$1 from "crypto";
@@ -15,14 +16,58 @@ import zlib from "node:zlib";
 import { createHmac } from "node:crypto";
 import os$1, { EOL as EOL$1 } from "node:os";
 import process$1 from "node:process";
+import https from "node:https";
 import * as stream$2 from "stream";
 import { Readable as Readable$1 } from "stream";
-import https from "node:https";
 import { Buffer as Buffer$1 } from "buffer";
 import fs from "node:fs";
 import * as fs$2 from "fs/promises";
 import fs$1, { realpath } from "fs/promises";
 import * as nodePath from "node:path";
+//#region node_modules/effect/dist/esm/Ref.js
+/**
+* @since 2.0.0
+* @category constructors
+*/
+var make = make$1;
+/**
+* @since 2.0.0
+* @category getters
+*/
+var get = get$1;
+/**
+* @since 2.0.0
+* @category utils
+*/
+var set = set$1;
+//#endregion
+//#region node_modules/effect/dist/esm/internal/layer/circular.js
+/** @internal */
+var setConfigProvider$1 = (configProvider) => scopedDiscard(withConfigProviderScoped(configProvider));
+//#endregion
+//#region node_modules/effect/dist/esm/Layer.js
+/**
+* Merges this layer with the specified layer concurrently, producing a new layer with combined input and output types.
+*
+* @since 2.0.0
+* @category zipping
+*/
+var merge$1 = merge$2;
+/**
+* Combines all the provided layers concurrently, creating a new layer with merged input, error, and output types.
+*
+* @since 2.0.0
+* @category zipping
+*/
+var mergeAll = mergeAll$1;
+/**
+* Sets the current `ConfigProvider`.
+*
+* @since 2.0.0
+* @category config
+*/
+var setConfigProvider = setConfigProvider$1;
+//#endregion
 //#region node_modules/effect/dist/esm/ConfigProvider.js
 /**
 * A config provider that loads configuration from context variables
@@ -53,6 +98,26 @@ var fromMap = fromMap$1;
 * @category utils
 */
 var orElse = orElse$1;
+//#endregion
+//#region node_modules/effect/dist/esm/Redacted.js
+/**
+* Retrieves the original value from a `Redacted` instance. Use this function
+* with caution, as it exposes the sensitive data.
+*
+* @example
+* ```ts
+* import * as assert from "node:assert"
+* import { Redacted } from "effect"
+*
+* const API_KEY = Redacted.make("1234567890")
+*
+* assert.equal(Redacted.value(API_KEY), "1234567890")
+* ```
+*
+* @since 3.3.0
+* @category getters
+*/
+var value = value$1;
 //#endregion
 //#region src/services/nix.ts
 var DixUnsupportedFlag = class extends TaggedError("DixUnsupportedFlag") {};
@@ -3457,6 +3522,97 @@ function isJsonObject(value) {
 	return value !== null && typeof value == "object" && !Array.isArray(value);
 }
 //#endregion
+//#region node_modules/@protobuf-ts/runtime/build/es2015/base64.js
+var encTable = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split("");
+var decTable = [];
+for (let i = 0; i < encTable.length; i++) decTable[encTable[i].charCodeAt(0)] = i;
+decTable["-".charCodeAt(0)] = encTable.indexOf("+");
+decTable["_".charCodeAt(0)] = encTable.indexOf("/");
+/**
+* Decodes a base64 string to a byte array.
+*
+* - ignores white-space, including line breaks and tabs
+* - allows inner padding (can decode concatenated base64 strings)
+* - does not require padding
+* - understands base64url encoding:
+*   "-" instead of "+",
+*   "_" instead of "/",
+*   no padding
+*/
+function base64decode(base64Str) {
+	let es = base64Str.length * 3 / 4;
+	if (base64Str[base64Str.length - 2] == "=") es -= 2;
+	else if (base64Str[base64Str.length - 1] == "=") es -= 1;
+	let bytes = new Uint8Array(es), bytePos = 0, groupPos = 0, b, p = 0;
+	for (let i = 0; i < base64Str.length; i++) {
+		b = decTable[base64Str.charCodeAt(i)];
+		if (b === void 0) switch (base64Str[i]) {
+			case "=": groupPos = 0;
+			case "\n":
+			case "\r":
+			case "	":
+			case " ": continue;
+			default: throw Error(`invalid base64 string.`);
+		}
+		switch (groupPos) {
+			case 0:
+				p = b;
+				groupPos = 1;
+				break;
+			case 1:
+				bytes[bytePos++] = p << 2 | (b & 48) >> 4;
+				p = b;
+				groupPos = 2;
+				break;
+			case 2:
+				bytes[bytePos++] = (p & 15) << 4 | (b & 60) >> 2;
+				p = b;
+				groupPos = 3;
+				break;
+			case 3:
+				bytes[bytePos++] = (p & 3) << 6 | b;
+				groupPos = 0;
+				break;
+		}
+	}
+	if (groupPos == 1) throw Error(`invalid base64 string.`);
+	return bytes.subarray(0, bytePos);
+}
+/**
+* Encodes a byte array to a base64 string.
+* Adds padding at the end.
+* Does not insert newlines.
+*/
+function base64encode$1(bytes) {
+	let base64 = "", groupPos = 0, b, p = 0;
+	for (let i = 0; i < bytes.length; i++) {
+		b = bytes[i];
+		switch (groupPos) {
+			case 0:
+				base64 += encTable[b >> 2];
+				p = (b & 3) << 4;
+				groupPos = 1;
+				break;
+			case 1:
+				base64 += encTable[p | b >> 4];
+				p = (b & 15) << 2;
+				groupPos = 2;
+				break;
+			case 2:
+				base64 += encTable[p | b >> 6];
+				base64 += encTable[b & 63];
+				groupPos = 0;
+				break;
+		}
+	}
+	if (groupPos) {
+		base64 += encTable[p];
+		base64 += "=";
+		if (groupPos == 1) base64 += "=";
+	}
+	return base64;
+}
+//#endregion
 //#region node_modules/@protobuf-ts/runtime/build/es2015/binary-format-contract.js
 /**
 * This handler implements the default behaviour for unknown fields.
@@ -3931,6 +4087,437 @@ var PbLong = class PbLong extends SharedPbLong {
 */
 PbLong.ZERO = new PbLong(0, 0);
 //#endregion
+//#region node_modules/@protobuf-ts/runtime/build/es2015/binary-reader.js
+var defaultsRead$1 = {
+	readUnknownField: true,
+	readerFactory: (bytes) => new BinaryReader(bytes)
+};
+/**
+* Make options for reading binary data form partial options.
+*/
+function binaryReadOptions(options) {
+	return options ? Object.assign(Object.assign({}, defaultsRead$1), options) : defaultsRead$1;
+}
+var BinaryReader = class {
+	constructor(buf, textDecoder) {
+		this.varint64 = varint64read;
+		/**
+		* Read a `uint32` field, an unsigned 32 bit varint.
+		*/
+		this.uint32 = varint32read;
+		this.buf = buf;
+		this.len = buf.length;
+		this.pos = 0;
+		this.view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+		this.textDecoder = textDecoder !== null && textDecoder !== void 0 ? textDecoder : new TextDecoder("utf-8", {
+			fatal: true,
+			ignoreBOM: true
+		});
+	}
+	/**
+	* Reads a tag - field number and wire type.
+	*/
+	tag() {
+		let tag = this.uint32(), fieldNo = tag >>> 3, wireType = tag & 7;
+		if (fieldNo <= 0 || wireType < 0 || wireType > 5) throw new Error("illegal tag: field no " + fieldNo + " wire type " + wireType);
+		return [fieldNo, wireType];
+	}
+	/**
+	* Skip one element on the wire and return the skipped data.
+	* Supports WireType.StartGroup since v2.0.0-alpha.23.
+	*/
+	skip(wireType) {
+		let start = this.pos;
+		switch (wireType) {
+			case WireType.Varint:
+				while (this.buf[this.pos++] & 128);
+				break;
+			case WireType.Bit64: this.pos += 4;
+			case WireType.Bit32:
+				this.pos += 4;
+				break;
+			case WireType.LengthDelimited:
+				let len = this.uint32();
+				this.pos += len;
+				break;
+			case WireType.StartGroup:
+				let t;
+				while ((t = this.tag()[1]) !== WireType.EndGroup) this.skip(t);
+				break;
+			default: throw new Error("cant skip wire type " + wireType);
+		}
+		this.assertBounds();
+		return this.buf.subarray(start, this.pos);
+	}
+	/**
+	* Throws error if position in byte array is out of range.
+	*/
+	assertBounds() {
+		if (this.pos > this.len) throw new RangeError("premature EOF");
+	}
+	/**
+	* Read a `int32` field, a signed 32 bit varint.
+	*/
+	int32() {
+		return this.uint32() | 0;
+	}
+	/**
+	* Read a `sint32` field, a signed, zigzag-encoded 32-bit varint.
+	*/
+	sint32() {
+		let zze = this.uint32();
+		return zze >>> 1 ^ -(zze & 1);
+	}
+	/**
+	* Read a `int64` field, a signed 64-bit varint.
+	*/
+	int64() {
+		return new PbLong(...this.varint64());
+	}
+	/**
+	* Read a `uint64` field, an unsigned 64-bit varint.
+	*/
+	uint64() {
+		return new PbULong(...this.varint64());
+	}
+	/**
+	* Read a `sint64` field, a signed, zig-zag-encoded 64-bit varint.
+	*/
+	sint64() {
+		let [lo, hi] = this.varint64();
+		let s = -(lo & 1);
+		lo = (lo >>> 1 | (hi & 1) << 31) ^ s;
+		hi = hi >>> 1 ^ s;
+		return new PbLong(lo, hi);
+	}
+	/**
+	* Read a `bool` field, a variant.
+	*/
+	bool() {
+		let [lo, hi] = this.varint64();
+		return lo !== 0 || hi !== 0;
+	}
+	/**
+	* Read a `fixed32` field, an unsigned, fixed-length 32-bit integer.
+	*/
+	fixed32() {
+		return this.view.getUint32((this.pos += 4) - 4, true);
+	}
+	/**
+	* Read a `sfixed32` field, a signed, fixed-length 32-bit integer.
+	*/
+	sfixed32() {
+		return this.view.getInt32((this.pos += 4) - 4, true);
+	}
+	/**
+	* Read a `fixed64` field, an unsigned, fixed-length 64 bit integer.
+	*/
+	fixed64() {
+		return new PbULong(this.sfixed32(), this.sfixed32());
+	}
+	/**
+	* Read a `fixed64` field, a signed, fixed-length 64-bit integer.
+	*/
+	sfixed64() {
+		return new PbLong(this.sfixed32(), this.sfixed32());
+	}
+	/**
+	* Read a `float` field, 32-bit floating point number.
+	*/
+	float() {
+		return this.view.getFloat32((this.pos += 4) - 4, true);
+	}
+	/**
+	* Read a `double` field, a 64-bit floating point number.
+	*/
+	double() {
+		return this.view.getFloat64((this.pos += 8) - 8, true);
+	}
+	/**
+	* Read a `bytes` field, length-delimited arbitrary data.
+	*/
+	bytes() {
+		let len = this.uint32();
+		let start = this.pos;
+		this.pos += len;
+		this.assertBounds();
+		return this.buf.subarray(start, start + len);
+	}
+	/**
+	* Read a `string` field, length-delimited data converted to UTF-8 text.
+	*/
+	string() {
+		return this.textDecoder.decode(this.bytes());
+	}
+};
+//#endregion
+//#region node_modules/@protobuf-ts/runtime/build/es2015/assert.js
+/**
+* assert that condition is true or throw error (with message)
+*/
+function assert(condition, msg) {
+	if (!condition) throw new Error(msg);
+}
+var FLOAT32_MAX = 34028234663852886e22;
+var FLOAT32_MIN = -34028234663852886e22;
+var UINT32_MAX = 4294967295;
+var INT32_MAX = 2147483647;
+var INT32_MIN = -2147483648;
+function assertInt32(arg) {
+	if (typeof arg !== "number") throw new Error("invalid int 32: " + typeof arg);
+	if (!Number.isInteger(arg) || arg > INT32_MAX || arg < INT32_MIN) throw new Error("invalid int 32: " + arg);
+}
+function assertUInt32(arg) {
+	if (typeof arg !== "number") throw new Error("invalid uint 32: " + typeof arg);
+	if (!Number.isInteger(arg) || arg > UINT32_MAX || arg < 0) throw new Error("invalid uint 32: " + arg);
+}
+function assertFloat32(arg) {
+	if (typeof arg !== "number") throw new Error("invalid float 32: " + typeof arg);
+	if (!Number.isFinite(arg)) return;
+	if (arg > FLOAT32_MAX || arg < FLOAT32_MIN) throw new Error("invalid float 32: " + arg);
+}
+//#endregion
+//#region node_modules/@protobuf-ts/runtime/build/es2015/binary-writer.js
+var defaultsWrite$1 = {
+	writeUnknownFields: true,
+	writerFactory: () => new BinaryWriter()
+};
+/**
+* Make options for writing binary data form partial options.
+*/
+function binaryWriteOptions(options) {
+	return options ? Object.assign(Object.assign({}, defaultsWrite$1), options) : defaultsWrite$1;
+}
+var BinaryWriter = class {
+	constructor(textEncoder) {
+		/**
+		* Previous fork states.
+		*/
+		this.stack = [];
+		this.textEncoder = textEncoder !== null && textEncoder !== void 0 ? textEncoder : new TextEncoder();
+		this.chunks = [];
+		this.buf = [];
+	}
+	/**
+	* Return all bytes written and reset this writer.
+	*/
+	finish() {
+		this.chunks.push(new Uint8Array(this.buf));
+		let len = 0;
+		for (let i = 0; i < this.chunks.length; i++) len += this.chunks[i].length;
+		let bytes = new Uint8Array(len);
+		let offset = 0;
+		for (let i = 0; i < this.chunks.length; i++) {
+			bytes.set(this.chunks[i], offset);
+			offset += this.chunks[i].length;
+		}
+		this.chunks = [];
+		return bytes;
+	}
+	/**
+	* Start a new fork for length-delimited data like a message
+	* or a packed repeated field.
+	*
+	* Must be joined later with `join()`.
+	*/
+	fork() {
+		this.stack.push({
+			chunks: this.chunks,
+			buf: this.buf
+		});
+		this.chunks = [];
+		this.buf = [];
+		return this;
+	}
+	/**
+	* Join the last fork. Write its length and bytes, then
+	* return to the previous state.
+	*/
+	join() {
+		let chunk = this.finish();
+		let prev = this.stack.pop();
+		if (!prev) throw new Error("invalid state, fork stack empty");
+		this.chunks = prev.chunks;
+		this.buf = prev.buf;
+		this.uint32(chunk.byteLength);
+		return this.raw(chunk);
+	}
+	/**
+	* Writes a tag (field number and wire type).
+	*
+	* Equivalent to `uint32( (fieldNo << 3 | type) >>> 0 )`.
+	*
+	* Generated code should compute the tag ahead of time and call `uint32()`.
+	*/
+	tag(fieldNo, type) {
+		return this.uint32((fieldNo << 3 | type) >>> 0);
+	}
+	/**
+	* Write a chunk of raw bytes.
+	*/
+	raw(chunk) {
+		if (this.buf.length) {
+			this.chunks.push(new Uint8Array(this.buf));
+			this.buf = [];
+		}
+		this.chunks.push(chunk);
+		return this;
+	}
+	/**
+	* Write a `uint32` value, an unsigned 32 bit varint.
+	*/
+	uint32(value) {
+		assertUInt32(value);
+		while (value > 127) {
+			this.buf.push(value & 127 | 128);
+			value = value >>> 7;
+		}
+		this.buf.push(value);
+		return this;
+	}
+	/**
+	* Write a `int32` value, a signed 32 bit varint.
+	*/
+	int32(value) {
+		assertInt32(value);
+		varint32write(value, this.buf);
+		return this;
+	}
+	/**
+	* Write a `bool` value, a variant.
+	*/
+	bool(value) {
+		this.buf.push(value ? 1 : 0);
+		return this;
+	}
+	/**
+	* Write a `bytes` value, length-delimited arbitrary data.
+	*/
+	bytes(value) {
+		this.uint32(value.byteLength);
+		return this.raw(value);
+	}
+	/**
+	* Write a `string` value, length-delimited data converted to UTF-8 text.
+	*/
+	string(value) {
+		let chunk = this.textEncoder.encode(value);
+		this.uint32(chunk.byteLength);
+		return this.raw(chunk);
+	}
+	/**
+	* Write a `float` value, 32-bit floating point number.
+	*/
+	float(value) {
+		assertFloat32(value);
+		let chunk = /* @__PURE__ */ new Uint8Array(4);
+		new DataView(chunk.buffer).setFloat32(0, value, true);
+		return this.raw(chunk);
+	}
+	/**
+	* Write a `double` value, a 64-bit floating point number.
+	*/
+	double(value) {
+		let chunk = /* @__PURE__ */ new Uint8Array(8);
+		new DataView(chunk.buffer).setFloat64(0, value, true);
+		return this.raw(chunk);
+	}
+	/**
+	* Write a `fixed32` value, an unsigned, fixed-length 32-bit integer.
+	*/
+	fixed32(value) {
+		assertUInt32(value);
+		let chunk = /* @__PURE__ */ new Uint8Array(4);
+		new DataView(chunk.buffer).setUint32(0, value, true);
+		return this.raw(chunk);
+	}
+	/**
+	* Write a `sfixed32` value, a signed, fixed-length 32-bit integer.
+	*/
+	sfixed32(value) {
+		assertInt32(value);
+		let chunk = /* @__PURE__ */ new Uint8Array(4);
+		new DataView(chunk.buffer).setInt32(0, value, true);
+		return this.raw(chunk);
+	}
+	/**
+	* Write a `sint32` value, a signed, zigzag-encoded 32-bit varint.
+	*/
+	sint32(value) {
+		assertInt32(value);
+		value = (value << 1 ^ value >> 31) >>> 0;
+		varint32write(value, this.buf);
+		return this;
+	}
+	/**
+	* Write a `fixed64` value, a signed, fixed-length 64-bit integer.
+	*/
+	sfixed64(value) {
+		let chunk = /* @__PURE__ */ new Uint8Array(8);
+		let view = new DataView(chunk.buffer);
+		let long = PbLong.from(value);
+		view.setInt32(0, long.lo, true);
+		view.setInt32(4, long.hi, true);
+		return this.raw(chunk);
+	}
+	/**
+	* Write a `fixed64` value, an unsigned, fixed-length 64 bit integer.
+	*/
+	fixed64(value) {
+		let chunk = /* @__PURE__ */ new Uint8Array(8);
+		let view = new DataView(chunk.buffer);
+		let long = PbULong.from(value);
+		view.setInt32(0, long.lo, true);
+		view.setInt32(4, long.hi, true);
+		return this.raw(chunk);
+	}
+	/**
+	* Write a `int64` value, a signed 64-bit varint.
+	*/
+	int64(value) {
+		let long = PbLong.from(value);
+		varint64write(long.lo, long.hi, this.buf);
+		return this;
+	}
+	/**
+	* Write a `sint64` value, a signed, zig-zag-encoded 64-bit varint.
+	*/
+	sint64(value) {
+		let long = PbLong.from(value), sign = long.hi >> 31;
+		varint64write(long.lo << 1 ^ sign, (long.hi << 1 | long.lo >>> 31) ^ sign, this.buf);
+		return this;
+	}
+	/**
+	* Write a `uint64` value, an unsigned 64-bit varint.
+	*/
+	uint64(value) {
+		let long = PbULong.from(value);
+		varint64write(long.lo, long.hi, this.buf);
+		return this;
+	}
+};
+//#endregion
+//#region node_modules/@protobuf-ts/runtime/build/es2015/json-format-contract.js
+var defaultsWrite = {
+	emitDefaultValues: false,
+	enumAsInteger: false,
+	useProtoFieldName: false,
+	prettySpaces: 0
+};
+var defaultsRead = { ignoreUnknownFields: false };
+/**
+* Make options for reading JSON data from partial options.
+*/
+function jsonReadOptions(options) {
+	return options ? Object.assign(Object.assign({}, defaultsRead), options) : defaultsRead;
+}
+/**
+* Make options for writing JSON data from partial options.
+*/
+function jsonWriteOptions(options) {
+	return options ? Object.assign(Object.assign({}, defaultsWrite), options) : defaultsWrite;
+}
+//#endregion
 //#region node_modules/@protobuf-ts/runtime/build/es2015/message-type-contract.js
 /**
 * The symbol used as a key on message objects to store the message type.
@@ -4273,119 +4860,6 @@ var ReflectionTypeCheck = class {
 		}
 	}
 };
-//#endregion
-//#region node_modules/@protobuf-ts/runtime/build/es2015/base64.js
-var encTable = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split("");
-var decTable = [];
-for (let i = 0; i < encTable.length; i++) decTable[encTable[i].charCodeAt(0)] = i;
-decTable["-".charCodeAt(0)] = encTable.indexOf("+");
-decTable["_".charCodeAt(0)] = encTable.indexOf("/");
-/**
-* Decodes a base64 string to a byte array.
-*
-* - ignores white-space, including line breaks and tabs
-* - allows inner padding (can decode concatenated base64 strings)
-* - does not require padding
-* - understands base64url encoding:
-*   "-" instead of "+",
-*   "_" instead of "/",
-*   no padding
-*/
-function base64decode(base64Str) {
-	let es = base64Str.length * 3 / 4;
-	if (base64Str[base64Str.length - 2] == "=") es -= 2;
-	else if (base64Str[base64Str.length - 1] == "=") es -= 1;
-	let bytes = new Uint8Array(es), bytePos = 0, groupPos = 0, b, p = 0;
-	for (let i = 0; i < base64Str.length; i++) {
-		b = decTable[base64Str.charCodeAt(i)];
-		if (b === void 0) switch (base64Str[i]) {
-			case "=": groupPos = 0;
-			case "\n":
-			case "\r":
-			case "	":
-			case " ": continue;
-			default: throw Error(`invalid base64 string.`);
-		}
-		switch (groupPos) {
-			case 0:
-				p = b;
-				groupPos = 1;
-				break;
-			case 1:
-				bytes[bytePos++] = p << 2 | (b & 48) >> 4;
-				p = b;
-				groupPos = 2;
-				break;
-			case 2:
-				bytes[bytePos++] = (p & 15) << 4 | (b & 60) >> 2;
-				p = b;
-				groupPos = 3;
-				break;
-			case 3:
-				bytes[bytePos++] = (p & 3) << 6 | b;
-				groupPos = 0;
-				break;
-		}
-	}
-	if (groupPos == 1) throw Error(`invalid base64 string.`);
-	return bytes.subarray(0, bytePos);
-}
-/**
-* Encodes a byte array to a base64 string.
-* Adds padding at the end.
-* Does not insert newlines.
-*/
-function base64encode$1(bytes) {
-	let base64 = "", groupPos = 0, b, p = 0;
-	for (let i = 0; i < bytes.length; i++) {
-		b = bytes[i];
-		switch (groupPos) {
-			case 0:
-				base64 += encTable[b >> 2];
-				p = (b & 3) << 4;
-				groupPos = 1;
-				break;
-			case 1:
-				base64 += encTable[p | b >> 4];
-				p = (b & 15) << 2;
-				groupPos = 2;
-				break;
-			case 2:
-				base64 += encTable[p | b >> 6];
-				base64 += encTable[b & 63];
-				groupPos = 0;
-				break;
-		}
-	}
-	if (groupPos) {
-		base64 += encTable[p];
-		base64 += "=";
-		if (groupPos == 1) base64 += "=";
-	}
-	return base64;
-}
-//#endregion
-//#region node_modules/@protobuf-ts/runtime/build/es2015/assert.js
-/**
-* assert that condition is true or throw error (with message)
-*/
-function assert(condition, msg) {
-	if (!condition) throw new Error(msg);
-}
-var FLOAT32_MAX = 34028234663852886e22, FLOAT32_MIN = -34028234663852886e22, UINT32_MAX = 4294967295, INT32_MAX = 2147483647, INT32_MIN = -2147483648;
-function assertInt32(arg) {
-	if (typeof arg !== "number") throw new Error("invalid int 32: " + typeof arg);
-	if (!Number.isInteger(arg) || arg > INT32_MAX || arg < INT32_MIN) throw new Error("invalid int 32: " + arg);
-}
-function assertUInt32(arg) {
-	if (typeof arg !== "number") throw new Error("invalid uint 32: " + typeof arg);
-	if (!Number.isInteger(arg) || arg > UINT32_MAX || arg < 0) throw new Error("invalid uint 32: " + arg);
-}
-function assertFloat32(arg) {
-	if (typeof arg !== "number") throw new Error("invalid float 32: " + typeof arg);
-	if (!Number.isFinite(arg)) return;
-	if (arg > FLOAT32_MAX || arg < FLOAT32_MIN) throw new Error("invalid float 32: " + arg);
-}
 //#endregion
 //#region node_modules/@protobuf-ts/runtime/build/es2015/reflection-long-convert.js
 /**
@@ -5278,26 +5752,6 @@ function reflectionMergePartial(info, target, source) {
 	}
 }
 //#endregion
-//#region node_modules/@protobuf-ts/runtime/build/es2015/json-format-contract.js
-var defaultsWrite$1 = {
-	emitDefaultValues: false,
-	enumAsInteger: false,
-	useProtoFieldName: false,
-	prettySpaces: 0
-}, defaultsRead$1 = { ignoreUnknownFields: false };
-/**
-* Make options for reading JSON data from partial options.
-*/
-function jsonReadOptions(options) {
-	return options ? Object.assign(Object.assign({}, defaultsRead$1), options) : defaultsRead$1;
-}
-/**
-* Make options for writing JSON data from partial options.
-*/
-function jsonWriteOptions(options) {
-	return options ? Object.assign(Object.assign({}, defaultsWrite$1), options) : defaultsWrite$1;
-}
-//#endregion
 //#region node_modules/@protobuf-ts/runtime/build/es2015/reflection-equals.js
 /**
 * Determines whether two message of the same type have the same field values.
@@ -5349,390 +5803,6 @@ function repeatedMsgEq(type, a, b) {
 	for (let i = 0; i < a.length; i++) if (!type.equals(a[i], b[i])) return false;
 	return true;
 }
-//#endregion
-//#region node_modules/@protobuf-ts/runtime/build/es2015/binary-writer.js
-var defaultsWrite = {
-	writeUnknownFields: true,
-	writerFactory: () => new BinaryWriter()
-};
-/**
-* Make options for writing binary data form partial options.
-*/
-function binaryWriteOptions(options) {
-	return options ? Object.assign(Object.assign({}, defaultsWrite), options) : defaultsWrite;
-}
-var BinaryWriter = class {
-	constructor(textEncoder) {
-		/**
-		* Previous fork states.
-		*/
-		this.stack = [];
-		this.textEncoder = textEncoder !== null && textEncoder !== void 0 ? textEncoder : new TextEncoder();
-		this.chunks = [];
-		this.buf = [];
-	}
-	/**
-	* Return all bytes written and reset this writer.
-	*/
-	finish() {
-		this.chunks.push(new Uint8Array(this.buf));
-		let len = 0;
-		for (let i = 0; i < this.chunks.length; i++) len += this.chunks[i].length;
-		let bytes = new Uint8Array(len);
-		let offset = 0;
-		for (let i = 0; i < this.chunks.length; i++) {
-			bytes.set(this.chunks[i], offset);
-			offset += this.chunks[i].length;
-		}
-		this.chunks = [];
-		return bytes;
-	}
-	/**
-	* Start a new fork for length-delimited data like a message
-	* or a packed repeated field.
-	*
-	* Must be joined later with `join()`.
-	*/
-	fork() {
-		this.stack.push({
-			chunks: this.chunks,
-			buf: this.buf
-		});
-		this.chunks = [];
-		this.buf = [];
-		return this;
-	}
-	/**
-	* Join the last fork. Write its length and bytes, then
-	* return to the previous state.
-	*/
-	join() {
-		let chunk = this.finish();
-		let prev = this.stack.pop();
-		if (!prev) throw new Error("invalid state, fork stack empty");
-		this.chunks = prev.chunks;
-		this.buf = prev.buf;
-		this.uint32(chunk.byteLength);
-		return this.raw(chunk);
-	}
-	/**
-	* Writes a tag (field number and wire type).
-	*
-	* Equivalent to `uint32( (fieldNo << 3 | type) >>> 0 )`.
-	*
-	* Generated code should compute the tag ahead of time and call `uint32()`.
-	*/
-	tag(fieldNo, type) {
-		return this.uint32((fieldNo << 3 | type) >>> 0);
-	}
-	/**
-	* Write a chunk of raw bytes.
-	*/
-	raw(chunk) {
-		if (this.buf.length) {
-			this.chunks.push(new Uint8Array(this.buf));
-			this.buf = [];
-		}
-		this.chunks.push(chunk);
-		return this;
-	}
-	/**
-	* Write a `uint32` value, an unsigned 32 bit varint.
-	*/
-	uint32(value) {
-		assertUInt32(value);
-		while (value > 127) {
-			this.buf.push(value & 127 | 128);
-			value = value >>> 7;
-		}
-		this.buf.push(value);
-		return this;
-	}
-	/**
-	* Write a `int32` value, a signed 32 bit varint.
-	*/
-	int32(value) {
-		assertInt32(value);
-		varint32write(value, this.buf);
-		return this;
-	}
-	/**
-	* Write a `bool` value, a variant.
-	*/
-	bool(value) {
-		this.buf.push(value ? 1 : 0);
-		return this;
-	}
-	/**
-	* Write a `bytes` value, length-delimited arbitrary data.
-	*/
-	bytes(value) {
-		this.uint32(value.byteLength);
-		return this.raw(value);
-	}
-	/**
-	* Write a `string` value, length-delimited data converted to UTF-8 text.
-	*/
-	string(value) {
-		let chunk = this.textEncoder.encode(value);
-		this.uint32(chunk.byteLength);
-		return this.raw(chunk);
-	}
-	/**
-	* Write a `float` value, 32-bit floating point number.
-	*/
-	float(value) {
-		assertFloat32(value);
-		let chunk = /* @__PURE__ */ new Uint8Array(4);
-		new DataView(chunk.buffer).setFloat32(0, value, true);
-		return this.raw(chunk);
-	}
-	/**
-	* Write a `double` value, a 64-bit floating point number.
-	*/
-	double(value) {
-		let chunk = /* @__PURE__ */ new Uint8Array(8);
-		new DataView(chunk.buffer).setFloat64(0, value, true);
-		return this.raw(chunk);
-	}
-	/**
-	* Write a `fixed32` value, an unsigned, fixed-length 32-bit integer.
-	*/
-	fixed32(value) {
-		assertUInt32(value);
-		let chunk = /* @__PURE__ */ new Uint8Array(4);
-		new DataView(chunk.buffer).setUint32(0, value, true);
-		return this.raw(chunk);
-	}
-	/**
-	* Write a `sfixed32` value, a signed, fixed-length 32-bit integer.
-	*/
-	sfixed32(value) {
-		assertInt32(value);
-		let chunk = /* @__PURE__ */ new Uint8Array(4);
-		new DataView(chunk.buffer).setInt32(0, value, true);
-		return this.raw(chunk);
-	}
-	/**
-	* Write a `sint32` value, a signed, zigzag-encoded 32-bit varint.
-	*/
-	sint32(value) {
-		assertInt32(value);
-		value = (value << 1 ^ value >> 31) >>> 0;
-		varint32write(value, this.buf);
-		return this;
-	}
-	/**
-	* Write a `fixed64` value, a signed, fixed-length 64-bit integer.
-	*/
-	sfixed64(value) {
-		let chunk = /* @__PURE__ */ new Uint8Array(8);
-		let view = new DataView(chunk.buffer);
-		let long = PbLong.from(value);
-		view.setInt32(0, long.lo, true);
-		view.setInt32(4, long.hi, true);
-		return this.raw(chunk);
-	}
-	/**
-	* Write a `fixed64` value, an unsigned, fixed-length 64 bit integer.
-	*/
-	fixed64(value) {
-		let chunk = /* @__PURE__ */ new Uint8Array(8);
-		let view = new DataView(chunk.buffer);
-		let long = PbULong.from(value);
-		view.setInt32(0, long.lo, true);
-		view.setInt32(4, long.hi, true);
-		return this.raw(chunk);
-	}
-	/**
-	* Write a `int64` value, a signed 64-bit varint.
-	*/
-	int64(value) {
-		let long = PbLong.from(value);
-		varint64write(long.lo, long.hi, this.buf);
-		return this;
-	}
-	/**
-	* Write a `sint64` value, a signed, zig-zag-encoded 64-bit varint.
-	*/
-	sint64(value) {
-		let long = PbLong.from(value), sign = long.hi >> 31;
-		varint64write(long.lo << 1 ^ sign, (long.hi << 1 | long.lo >>> 31) ^ sign, this.buf);
-		return this;
-	}
-	/**
-	* Write a `uint64` value, an unsigned 64-bit varint.
-	*/
-	uint64(value) {
-		let long = PbULong.from(value);
-		varint64write(long.lo, long.hi, this.buf);
-		return this;
-	}
-};
-//#endregion
-//#region node_modules/@protobuf-ts/runtime/build/es2015/binary-reader.js
-var defaultsRead = {
-	readUnknownField: true,
-	readerFactory: (bytes) => new BinaryReader(bytes)
-};
-/**
-* Make options for reading binary data form partial options.
-*/
-function binaryReadOptions(options) {
-	return options ? Object.assign(Object.assign({}, defaultsRead), options) : defaultsRead;
-}
-var BinaryReader = class {
-	constructor(buf, textDecoder) {
-		this.varint64 = varint64read;
-		/**
-		* Read a `uint32` field, an unsigned 32 bit varint.
-		*/
-		this.uint32 = varint32read;
-		this.buf = buf;
-		this.len = buf.length;
-		this.pos = 0;
-		this.view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
-		this.textDecoder = textDecoder !== null && textDecoder !== void 0 ? textDecoder : new TextDecoder("utf-8", {
-			fatal: true,
-			ignoreBOM: true
-		});
-	}
-	/**
-	* Reads a tag - field number and wire type.
-	*/
-	tag() {
-		let tag = this.uint32(), fieldNo = tag >>> 3, wireType = tag & 7;
-		if (fieldNo <= 0 || wireType < 0 || wireType > 5) throw new Error("illegal tag: field no " + fieldNo + " wire type " + wireType);
-		return [fieldNo, wireType];
-	}
-	/**
-	* Skip one element on the wire and return the skipped data.
-	* Supports WireType.StartGroup since v2.0.0-alpha.23.
-	*/
-	skip(wireType) {
-		let start = this.pos;
-		switch (wireType) {
-			case WireType.Varint:
-				while (this.buf[this.pos++] & 128);
-				break;
-			case WireType.Bit64: this.pos += 4;
-			case WireType.Bit32:
-				this.pos += 4;
-				break;
-			case WireType.LengthDelimited:
-				let len = this.uint32();
-				this.pos += len;
-				break;
-			case WireType.StartGroup:
-				let t;
-				while ((t = this.tag()[1]) !== WireType.EndGroup) this.skip(t);
-				break;
-			default: throw new Error("cant skip wire type " + wireType);
-		}
-		this.assertBounds();
-		return this.buf.subarray(start, this.pos);
-	}
-	/**
-	* Throws error if position in byte array is out of range.
-	*/
-	assertBounds() {
-		if (this.pos > this.len) throw new RangeError("premature EOF");
-	}
-	/**
-	* Read a `int32` field, a signed 32 bit varint.
-	*/
-	int32() {
-		return this.uint32() | 0;
-	}
-	/**
-	* Read a `sint32` field, a signed, zigzag-encoded 32-bit varint.
-	*/
-	sint32() {
-		let zze = this.uint32();
-		return zze >>> 1 ^ -(zze & 1);
-	}
-	/**
-	* Read a `int64` field, a signed 64-bit varint.
-	*/
-	int64() {
-		return new PbLong(...this.varint64());
-	}
-	/**
-	* Read a `uint64` field, an unsigned 64-bit varint.
-	*/
-	uint64() {
-		return new PbULong(...this.varint64());
-	}
-	/**
-	* Read a `sint64` field, a signed, zig-zag-encoded 64-bit varint.
-	*/
-	sint64() {
-		let [lo, hi] = this.varint64();
-		let s = -(lo & 1);
-		lo = (lo >>> 1 | (hi & 1) << 31) ^ s;
-		hi = hi >>> 1 ^ s;
-		return new PbLong(lo, hi);
-	}
-	/**
-	* Read a `bool` field, a variant.
-	*/
-	bool() {
-		let [lo, hi] = this.varint64();
-		return lo !== 0 || hi !== 0;
-	}
-	/**
-	* Read a `fixed32` field, an unsigned, fixed-length 32-bit integer.
-	*/
-	fixed32() {
-		return this.view.getUint32((this.pos += 4) - 4, true);
-	}
-	/**
-	* Read a `sfixed32` field, a signed, fixed-length 32-bit integer.
-	*/
-	sfixed32() {
-		return this.view.getInt32((this.pos += 4) - 4, true);
-	}
-	/**
-	* Read a `fixed64` field, an unsigned, fixed-length 64 bit integer.
-	*/
-	fixed64() {
-		return new PbULong(this.sfixed32(), this.sfixed32());
-	}
-	/**
-	* Read a `fixed64` field, a signed, fixed-length 64-bit integer.
-	*/
-	sfixed64() {
-		return new PbLong(this.sfixed32(), this.sfixed32());
-	}
-	/**
-	* Read a `float` field, 32-bit floating point number.
-	*/
-	float() {
-		return this.view.getFloat32((this.pos += 4) - 4, true);
-	}
-	/**
-	* Read a `double` field, a 64-bit floating point number.
-	*/
-	double() {
-		return this.view.getFloat64((this.pos += 8) - 8, true);
-	}
-	/**
-	* Read a `bytes` field, length-delimited arbitrary data.
-	*/
-	bytes() {
-		let len = this.uint32();
-		let start = this.pos;
-		this.pos += len;
-		this.assertBounds();
-		return this.buf.subarray(start, start + len);
-	}
-	/**
-	* Read a `string` field, length-delimited data converted to UTF-8 text.
-	*/
-	string() {
-		return this.textDecoder.decode(this.bytes());
-	}
-};
 //#endregion
 //#region node_modules/@protobuf-ts/runtime/build/es2015/message-type.js
 var baseDescriptors = Object.getOwnPropertyDescriptors(Object.getPrototypeOf({}));
@@ -7994,6 +8064,43 @@ function getUploadZipSpecification(filesToZip, rootDirectory) {
 	return specification;
 }
 //#endregion
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/abort-controller/AbortError.js
+/**
+* This error is thrown when an asynchronous operation has been aborted.
+* Check for this error by testing the `name` that the name property of the
+* error matches `"AbortError"`.
+*
+* @example
+* ```ts snippet:ReadmeSampleAbortError
+* import { AbortError } from "@typespec/ts-http-runtime";
+*
+* async function doAsyncWork(options: { abortSignal: AbortSignal }): Promise<void> {
+*   if (options.abortSignal.aborted) {
+*     throw new AbortError();
+*   }
+*
+*   // do async work
+* }
+*
+* const controller = new AbortController();
+* controller.abort();
+*
+* try {
+*   doAsyncWork({ abortSignal: controller.signal });
+* } catch (e) {
+*   if (e instanceof Error && e.name === "AbortError") {
+*     // handle abort error here.
+*   }
+* }
+* ```
+*/
+var AbortError$1 = class extends Error {
+	constructor(message) {
+		super(message);
+		this.name = "AbortError";
+	}
+};
+//#endregion
 //#region node_modules/@typespec/ts-http-runtime/dist/esm/logger/log.js
 function log$1(message, ...args) {
 	process$1.stderr.write(`${util.format(message, ...args)}${EOL$1}`);
@@ -8211,273 +8318,342 @@ function createClientLogger$1(namespace) {
 	return context$1.createClientLogger(namespace);
 }
 //#endregion
-//#region node_modules/@azure/logger/dist/esm/index.js
-var context = createLoggerContext({
-	logLevelEnvVarName: "AZURE_LOG_LEVEL",
-	namespace: "azure"
-});
-context.logger;
-/**
-* Creates a logger for use by the Azure SDKs that inherits from `AzureLogger`.
-* @param namespace - The name of the SDK package.
-* @hidden
-*/
-function createClientLogger(namespace) {
-	return context.createClientLogger(namespace);
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/httpHeaders.js
+function normalizeName(name) {
+	return name.toLowerCase();
 }
-//#endregion
-//#region node_modules/@azure/core-rest-pipeline/dist/esm/log.js
-var logger$4 = createClientLogger("core-rest-pipeline");
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/policies/agentPolicy.js
-/**
-* Name of the Agent Policy
-*/
-var agentPolicyName = "agentPolicy";
-/**
-* Gets a pipeline policy that sets http.agent
-*/
-function agentPolicy$1(agent) {
-	return {
-		name: agentPolicyName,
-		sendRequest: async (req, next) => {
-			if (!req.agent) req.agent = agent;
-			return next(req);
-		}
-	};
+function* headerIterator(map) {
+	for (const entry of map.values()) yield [entry.name, entry.value];
 }
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/policies/decompressResponsePolicy.js
-/**
-* The programmatic identifier of the decompressResponsePolicy.
-*/
-var decompressResponsePolicyName$1 = "decompressResponsePolicy";
-/**
-* A policy to enable response decompression according to Accept-Encoding header
-* https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding
-*/
-function decompressResponsePolicy$1() {
-	return {
-		name: decompressResponsePolicyName$1,
-		async sendRequest(request, next) {
-			if (request.method !== "HEAD") request.headers.set("Accept-Encoding", "gzip,deflate");
-			return next(request);
-		}
-	};
-}
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/util/random.js
-/**
-* Returns a random integer value between a lower and upper bound,
-* inclusive of both bounds.
-* Note that this uses Math.random and isn't secure. If you need to use
-* this for any kind of security purpose, find a better source of random.
-* @param min - The smallest integer value allowed.
-* @param max - The largest integer value allowed.
-*/
-function getRandomIntegerInclusive(min, max) {
-	min = Math.ceil(min);
-	max = Math.floor(max);
-	return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/util/delay.js
-/**
-* Calculates the delay interval for retry attempts using exponential delay with jitter.
-* @param retryAttempt - The current retry attempt number.
-* @param config - The exponential retry configuration.
-* @returns An object containing the calculated retry delay.
-*/
-function calculateRetryDelay(retryAttempt, config) {
-	const exponentialDelay = config.retryDelayInMs * Math.pow(2, retryAttempt);
-	const clampedDelay = Math.min(config.maxRetryDelayInMs, exponentialDelay);
-	return { retryAfterInMs: clampedDelay / 2 + getRandomIntegerInclusive(0, clampedDelay / 2) };
-}
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/abort-controller/AbortError.js
-/**
-* This error is thrown when an asynchronous operation has been aborted.
-* Check for this error by testing the `name` that the name property of the
-* error matches `"AbortError"`.
-*
-* @example
-* ```ts snippet:ReadmeSampleAbortError
-* import { AbortError } from "@typespec/ts-http-runtime";
-*
-* async function doAsyncWork(options: { abortSignal: AbortSignal }): Promise<void> {
-*   if (options.abortSignal.aborted) {
-*     throw new AbortError();
-*   }
-*
-*   // do async work
-* }
-*
-* const controller = new AbortController();
-* controller.abort();
-*
-* try {
-*   doAsyncWork({ abortSignal: controller.signal });
-* } catch (e) {
-*   if (e instanceof Error && e.name === "AbortError") {
-*     // handle abort error here.
-*   }
-* }
-* ```
-*/
-var AbortError$1 = class extends Error {
-	constructor(message) {
-		super(message);
-		this.name = "AbortError";
+var HttpHeadersImpl = class {
+	_headersMap;
+	constructor(rawHeaders) {
+		this._headersMap = /* @__PURE__ */ new Map();
+		if (rawHeaders) for (const headerName of Object.keys(rawHeaders)) this.set(headerName, rawHeaders[headerName]);
+	}
+	/**
+	* Set a header in this collection with the provided name and value. The name is
+	* case-insensitive.
+	* @param name - The name of the header to set. This value is case-insensitive.
+	* @param value - The value of the header to set.
+	*/
+	set(name, value) {
+		this._headersMap.set(normalizeName(name), {
+			name,
+			value: String(value).trim()
+		});
+	}
+	/**
+	* Get the header value for the provided header name, or undefined if no header exists in this
+	* collection with the provided name.
+	* @param name - The name of the header. This value is case-insensitive.
+	*/
+	get(name) {
+		return this._headersMap.get(normalizeName(name))?.value;
+	}
+	/**
+	* Get whether or not this header collection contains a header entry for the provided header name.
+	* @param name - The name of the header to set. This value is case-insensitive.
+	*/
+	has(name) {
+		return this._headersMap.has(normalizeName(name));
+	}
+	/**
+	* Remove the header with the provided headerName.
+	* @param name - The name of the header to remove.
+	*/
+	delete(name) {
+		this._headersMap.delete(normalizeName(name));
+	}
+	/**
+	* Get the JSON object representation of this HTTP header collection.
+	*/
+	toJSON(options = {}) {
+		const result = {};
+		if (options.preserveCase) for (const entry of this._headersMap.values()) result[entry.name] = entry.value;
+		else for (const [normalizedName, entry] of this._headersMap) result[normalizedName] = entry.value;
+		return result;
+	}
+	/**
+	* Get the string representation of this HTTP header collection.
+	*/
+	toString() {
+		return JSON.stringify(this.toJSON({ preserveCase: true }));
+	}
+	/**
+	* Iterate over tuples of header [name, value] pairs.
+	*/
+	[Symbol.iterator]() {
+		return headerIterator(this._headersMap);
 	}
 };
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/util/helpers.js
-var StandardAbortMessage$1 = "The operation was aborted.";
 /**
-* A wrapper for setTimeout that resolves a promise after delayInMs milliseconds.
-* @param delayInMs - The number of milliseconds to be delayed.
-* @param value - The value to be resolved with after a timeout of t milliseconds.
-* @param options - The options for delay - currently abort options
-*                  - abortSignal - The abortSignal associated with containing operation.
-*                  - abortErrorMsg - The abort error message associated with containing operation.
-* @returns Resolved promise
+* Creates an object that satisfies the `HttpHeaders` interface.
+* @param rawHeaders - A simple object representing initial headers
 */
-function delay$2(delayInMs, value, options) {
-	return new Promise((resolve, reject) => {
-		let timer = void 0;
-		let onAborted = void 0;
-		const rejectOnAbort = () => {
-			return reject(new AbortError$1(options?.abortErrorMsg ? options?.abortErrorMsg : StandardAbortMessage$1));
-		};
-		const removeListeners = () => {
-			if (options?.abortSignal && onAborted) options.abortSignal.removeEventListener("abort", onAborted);
-		};
-		onAborted = () => {
-			if (timer) clearTimeout(timer);
-			removeListeners();
-			return rejectOnAbort();
-		};
-		if (options?.abortSignal && options.abortSignal.aborted) return rejectOnAbort();
-		timer = setTimeout(() => {
-			removeListeners();
-			resolve(value);
-		}, delayInMs);
-		if (options?.abortSignal) options.abortSignal.addEventListener("abort", onAborted);
-	});
-}
-/**
-* @internal
-* @returns the parsed value or undefined if the parsed value is invalid.
-*/
-function parseHeaderValueAsNumber(response, headerName) {
-	const value = response.headers.get(headerName);
-	if (!value) return;
-	const valueAsNum = Number(value);
-	if (Number.isNaN(valueAsNum)) return;
-	return valueAsNum;
+function createHttpHeaders$1(rawHeaders) {
+	return new HttpHeadersImpl(rawHeaders);
 }
 //#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/retryStrategies/throttlingRetryStrategy.js
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/util/uuidUtils.js
 /**
-* The header that comes back from services representing
-* the amount of time (minimum) to wait to retry (in seconds or timestamp after which we can retry).
-*/
-var RetryAfterHeader = "Retry-After";
-/**
-* The headers that come back from services representing
-* the amount of time (minimum) to wait to retry.
+* Generated Universally Unique Identifier
 *
-* "retry-after-ms", "x-ms-retry-after-ms" : milliseconds
-* "Retry-After" : seconds or timestamp
+* @returns RFC4122 v4 UUID.
 */
-var AllRetryAfterHeaders = [
-	"retry-after-ms",
-	"x-ms-retry-after-ms",
-	RetryAfterHeader
-];
-/**
-* A response is a throttling retry response if it has a throttling status code (429 or 503),
-* as long as one of the [ "Retry-After" or "retry-after-ms" or "x-ms-retry-after-ms" ] headers has a valid value.
-*
-* Returns the `retryAfterInMs` value if the response is a throttling retry response.
-* If not throttling retry response, returns `undefined`.
-*
-* @internal
-*/
-function getRetryAfterInMs(response) {
-	if (!(response && [429, 503].includes(response.status))) return void 0;
-	try {
-		for (const header of AllRetryAfterHeaders) {
-			const retryAfterValue = parseHeaderValueAsNumber(response, header);
-			if (retryAfterValue === 0 || retryAfterValue) return retryAfterValue * (header === RetryAfterHeader ? 1e3 : 1);
-		}
-		const retryAfterHeader = response.headers.get(RetryAfterHeader);
-		if (!retryAfterHeader) return;
-		const diff = Date.parse(retryAfterHeader) - Date.now();
-		return Number.isFinite(diff) ? Math.max(0, diff) : void 0;
-	} catch {
-		return;
+function randomUUID$1() {
+	return crypto.randomUUID();
+}
+//#endregion
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/pipelineRequest.js
+var PipelineRequestImpl = class {
+	url;
+	method;
+	headers;
+	timeout;
+	withCredentials;
+	body;
+	multipartBody;
+	formData;
+	streamResponseStatusCodes;
+	enableBrowserStreams;
+	proxySettings;
+	disableKeepAlive;
+	abortSignal;
+	requestId;
+	allowInsecureConnection;
+	onUploadProgress;
+	onDownloadProgress;
+	requestOverrides;
+	authSchemes;
+	constructor(options) {
+		this.url = options.url;
+		this.body = options.body;
+		this.headers = options.headers ?? createHttpHeaders$1();
+		this.method = options.method ?? "GET";
+		this.timeout = options.timeout ?? 0;
+		this.multipartBody = options.multipartBody;
+		this.formData = options.formData;
+		this.disableKeepAlive = options.disableKeepAlive ?? false;
+		this.proxySettings = options.proxySettings;
+		this.streamResponseStatusCodes = options.streamResponseStatusCodes;
+		this.withCredentials = options.withCredentials ?? false;
+		this.abortSignal = options.abortSignal;
+		this.onUploadProgress = options.onUploadProgress;
+		this.onDownloadProgress = options.onDownloadProgress;
+		this.requestId = options.requestId || randomUUID$1();
+		this.allowInsecureConnection = options.allowInsecureConnection ?? false;
+		this.enableBrowserStreams = options.enableBrowserStreams ?? false;
+		this.requestOverrides = options.requestOverrides;
+		this.authSchemes = options.authSchemes;
 	}
-}
+};
 /**
-* A response is a retry response if it has a throttling status code (429 or 503),
-* as long as one of the [ "Retry-After" or "retry-after-ms" or "x-ms-retry-after-ms" ] headers has a valid value.
+* Creates a new pipeline request with the given options.
+* This method is to allow for the easy setting of default values and not required.
+* @param options - The options to create the request with.
 */
-function isThrottlingRetryResponse(response) {
-	return Number.isFinite(getRetryAfterInMs(response));
-}
-function throttlingRetryStrategy() {
-	return {
-		name: "throttlingRetryStrategy",
-		retry({ response }) {
-			const retryAfterInMs = getRetryAfterInMs(response);
-			if (!Number.isFinite(retryAfterInMs)) return { skipStrategy: true };
-			return { retryAfterInMs };
-		}
-	};
+function createPipelineRequest$1(options) {
+	return new PipelineRequestImpl(options);
 }
 //#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/retryStrategies/exponentialRetryStrategy.js
-var DEFAULT_CLIENT_RETRY_INTERVAL = 1e3;
-var DEFAULT_CLIENT_MAX_RETRY_INTERVAL = 1e3 * 64;
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/pipeline.js
+var ValidPhaseNames = /* @__PURE__ */ new Set([
+	"Deserialize",
+	"Serialize",
+	"Retry",
+	"Sign"
+]);
 /**
-* A retry strategy that retries with an exponentially increasing delay in these two cases:
-* - When there are errors in the underlying transport layer (e.g. DNS lookup failures).
-* - Or otherwise if the outgoing request fails (408, greater or equal than 500, except for 501 and 505).
+* A private implementation of Pipeline.
+* Do not export this class from the package.
+* @internal
 */
-function exponentialRetryStrategy(options = {}) {
-	const retryInterval = options.retryDelayInMs ?? DEFAULT_CLIENT_RETRY_INTERVAL;
-	const maxRetryInterval = options.maxRetryDelayInMs ?? DEFAULT_CLIENT_MAX_RETRY_INTERVAL;
-	return {
-		name: "exponentialRetryStrategy",
-		retry({ retryCount, response, responseError }) {
-			const matchedSystemError = isSystemError(responseError);
-			const ignoreSystemErrors = matchedSystemError && options.ignoreSystemErrors;
-			const isExponential = isExponentialRetryResponse(response);
-			const ignoreExponentialResponse = isExponential && options.ignoreHttpStatusCodes;
-			if (response && (isThrottlingRetryResponse(response) || !isExponential) || ignoreExponentialResponse || ignoreSystemErrors) return { skipStrategy: true };
-			if (responseError && !matchedSystemError && !isExponential) return { errorToThrow: responseError };
-			return calculateRetryDelay(retryCount, {
-				retryDelayInMs: retryInterval,
-				maxRetryDelayInMs: maxRetryInterval
-			});
+var HttpPipeline = class HttpPipeline {
+	_policies = [];
+	_orderedPolicies;
+	constructor(policies) {
+		this._policies = policies?.slice(0) ?? [];
+		this._orderedPolicies = void 0;
+	}
+	addPolicy(policy, options = {}) {
+		if (options.phase && options.afterPhase) throw new Error("Policies inside a phase cannot specify afterPhase.");
+		if (options.phase && !ValidPhaseNames.has(options.phase)) throw new Error(`Invalid phase name: ${options.phase}`);
+		if (options.afterPhase && !ValidPhaseNames.has(options.afterPhase)) throw new Error(`Invalid afterPhase name: ${options.afterPhase}`);
+		this._policies.push({
+			policy,
+			options
+		});
+		this._orderedPolicies = void 0;
+	}
+	removePolicy(options) {
+		const removedPolicies = [];
+		this._policies = this._policies.filter((policyDescriptor) => {
+			if (options.name && policyDescriptor.policy.name === options.name || options.phase && policyDescriptor.options.phase === options.phase) {
+				removedPolicies.push(policyDescriptor.policy);
+				return false;
+			} else return true;
+		});
+		this._orderedPolicies = void 0;
+		return removedPolicies;
+	}
+	sendRequest(httpClient, request) {
+		return this.getOrderedPolicies().reduceRight((next, policy) => {
+			return (req) => {
+				return policy.sendRequest(req, next);
+			};
+		}, (req) => httpClient.sendRequest(req))(request);
+	}
+	getOrderedPolicies() {
+		if (!this._orderedPolicies) this._orderedPolicies = this.orderPolicies();
+		return this._orderedPolicies;
+	}
+	clone() {
+		return new HttpPipeline(this._policies);
+	}
+	static create() {
+		return new HttpPipeline();
+	}
+	orderPolicies() {
+		/**
+		* The goal of this method is to reliably order pipeline policies
+		* based on their declared requirements when they were added.
+		*
+		* Order is first determined by phase:
+		*
+		* 1. Serialize Phase
+		* 2. Policies not in a phase
+		* 3. Deserialize Phase
+		* 4. Retry Phase
+		* 5. Sign Phase
+		*
+		* Within each phase, policies are executed in the order
+		* they were added unless they were specified to execute
+		* before/after other policies or after a particular phase.
+		*
+		* To determine the final order, we will walk the policy list
+		* in phase order multiple times until all dependencies are
+		* satisfied.
+		*
+		* `afterPolicies` are the set of policies that must be
+		* executed before a given policy. This requirement is
+		* considered satisfied when each of the listed policies
+		* have been scheduled.
+		*
+		* `beforePolicies` are the set of policies that must be
+		* executed after a given policy. Since this dependency
+		* can be expressed by converting it into a equivalent
+		* `afterPolicies` declarations, they are normalized
+		* into that form for simplicity.
+		*
+		* An `afterPhase` dependency is considered satisfied when all
+		* policies in that phase have scheduled.
+		*
+		*/
+		const result = [];
+		const policyMap = /* @__PURE__ */ new Map();
+		function createPhase(name) {
+			return {
+				name,
+				policies: /* @__PURE__ */ new Set(),
+				hasRun: false,
+				hasAfterPolicies: false
+			};
 		}
-	};
-}
+		const serializePhase = createPhase("Serialize");
+		const noPhase = createPhase("None");
+		const deserializePhase = createPhase("Deserialize");
+		const retryPhase = createPhase("Retry");
+		const signPhase = createPhase("Sign");
+		const orderedPhases = [
+			serializePhase,
+			noPhase,
+			deserializePhase,
+			retryPhase,
+			signPhase
+		];
+		function getPhase(phase) {
+			if (phase === "Retry") return retryPhase;
+			else if (phase === "Serialize") return serializePhase;
+			else if (phase === "Deserialize") return deserializePhase;
+			else if (phase === "Sign") return signPhase;
+			else return noPhase;
+		}
+		for (const descriptor of this._policies) {
+			const policy = descriptor.policy;
+			const options = descriptor.options;
+			const policyName = policy.name;
+			if (policyMap.has(policyName)) throw new Error("Duplicate policy names not allowed in pipeline");
+			const node = {
+				policy,
+				dependsOn: /* @__PURE__ */ new Set(),
+				dependants: /* @__PURE__ */ new Set()
+			};
+			if (options.afterPhase) {
+				node.afterPhase = getPhase(options.afterPhase);
+				node.afterPhase.hasAfterPolicies = true;
+			}
+			policyMap.set(policyName, node);
+			getPhase(options.phase).policies.add(node);
+		}
+		for (const descriptor of this._policies) {
+			const { policy, options } = descriptor;
+			const policyName = policy.name;
+			const node = policyMap.get(policyName);
+			if (!node) throw new Error(`Missing node for policy ${policyName}`);
+			if (options.afterPolicies) for (const afterPolicyName of options.afterPolicies) {
+				const afterNode = policyMap.get(afterPolicyName);
+				if (afterNode) {
+					node.dependsOn.add(afterNode);
+					afterNode.dependants.add(node);
+				}
+			}
+			if (options.beforePolicies) for (const beforePolicyName of options.beforePolicies) {
+				const beforeNode = policyMap.get(beforePolicyName);
+				if (beforeNode) {
+					beforeNode.dependsOn.add(node);
+					node.dependants.add(beforeNode);
+				}
+			}
+		}
+		function walkPhase(phase) {
+			phase.hasRun = true;
+			for (const node of phase.policies) {
+				if (node.afterPhase && (!node.afterPhase.hasRun || node.afterPhase.policies.size)) continue;
+				if (node.dependsOn.size === 0) {
+					result.push(node.policy);
+					for (const dependant of node.dependants) dependant.dependsOn.delete(node);
+					policyMap.delete(node.policy.name);
+					phase.policies.delete(node);
+				}
+			}
+		}
+		function walkPhases() {
+			for (const phase of orderedPhases) {
+				walkPhase(phase);
+				if (phase.policies.size > 0 && phase !== noPhase) {
+					if (!noPhase.hasRun) walkPhase(noPhase);
+					return;
+				}
+				if (phase.hasAfterPolicies) walkPhase(noPhase);
+			}
+		}
+		let iteration = 0;
+		while (policyMap.size > 0) {
+			iteration++;
+			const initialResultLength = result.length;
+			walkPhases();
+			if (result.length <= initialResultLength && iteration > 1) throw new Error("Cannot satisfy policy dependencies due to requirements cycle.");
+		}
+		return result;
+	}
+};
 /**
-* A response is a retry response if it has status codes:
-* - 408, or
-* - Greater or equal than 500, except for 501 and 505.
+* Creates a totally empty pipeline.
+* Useful for testing or creating a custom one.
 */
-function isExponentialRetryResponse(response) {
-	return Boolean(response && response.status !== void 0 && (response.status >= 500 || response.status === 408) && response.status !== 501 && response.status !== 505);
-}
-/**
-* Determines whether an error from a pipeline response was triggered in the network layer.
-*/
-function isSystemError(err) {
-	if (!err) return false;
-	return err.code === "ETIMEDOUT" || err.code === "ESOCKETTIMEDOUT" || err.code === "ECONNREFUSED" || err.code === "ECONNRESET" || err.code === "ENOENT" || err.code === "ENOTFOUND";
+function createEmptyPipeline$1() {
+	return HttpPipeline.create();
 }
 //#endregion
 //#region node_modules/@typespec/ts-http-runtime/dist/esm/util/object.js
@@ -8696,6 +8872,538 @@ function isRestError$1(e) {
 	return isError$1(e) && e.name === "RestError";
 }
 //#endregion
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/util/bytesEncoding.js
+/**
+* The helper that transforms string to specific character encoded bytes array.
+* @param value - the string to be converted
+* @param format - the format we use to decode the value
+* @returns a uint8array
+*/
+function stringToUint8Array(value, format) {
+	return Buffer.from(value, format);
+}
+//#endregion
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/log.js
+var logger$4 = createClientLogger$1("ts-http-runtime");
+//#endregion
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/nodeHttpClient.js
+var DEFAULT_TLS_SETTINGS = {};
+function isReadableStream(body) {
+	return body && typeof body.pipe === "function";
+}
+function isStreamComplete(stream) {
+	if (stream.readable === false) return Promise.resolve();
+	return new Promise((resolve) => {
+		const handler = () => {
+			resolve();
+			stream.removeListener("close", handler);
+			stream.removeListener("end", handler);
+			stream.removeListener("error", handler);
+		};
+		stream.on("close", handler);
+		stream.on("end", handler);
+		stream.on("error", handler);
+	});
+}
+function isArrayBuffer(body) {
+	return body && typeof body.byteLength === "number";
+}
+var ReportTransform = class extends Transform {
+	loadedBytes = 0;
+	progressCallback;
+	_transform(chunk, _encoding, callback) {
+		this.push(chunk);
+		this.loadedBytes += chunk.length;
+		try {
+			this.progressCallback({ loadedBytes: this.loadedBytes });
+			callback();
+		} catch (e) {
+			callback(e);
+		}
+	}
+	constructor(progressCallback) {
+		super();
+		this.progressCallback = progressCallback;
+	}
+};
+/**
+* A HttpClient implementation that uses Node's "https" module to send HTTPS requests.
+* @internal
+*/
+var NodeHttpClient = class {
+	cachedHttpAgent;
+	cachedHttpsAgents = /* @__PURE__ */ new WeakMap();
+	/**
+	* Makes a request over an underlying transport layer and returns the response.
+	* @param request - The request to be made.
+	*/
+	async sendRequest(request) {
+		const abortController = new AbortController();
+		let abortListener;
+		if (request.abortSignal) {
+			if (request.abortSignal.aborted) throw new AbortError$1("The operation was aborted. Request has already been canceled.");
+			abortListener = (event) => {
+				if (event.type === "abort") abortController.abort();
+			};
+			request.abortSignal.addEventListener("abort", abortListener);
+		}
+		let timeoutId;
+		if (request.timeout > 0) timeoutId = setTimeout(() => {
+			const sanitizer = new Sanitizer();
+			logger$4.info(`request to '${sanitizer.sanitizeUrl(request.url)}' timed out. canceling...`);
+			abortController.abort();
+		}, request.timeout);
+		const acceptEncoding = request.headers.get("Accept-Encoding");
+		const shouldDecompress = acceptEncoding?.includes("gzip") || acceptEncoding?.includes("deflate");
+		let body = typeof request.body === "function" ? request.body() : request.body;
+		if (body && !request.headers.has("Content-Length")) {
+			const bodyLength = getBodyLength(body);
+			if (bodyLength !== null) request.headers.set("Content-Length", bodyLength);
+		}
+		let responseStream;
+		try {
+			if (body && request.onUploadProgress) {
+				const onUploadProgress = request.onUploadProgress;
+				const uploadReportStream = new ReportTransform(onUploadProgress);
+				uploadReportStream.on("error", (e) => {
+					logger$4.error("Error in upload progress", e);
+				});
+				if (isReadableStream(body)) body.pipe(uploadReportStream);
+				else uploadReportStream.end(body);
+				body = uploadReportStream;
+			}
+			const res = await this.makeRequest(request, abortController, body);
+			if (timeoutId !== void 0) clearTimeout(timeoutId);
+			const headers = getResponseHeaders(res);
+			const response = {
+				status: res.statusCode ?? 0,
+				headers,
+				request
+			};
+			if (request.method === "HEAD") {
+				res.resume();
+				return response;
+			}
+			responseStream = shouldDecompress ? getDecodedResponseStream(res, headers) : res;
+			const onDownloadProgress = request.onDownloadProgress;
+			if (onDownloadProgress) {
+				const downloadReportStream = new ReportTransform(onDownloadProgress);
+				downloadReportStream.on("error", (e) => {
+					logger$4.error("Error in download progress", e);
+				});
+				responseStream.pipe(downloadReportStream);
+				responseStream = downloadReportStream;
+			}
+			if (request.streamResponseStatusCodes?.has(Number.POSITIVE_INFINITY) || request.streamResponseStatusCodes?.has(response.status)) response.readableStreamBody = responseStream;
+			else response.bodyAsText = await streamToText(responseStream);
+			return response;
+		} finally {
+			if (request.abortSignal && abortListener) {
+				let uploadStreamDone = Promise.resolve();
+				if (isReadableStream(body)) uploadStreamDone = isStreamComplete(body);
+				let downloadStreamDone = Promise.resolve();
+				if (isReadableStream(responseStream)) downloadStreamDone = isStreamComplete(responseStream);
+				Promise.all([uploadStreamDone, downloadStreamDone]).then(() => {
+					if (abortListener) request.abortSignal?.removeEventListener("abort", abortListener);
+				}).catch((e) => {
+					logger$4.warning("Error when cleaning up abortListener on httpRequest", e);
+				});
+			}
+		}
+	}
+	makeRequest(request, abortController, body) {
+		const url = new URL(request.url);
+		const isInsecure = url.protocol !== "https:";
+		if (isInsecure && !request.allowInsecureConnection) throw new Error(`Cannot connect to ${request.url} while allowInsecureConnection is false.`);
+		const options = {
+			agent: request.agent ?? this.getOrCreateAgent(request, isInsecure),
+			hostname: url.hostname,
+			path: `${url.pathname}${url.search}`,
+			port: url.port,
+			method: request.method,
+			headers: request.headers.toJSON({ preserveCase: true }),
+			...request.requestOverrides
+		};
+		return new Promise((resolve, reject) => {
+			const req = isInsecure ? http.request(options, resolve) : https.request(options, resolve);
+			req.once("error", (err) => {
+				reject(new RestError$1(err.message, {
+					code: err.code ?? RestError$1.REQUEST_SEND_ERROR,
+					request
+				}));
+			});
+			abortController.signal.addEventListener("abort", () => {
+				const abortError = new AbortError$1("The operation was aborted. Rejecting from abort signal callback while making request.");
+				req.destroy(abortError);
+				reject(abortError);
+			});
+			if (body && isReadableStream(body)) body.pipe(req);
+			else if (body) if (typeof body === "string" || Buffer.isBuffer(body)) req.end(body);
+			else if (isArrayBuffer(body)) req.end(ArrayBuffer.isView(body) ? Buffer.from(body.buffer) : Buffer.from(body));
+			else {
+				logger$4.error("Unrecognized body type", body);
+				reject(new RestError$1("Unrecognized body type"));
+			}
+			else req.end();
+		});
+	}
+	getOrCreateAgent(request, isInsecure) {
+		const disableKeepAlive = request.disableKeepAlive;
+		if (isInsecure) {
+			if (disableKeepAlive) return http.globalAgent;
+			if (!this.cachedHttpAgent) this.cachedHttpAgent = new http.Agent({ keepAlive: true });
+			return this.cachedHttpAgent;
+		} else {
+			if (disableKeepAlive && !request.tlsSettings) return https.globalAgent;
+			const tlsSettings = request.tlsSettings ?? DEFAULT_TLS_SETTINGS;
+			let agent = this.cachedHttpsAgents.get(tlsSettings);
+			if (agent && agent.options.keepAlive === !disableKeepAlive) return agent;
+			logger$4.info("No cached TLS Agent exist, creating a new Agent");
+			agent = new https.Agent({
+				keepAlive: !disableKeepAlive,
+				...tlsSettings
+			});
+			this.cachedHttpsAgents.set(tlsSettings, agent);
+			return agent;
+		}
+	}
+};
+function getResponseHeaders(res) {
+	const headers = createHttpHeaders$1();
+	for (const header of Object.keys(res.headers)) {
+		const value = res.headers[header];
+		if (Array.isArray(value)) {
+			if (value.length > 0) headers.set(header, value[0]);
+		} else if (value) headers.set(header, value);
+	}
+	return headers;
+}
+function getDecodedResponseStream(stream, headers) {
+	const contentEncoding = headers.get("Content-Encoding");
+	if (contentEncoding === "gzip") {
+		const unzip = zlib.createGunzip();
+		stream.pipe(unzip);
+		return unzip;
+	} else if (contentEncoding === "deflate") {
+		const inflate = zlib.createInflate();
+		stream.pipe(inflate);
+		return inflate;
+	}
+	return stream;
+}
+function streamToText(stream) {
+	return new Promise((resolve, reject) => {
+		const buffer = [];
+		stream.on("data", (chunk) => {
+			if (Buffer.isBuffer(chunk)) buffer.push(chunk);
+			else buffer.push(Buffer.from(chunk));
+		});
+		stream.on("end", () => {
+			resolve(Buffer.concat(buffer).toString("utf8"));
+		});
+		stream.on("error", (e) => {
+			if (e && e?.name === "AbortError") reject(e);
+			else reject(new RestError$1(`Error reading response as text: ${e.message}`, { code: RestError$1.PARSE_ERROR }));
+		});
+	});
+}
+/** @internal */
+function getBodyLength(body) {
+	if (!body) return 0;
+	else if (Buffer.isBuffer(body)) return body.length;
+	else if (isReadableStream(body)) return null;
+	else if (isArrayBuffer(body)) return body.byteLength;
+	else if (typeof body === "string") return Buffer.from(body).length;
+	else return null;
+}
+/**
+* Create a new HttpClient instance for the NodeJS environment.
+* @internal
+*/
+function createNodeHttpClient() {
+	return new NodeHttpClient();
+}
+//#endregion
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/defaultHttpClient.js
+/**
+* Create the correct HttpClient for the current environment.
+*/
+function createDefaultHttpClient$1() {
+	return createNodeHttpClient();
+}
+//#endregion
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/policies/logPolicy.js
+/**
+* The programmatic identifier of the logPolicy.
+*/
+var logPolicyName = "logPolicy";
+/**
+* A policy that logs all requests and responses.
+* @param options - Options to configure logPolicy.
+*/
+function logPolicy$1(options = {}) {
+	const logger = options.logger ?? logger$4.info;
+	const sanitizer = new Sanitizer({
+		additionalAllowedHeaderNames: options.additionalAllowedHeaderNames,
+		additionalAllowedQueryParameters: options.additionalAllowedQueryParameters
+	});
+	return {
+		name: logPolicyName,
+		async sendRequest(request, next) {
+			if (!logger.enabled) return next(request);
+			logger(`Request: ${sanitizer.sanitize(request)}`);
+			const response = await next(request);
+			logger(`Response status code: ${response.status}`);
+			logger(`Headers: ${sanitizer.sanitize(response.headers)}`);
+			return response;
+		}
+	};
+}
+//#endregion
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/policies/redirectPolicy.js
+/**
+* The programmatic identifier of the redirectPolicy.
+*/
+var redirectPolicyName$1 = "redirectPolicy";
+/**
+* Methods that are allowed to follow redirects 301 and 302
+*/
+var allowedRedirect = ["GET", "HEAD"];
+/**
+* A policy to follow Location headers from the server in order
+* to support server-side redirection.
+* In the browser, this policy is not used.
+* @param options - Options to control policy behavior.
+*/
+function redirectPolicy$1(options = {}) {
+	const { maxRetries = 20, allowCrossOriginRedirects = false } = options;
+	return {
+		name: redirectPolicyName$1,
+		async sendRequest(request, next) {
+			return handleRedirect(next, await next(request), maxRetries, allowCrossOriginRedirects);
+		}
+	};
+}
+async function handleRedirect(next, response, maxRetries, allowCrossOriginRedirects, currentRetries = 0) {
+	const { request, status, headers } = response;
+	const locationHeader = headers.get("location");
+	if (locationHeader && (status === 300 || status === 301 && allowedRedirect.includes(request.method) || status === 302 && allowedRedirect.includes(request.method) || status === 303 && request.method === "POST" || status === 307) && currentRetries < maxRetries) {
+		const url = new URL(locationHeader, request.url);
+		if (!allowCrossOriginRedirects) {
+			const originalUrl = new URL(request.url);
+			if (url.origin !== originalUrl.origin) {
+				logger$4.verbose(`Skipping cross-origin redirect from ${originalUrl.origin} to ${url.origin}.`);
+				return response;
+			}
+		}
+		request.url = url.toString();
+		if (status === 303) {
+			request.method = "GET";
+			request.headers.delete("Content-Length");
+			delete request.body;
+		}
+		request.headers.delete("Authorization");
+		return handleRedirect(next, await next(request), maxRetries, allowCrossOriginRedirects, currentRetries + 1);
+	}
+	return response;
+}
+//#endregion
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/policies/decompressResponsePolicy.js
+/**
+* The programmatic identifier of the decompressResponsePolicy.
+*/
+var decompressResponsePolicyName$1 = "decompressResponsePolicy";
+/**
+* A policy to enable response decompression according to Accept-Encoding header
+* https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding
+*/
+function decompressResponsePolicy$1() {
+	return {
+		name: decompressResponsePolicyName$1,
+		async sendRequest(request, next) {
+			if (request.method !== "HEAD") request.headers.set("Accept-Encoding", "gzip,deflate");
+			return next(request);
+		}
+	};
+}
+//#endregion
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/util/random.js
+/**
+* Returns a random integer value between a lower and upper bound,
+* inclusive of both bounds.
+* Note that this uses Math.random and isn't secure. If you need to use
+* this for any kind of security purpose, find a better source of random.
+* @param min - The smallest integer value allowed.
+* @param max - The largest integer value allowed.
+*/
+function getRandomIntegerInclusive(min, max) {
+	min = Math.ceil(min);
+	max = Math.floor(max);
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+//#endregion
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/util/delay.js
+/**
+* Calculates the delay interval for retry attempts using exponential delay with jitter.
+* @param retryAttempt - The current retry attempt number.
+* @param config - The exponential retry configuration.
+* @returns An object containing the calculated retry delay.
+*/
+function calculateRetryDelay(retryAttempt, config) {
+	const exponentialDelay = config.retryDelayInMs * Math.pow(2, retryAttempt);
+	const clampedDelay = Math.min(config.maxRetryDelayInMs, exponentialDelay);
+	return { retryAfterInMs: clampedDelay / 2 + getRandomIntegerInclusive(0, clampedDelay / 2) };
+}
+//#endregion
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/util/helpers.js
+var StandardAbortMessage$1 = "The operation was aborted.";
+/**
+* A wrapper for setTimeout that resolves a promise after delayInMs milliseconds.
+* @param delayInMs - The number of milliseconds to be delayed.
+* @param value - The value to be resolved with after a timeout of t milliseconds.
+* @param options - The options for delay - currently abort options
+*                  - abortSignal - The abortSignal associated with containing operation.
+*                  - abortErrorMsg - The abort error message associated with containing operation.
+* @returns Resolved promise
+*/
+function delay$2(delayInMs, value, options) {
+	return new Promise((resolve, reject) => {
+		let timer = void 0;
+		let onAborted = void 0;
+		const rejectOnAbort = () => {
+			return reject(new AbortError$1(options?.abortErrorMsg ? options?.abortErrorMsg : StandardAbortMessage$1));
+		};
+		const removeListeners = () => {
+			if (options?.abortSignal && onAborted) options.abortSignal.removeEventListener("abort", onAborted);
+		};
+		onAborted = () => {
+			if (timer) clearTimeout(timer);
+			removeListeners();
+			return rejectOnAbort();
+		};
+		if (options?.abortSignal && options.abortSignal.aborted) return rejectOnAbort();
+		timer = setTimeout(() => {
+			removeListeners();
+			resolve(value);
+		}, delayInMs);
+		if (options?.abortSignal) options.abortSignal.addEventListener("abort", onAborted);
+	});
+}
+/**
+* @internal
+* @returns the parsed value or undefined if the parsed value is invalid.
+*/
+function parseHeaderValueAsNumber(response, headerName) {
+	const value = response.headers.get(headerName);
+	if (!value) return;
+	const valueAsNum = Number(value);
+	if (Number.isNaN(valueAsNum)) return;
+	return valueAsNum;
+}
+//#endregion
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/retryStrategies/throttlingRetryStrategy.js
+/**
+* The header that comes back from services representing
+* the amount of time (minimum) to wait to retry (in seconds or timestamp after which we can retry).
+*/
+var RetryAfterHeader = "Retry-After";
+/**
+* The headers that come back from services representing
+* the amount of time (minimum) to wait to retry.
+*
+* "retry-after-ms", "x-ms-retry-after-ms" : milliseconds
+* "Retry-After" : seconds or timestamp
+*/
+var AllRetryAfterHeaders = [
+	"retry-after-ms",
+	"x-ms-retry-after-ms",
+	RetryAfterHeader
+];
+/**
+* A response is a throttling retry response if it has a throttling status code (429 or 503),
+* as long as one of the [ "Retry-After" or "retry-after-ms" or "x-ms-retry-after-ms" ] headers has a valid value.
+*
+* Returns the `retryAfterInMs` value if the response is a throttling retry response.
+* If not throttling retry response, returns `undefined`.
+*
+* @internal
+*/
+function getRetryAfterInMs(response) {
+	if (!(response && [429, 503].includes(response.status))) return void 0;
+	try {
+		for (const header of AllRetryAfterHeaders) {
+			const retryAfterValue = parseHeaderValueAsNumber(response, header);
+			if (retryAfterValue === 0 || retryAfterValue) return retryAfterValue * (header === RetryAfterHeader ? 1e3 : 1);
+		}
+		const retryAfterHeader = response.headers.get(RetryAfterHeader);
+		if (!retryAfterHeader) return;
+		const diff = Date.parse(retryAfterHeader) - Date.now();
+		return Number.isFinite(diff) ? Math.max(0, diff) : void 0;
+	} catch {
+		return;
+	}
+}
+/**
+* A response is a retry response if it has a throttling status code (429 or 503),
+* as long as one of the [ "Retry-After" or "retry-after-ms" or "x-ms-retry-after-ms" ] headers has a valid value.
+*/
+function isThrottlingRetryResponse(response) {
+	return Number.isFinite(getRetryAfterInMs(response));
+}
+function throttlingRetryStrategy() {
+	return {
+		name: "throttlingRetryStrategy",
+		retry({ response }) {
+			const retryAfterInMs = getRetryAfterInMs(response);
+			if (!Number.isFinite(retryAfterInMs)) return { skipStrategy: true };
+			return { retryAfterInMs };
+		}
+	};
+}
+//#endregion
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/retryStrategies/exponentialRetryStrategy.js
+var DEFAULT_CLIENT_RETRY_INTERVAL = 1e3;
+var DEFAULT_CLIENT_MAX_RETRY_INTERVAL = 1e3 * 64;
+/**
+* A retry strategy that retries with an exponentially increasing delay in these two cases:
+* - When there are errors in the underlying transport layer (e.g. DNS lookup failures).
+* - Or otherwise if the outgoing request fails (408, greater or equal than 500, except for 501 and 505).
+*/
+function exponentialRetryStrategy(options = {}) {
+	const retryInterval = options.retryDelayInMs ?? DEFAULT_CLIENT_RETRY_INTERVAL;
+	const maxRetryInterval = options.maxRetryDelayInMs ?? DEFAULT_CLIENT_MAX_RETRY_INTERVAL;
+	return {
+		name: "exponentialRetryStrategy",
+		retry({ retryCount, response, responseError }) {
+			const matchedSystemError = isSystemError(responseError);
+			const ignoreSystemErrors = matchedSystemError && options.ignoreSystemErrors;
+			const isExponential = isExponentialRetryResponse(response);
+			const ignoreExponentialResponse = isExponential && options.ignoreHttpStatusCodes;
+			if (response && (isThrottlingRetryResponse(response) || !isExponential) || ignoreExponentialResponse || ignoreSystemErrors) return { skipStrategy: true };
+			if (responseError && !matchedSystemError && !isExponential) return { errorToThrow: responseError };
+			return calculateRetryDelay(retryCount, {
+				retryDelayInMs: retryInterval,
+				maxRetryDelayInMs: maxRetryInterval
+			});
+		}
+	};
+}
+/**
+* A response is a retry response if it has status codes:
+* - 408, or
+* - Greater or equal than 500, except for 501 and 505.
+*/
+function isExponentialRetryResponse(response) {
+	return Boolean(response && response.status !== void 0 && (response.status >= 500 || response.status === 408) && response.status !== 501 && response.status !== 505);
+}
+/**
+* Determines whether an error from a pipeline response was triggered in the network layer.
+*/
+function isSystemError(err) {
+	if (!err) return false;
+	return err.code === "ETIMEDOUT" || err.code === "ESOCKETTIMEDOUT" || err.code === "ECONNREFUSED" || err.code === "ECONNRESET" || err.code === "ENOENT" || err.code === "ENOTFOUND";
+}
+//#endregion
 //#region node_modules/@typespec/ts-http-runtime/dist/esm/policies/retryPolicy.js
 var retryPolicyLogger = createClientLogger$1("ts-http-runtime retryPolicy");
 /**
@@ -8796,17 +9504,6 @@ function defaultRetryPolicy$1(options = {}) {
 		sendRequest: retryPolicy([throttlingRetryStrategy(), exponentialRetryStrategy(options)], { maxRetries: options.maxRetries ?? 3 }).sendRequest
 	};
 }
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/util/bytesEncoding.js
-/**
-* The helper that transforms string to specific character encoded bytes array.
-* @param value - the string to be converted
-* @param format - the format we use to decode the value
-* @returns a uint8array
-*/
-function stringToUint8Array(value, format) {
-	return Buffer.from(value, format);
-}
 typeof window !== "undefined" && window.document;
 typeof self === "object" && typeof self?.importScripts === "function" && (self.constructor?.name === "DedicatedWorkerGlobalScope" || self.constructor?.name === "ServiceWorkerGlobalScope" || self.constructor?.name);
 typeof Deno !== "undefined" && typeof Deno.version !== "undefined" && Deno.version.deno;
@@ -8816,83 +9513,6 @@ typeof Bun !== "undefined" && Bun.version;
 */
 var isNodeLike$1 = typeof globalThis.process !== "undefined" && Boolean(globalThis.process.version) && Boolean(globalThis.process.versions?.node);
 typeof navigator !== "undefined" && navigator?.product;
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/httpHeaders.js
-function normalizeName(name) {
-	return name.toLowerCase();
-}
-function* headerIterator(map) {
-	for (const entry of map.values()) yield [entry.name, entry.value];
-}
-var HttpHeadersImpl = class {
-	_headersMap;
-	constructor(rawHeaders) {
-		this._headersMap = /* @__PURE__ */ new Map();
-		if (rawHeaders) for (const headerName of Object.keys(rawHeaders)) this.set(headerName, rawHeaders[headerName]);
-	}
-	/**
-	* Set a header in this collection with the provided name and value. The name is
-	* case-insensitive.
-	* @param name - The name of the header to set. This value is case-insensitive.
-	* @param value - The value of the header to set.
-	*/
-	set(name, value) {
-		this._headersMap.set(normalizeName(name), {
-			name,
-			value: String(value).trim()
-		});
-	}
-	/**
-	* Get the header value for the provided header name, or undefined if no header exists in this
-	* collection with the provided name.
-	* @param name - The name of the header. This value is case-insensitive.
-	*/
-	get(name) {
-		return this._headersMap.get(normalizeName(name))?.value;
-	}
-	/**
-	* Get whether or not this header collection contains a header entry for the provided header name.
-	* @param name - The name of the header to set. This value is case-insensitive.
-	*/
-	has(name) {
-		return this._headersMap.has(normalizeName(name));
-	}
-	/**
-	* Remove the header with the provided headerName.
-	* @param name - The name of the header to remove.
-	*/
-	delete(name) {
-		this._headersMap.delete(normalizeName(name));
-	}
-	/**
-	* Get the JSON object representation of this HTTP header collection.
-	*/
-	toJSON(options = {}) {
-		const result = {};
-		if (options.preserveCase) for (const entry of this._headersMap.values()) result[entry.name] = entry.value;
-		else for (const [normalizedName, entry] of this._headersMap) result[normalizedName] = entry.value;
-		return result;
-	}
-	/**
-	* Get the string representation of this HTTP header collection.
-	*/
-	toString() {
-		return JSON.stringify(this.toJSON({ preserveCase: true }));
-	}
-	/**
-	* Iterate over tuples of header [name, value] pairs.
-	*/
-	[Symbol.iterator]() {
-		return headerIterator(this._headersMap);
-	}
-};
-/**
-* Creates an object that satisfies the `HttpHeaders` interface.
-* @param rawHeaders - A simple object representing initial headers
-*/
-function createHttpHeaders$1(rawHeaders) {
-	return new HttpHeadersImpl(rawHeaders);
-}
 //#endregion
 //#region node_modules/@typespec/ts-http-runtime/dist/esm/policies/formDataPolicy.js
 /**
@@ -8955,173 +9575,6 @@ async function prepareFormData(formData, request) {
 		});
 	}
 	request.multipartBody = { parts };
-}
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/log.js
-var logger$3 = createClientLogger$1("ts-http-runtime");
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/policies/logPolicy.js
-/**
-* The programmatic identifier of the logPolicy.
-*/
-var logPolicyName = "logPolicy";
-/**
-* A policy that logs all requests and responses.
-* @param options - Options to configure logPolicy.
-*/
-function logPolicy$1(options = {}) {
-	const logger = options.logger ?? logger$3.info;
-	const sanitizer = new Sanitizer({
-		additionalAllowedHeaderNames: options.additionalAllowedHeaderNames,
-		additionalAllowedQueryParameters: options.additionalAllowedQueryParameters
-	});
-	return {
-		name: logPolicyName,
-		async sendRequest(request, next) {
-			if (!logger.enabled) return next(request);
-			logger(`Request: ${sanitizer.sanitize(request)}`);
-			const response = await next(request);
-			logger(`Response status code: ${response.status}`);
-			logger(`Headers: ${sanitizer.sanitize(response.headers)}`);
-			return response;
-		}
-	};
-}
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/util/typeGuards.js
-function isBlob(x) {
-	return typeof Blob !== "undefined" && x instanceof Blob;
-}
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/util/uuidUtils.js
-/**
-* Generated Universally Unique Identifier
-*
-* @returns RFC4122 v4 UUID.
-*/
-function randomUUID$1() {
-	return crypto.randomUUID();
-}
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/util/concat.js
-async function* streamAsyncIterator() {
-	const reader = this.getReader();
-	try {
-		while (true) {
-			const { done, value } = await reader.read();
-			if (done) return;
-			yield value;
-		}
-	} finally {
-		reader.releaseLock();
-	}
-}
-function makeAsyncIterable(webStream) {
-	if (!webStream[Symbol.asyncIterator]) webStream[Symbol.asyncIterator] = streamAsyncIterator.bind(webStream);
-	if (!webStream.values) webStream.values = streamAsyncIterator.bind(webStream);
-}
-function ensureNodeStream(stream) {
-	if (stream instanceof ReadableStream) {
-		makeAsyncIterable(stream);
-		return Readable$1.fromWeb(stream);
-	} else return stream;
-}
-function toStream(source) {
-	if (source instanceof Uint8Array) return Readable$1.from(Buffer.from(source));
-	else if (isBlob(source)) return ensureNodeStream(source.stream());
-	else return ensureNodeStream(source);
-}
-/**
-* Utility function that concatenates a set of binary inputs into one combined output.
-*
-* @param sources - array of sources for the concatenation
-* @returns - in Node, a (() =\> NodeJS.ReadableStream) which, when read, produces a concatenation of all the inputs.
-*           In browser, returns a `Blob` representing all the concatenated inputs.
-*
-* @internal
-*/
-async function concat$2(sources) {
-	return function() {
-		const streams = sources.map((x) => typeof x === "function" ? x() : x).map(toStream);
-		return Readable$1.from((async function* () {
-			for (const stream of streams) for await (const chunk of stream) yield chunk;
-		})());
-	};
-}
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/policies/multipartPolicy.js
-function generateBoundary() {
-	return `----AzSDKFormBoundary${randomUUID$1()}`;
-}
-function encodeHeaders(headers) {
-	let result = "";
-	for (const [key, value] of headers) result += `${key}: ${value}\r\n`;
-	return result;
-}
-function getLength(source) {
-	if (source instanceof Uint8Array) return source.byteLength;
-	else if (isBlob(source)) return source.size === -1 ? void 0 : source.size;
-	else return;
-}
-function getTotalLength(sources) {
-	let total = 0;
-	for (const source of sources) {
-		const partLength = getLength(source);
-		if (partLength === void 0) return;
-		else total += partLength;
-	}
-	return total;
-}
-async function buildRequestBody(request, parts, boundary) {
-	const sources = [
-		stringToUint8Array(`--${boundary}`, "utf-8"),
-		...parts.flatMap((part) => [
-			stringToUint8Array("\r\n", "utf-8"),
-			stringToUint8Array(encodeHeaders(part.headers), "utf-8"),
-			stringToUint8Array("\r\n", "utf-8"),
-			part.body,
-			stringToUint8Array(`\r\n--${boundary}`, "utf-8")
-		]),
-		stringToUint8Array("--\r\n\r\n", "utf-8")
-	];
-	const contentLength = getTotalLength(sources);
-	if (contentLength) request.headers.set("Content-Length", contentLength);
-	request.body = await concat$2(sources);
-}
-/**
-* Name of multipart policy
-*/
-var multipartPolicyName$1 = "multipartPolicy";
-var maxBoundaryLength = 70;
-var validBoundaryCharacters = /* @__PURE__ */ new Set(`abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'()+,-./:=?`);
-function assertValidBoundary(boundary) {
-	if (boundary.length > maxBoundaryLength) throw new Error(`Multipart boundary "${boundary}" exceeds maximum length of 70 characters`);
-	if (Array.from(boundary).some((x) => !validBoundaryCharacters.has(x))) throw new Error(`Multipart boundary "${boundary}" contains invalid characters`);
-}
-/**
-* Pipeline policy for multipart requests
-*/
-function multipartPolicy$1() {
-	return {
-		name: multipartPolicyName$1,
-		async sendRequest(request, next) {
-			if (!request.multipartBody) return next(request);
-			if (request.body) throw new Error("multipartBody and regular body cannot be set at the same time");
-			let boundary = request.multipartBody.boundary;
-			const contentTypeHeader = request.headers.get("Content-Type") ?? "multipart/mixed";
-			const parsedHeader = contentTypeHeader.match(/^(multipart\/[^ ;]+)(?:; *boundary=(.+))?$/);
-			if (!parsedHeader) throw new Error(`Got multipart request body, but content-type header was not multipart: ${contentTypeHeader}`);
-			const [, contentType, parsedBoundary] = parsedHeader;
-			if (parsedBoundary && boundary && parsedBoundary !== boundary) throw new Error(`Multipart boundary was specified as ${parsedBoundary} in the header, but got ${boundary} in the request body`);
-			boundary ??= parsedBoundary;
-			if (boundary) assertValidBoundary(boundary);
-			else boundary = generateBoundary();
-			request.headers.set("Content-Type", `${contentType}; boundary=${boundary}`);
-			await buildRequestBody(request, request.multipartBody.parts, boundary);
-			request.multipartBody = void 0;
-			return next(request);
-		}
-	};
 }
 //#endregion
 //#region node_modules/ms/index.js
@@ -10500,7 +10953,7 @@ function getUrlFromProxySettings(settings) {
 function setProxyAgentOnRequest(request, cachedAgents, proxyUrl) {
 	if (request.agent) return;
 	const isInsecure = new URL(request.url).protocol !== "https:";
-	if (request.tlsSettings) logger$3.warning("TLS settings are not supported in combination with custom Proxy, certificates provided to the client will be ignored.");
+	if (request.tlsSettings) logger$4.warning("TLS settings are not supported in combination with custom Proxy, certificates provided to the client will be ignored.");
 	if (isInsecure) {
 		if (!cachedAgents.httpProxyAgent) cachedAgents.httpProxyAgent = new import_dist$2.HttpProxyAgent(proxyUrl);
 		request.agent = cachedAgents.httpProxyAgent;
@@ -10530,52 +10983,22 @@ function proxyPolicy$1(proxySettings, options) {
 	};
 }
 //#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/policies/redirectPolicy.js
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/policies/agentPolicy.js
 /**
-* The programmatic identifier of the redirectPolicy.
+* Name of the Agent Policy
 */
-var redirectPolicyName$1 = "redirectPolicy";
+var agentPolicyName = "agentPolicy";
 /**
-* Methods that are allowed to follow redirects 301 and 302
+* Gets a pipeline policy that sets http.agent
 */
-var allowedRedirect = ["GET", "HEAD"];
-/**
-* A policy to follow Location headers from the server in order
-* to support server-side redirection.
-* In the browser, this policy is not used.
-* @param options - Options to control policy behavior.
-*/
-function redirectPolicy$1(options = {}) {
-	const { maxRetries = 20, allowCrossOriginRedirects = false } = options;
+function agentPolicy$1(agent) {
 	return {
-		name: redirectPolicyName$1,
-		async sendRequest(request, next) {
-			return handleRedirect(next, await next(request), maxRetries, allowCrossOriginRedirects);
+		name: agentPolicyName,
+		sendRequest: async (req, next) => {
+			if (!req.agent) req.agent = agent;
+			return next(req);
 		}
 	};
-}
-async function handleRedirect(next, response, maxRetries, allowCrossOriginRedirects, currentRetries = 0) {
-	const { request, status, headers } = response;
-	const locationHeader = headers.get("location");
-	if (locationHeader && (status === 300 || status === 301 && allowedRedirect.includes(request.method) || status === 302 && allowedRedirect.includes(request.method) || status === 303 && request.method === "POST" || status === 307) && currentRetries < maxRetries) {
-		const url = new URL(locationHeader, request.url);
-		if (!allowCrossOriginRedirects) {
-			const originalUrl = new URL(request.url);
-			if (url.origin !== originalUrl.origin) {
-				logger$3.verbose(`Skipping cross-origin redirect from ${originalUrl.origin} to ${url.origin}.`);
-				return response;
-			}
-		}
-		request.url = url.toString();
-		if (status === 303) {
-			request.method = "GET";
-			request.headers.delete("Content-Length");
-			delete request.body;
-		}
-		request.headers.delete("Authorization");
-		return handleRedirect(next, await next(request), maxRetries, allowCrossOriginRedirects, currentRetries + 1);
-	}
-	return response;
 }
 //#endregion
 //#region node_modules/@typespec/ts-http-runtime/dist/esm/policies/tlsPolicy.js
@@ -10596,513 +11019,130 @@ function tlsPolicy$1(tlsSettings) {
 	};
 }
 //#endregion
-//#region node_modules/@azure/core-rest-pipeline/dist/esm/policies/logPolicy.js
-/**
-* A policy that logs all requests and responses.
-* @param options - Options to configure logPolicy.
-*/
-function logPolicy(options = {}) {
-	return logPolicy$1({
-		logger: logger$4.info,
-		...options
-	});
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/util/typeGuards.js
+function isBlob(x) {
+	return typeof Blob !== "undefined" && x instanceof Blob;
 }
 //#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/pipelineRequest.js
-var PipelineRequestImpl = class {
-	url;
-	method;
-	headers;
-	timeout;
-	withCredentials;
-	body;
-	multipartBody;
-	formData;
-	streamResponseStatusCodes;
-	enableBrowserStreams;
-	proxySettings;
-	disableKeepAlive;
-	abortSignal;
-	requestId;
-	allowInsecureConnection;
-	onUploadProgress;
-	onDownloadProgress;
-	requestOverrides;
-	authSchemes;
-	constructor(options) {
-		this.url = options.url;
-		this.body = options.body;
-		this.headers = options.headers ?? createHttpHeaders$1();
-		this.method = options.method ?? "GET";
-		this.timeout = options.timeout ?? 0;
-		this.multipartBody = options.multipartBody;
-		this.formData = options.formData;
-		this.disableKeepAlive = options.disableKeepAlive ?? false;
-		this.proxySettings = options.proxySettings;
-		this.streamResponseStatusCodes = options.streamResponseStatusCodes;
-		this.withCredentials = options.withCredentials ?? false;
-		this.abortSignal = options.abortSignal;
-		this.onUploadProgress = options.onUploadProgress;
-		this.onDownloadProgress = options.onDownloadProgress;
-		this.requestId = options.requestId || randomUUID$1();
-		this.allowInsecureConnection = options.allowInsecureConnection ?? false;
-		this.enableBrowserStreams = options.enableBrowserStreams ?? false;
-		this.requestOverrides = options.requestOverrides;
-		this.authSchemes = options.authSchemes;
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/util/concat.js
+async function* streamAsyncIterator() {
+	const reader = this.getReader();
+	try {
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) return;
+			yield value;
+		}
+	} finally {
+		reader.releaseLock();
 	}
-};
-/**
-* Creates a new pipeline request with the given options.
-* This method is to allow for the easy setting of default values and not required.
-* @param options - The options to create the request with.
-*/
-function createPipelineRequest$1(options) {
-	return new PipelineRequestImpl(options);
 }
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/pipeline.js
-var ValidPhaseNames = /* @__PURE__ */ new Set([
-	"Deserialize",
-	"Serialize",
-	"Retry",
-	"Sign"
-]);
+function makeAsyncIterable(webStream) {
+	if (!webStream[Symbol.asyncIterator]) webStream[Symbol.asyncIterator] = streamAsyncIterator.bind(webStream);
+	if (!webStream.values) webStream.values = streamAsyncIterator.bind(webStream);
+}
+function ensureNodeStream(stream) {
+	if (stream instanceof ReadableStream) {
+		makeAsyncIterable(stream);
+		return Readable$1.fromWeb(stream);
+	} else return stream;
+}
+function toStream(source) {
+	if (source instanceof Uint8Array) return Readable$1.from(Buffer.from(source));
+	else if (isBlob(source)) return ensureNodeStream(source.stream());
+	else return ensureNodeStream(source);
+}
 /**
-* A private implementation of Pipeline.
-* Do not export this class from the package.
+* Utility function that concatenates a set of binary inputs into one combined output.
+*
+* @param sources - array of sources for the concatenation
+* @returns - in Node, a (() =\> NodeJS.ReadableStream) which, when read, produces a concatenation of all the inputs.
+*           In browser, returns a `Blob` representing all the concatenated inputs.
+*
 * @internal
 */
-var HttpPipeline = class HttpPipeline {
-	_policies = [];
-	_orderedPolicies;
-	constructor(policies) {
-		this._policies = policies?.slice(0) ?? [];
-		this._orderedPolicies = void 0;
-	}
-	addPolicy(policy, options = {}) {
-		if (options.phase && options.afterPhase) throw new Error("Policies inside a phase cannot specify afterPhase.");
-		if (options.phase && !ValidPhaseNames.has(options.phase)) throw new Error(`Invalid phase name: ${options.phase}`);
-		if (options.afterPhase && !ValidPhaseNames.has(options.afterPhase)) throw new Error(`Invalid afterPhase name: ${options.afterPhase}`);
-		this._policies.push({
-			policy,
-			options
-		});
-		this._orderedPolicies = void 0;
-	}
-	removePolicy(options) {
-		const removedPolicies = [];
-		this._policies = this._policies.filter((policyDescriptor) => {
-			if (options.name && policyDescriptor.policy.name === options.name || options.phase && policyDescriptor.options.phase === options.phase) {
-				removedPolicies.push(policyDescriptor.policy);
-				return false;
-			} else return true;
-		});
-		this._orderedPolicies = void 0;
-		return removedPolicies;
-	}
-	sendRequest(httpClient, request) {
-		return this.getOrderedPolicies().reduceRight((next, policy) => {
-			return (req) => {
-				return policy.sendRequest(req, next);
-			};
-		}, (req) => httpClient.sendRequest(req))(request);
-	}
-	getOrderedPolicies() {
-		if (!this._orderedPolicies) this._orderedPolicies = this.orderPolicies();
-		return this._orderedPolicies;
-	}
-	clone() {
-		return new HttpPipeline(this._policies);
-	}
-	static create() {
-		return new HttpPipeline();
-	}
-	orderPolicies() {
-		/**
-		* The goal of this method is to reliably order pipeline policies
-		* based on their declared requirements when they were added.
-		*
-		* Order is first determined by phase:
-		*
-		* 1. Serialize Phase
-		* 2. Policies not in a phase
-		* 3. Deserialize Phase
-		* 4. Retry Phase
-		* 5. Sign Phase
-		*
-		* Within each phase, policies are executed in the order
-		* they were added unless they were specified to execute
-		* before/after other policies or after a particular phase.
-		*
-		* To determine the final order, we will walk the policy list
-		* in phase order multiple times until all dependencies are
-		* satisfied.
-		*
-		* `afterPolicies` are the set of policies that must be
-		* executed before a given policy. This requirement is
-		* considered satisfied when each of the listed policies
-		* have been scheduled.
-		*
-		* `beforePolicies` are the set of policies that must be
-		* executed after a given policy. Since this dependency
-		* can be expressed by converting it into a equivalent
-		* `afterPolicies` declarations, they are normalized
-		* into that form for simplicity.
-		*
-		* An `afterPhase` dependency is considered satisfied when all
-		* policies in that phase have scheduled.
-		*
-		*/
-		const result = [];
-		const policyMap = /* @__PURE__ */ new Map();
-		function createPhase(name) {
-			return {
-				name,
-				policies: /* @__PURE__ */ new Set(),
-				hasRun: false,
-				hasAfterPolicies: false
-			};
-		}
-		const serializePhase = createPhase("Serialize");
-		const noPhase = createPhase("None");
-		const deserializePhase = createPhase("Deserialize");
-		const retryPhase = createPhase("Retry");
-		const signPhase = createPhase("Sign");
-		const orderedPhases = [
-			serializePhase,
-			noPhase,
-			deserializePhase,
-			retryPhase,
-			signPhase
-		];
-		function getPhase(phase) {
-			if (phase === "Retry") return retryPhase;
-			else if (phase === "Serialize") return serializePhase;
-			else if (phase === "Deserialize") return deserializePhase;
-			else if (phase === "Sign") return signPhase;
-			else return noPhase;
-		}
-		for (const descriptor of this._policies) {
-			const policy = descriptor.policy;
-			const options = descriptor.options;
-			const policyName = policy.name;
-			if (policyMap.has(policyName)) throw new Error("Duplicate policy names not allowed in pipeline");
-			const node = {
-				policy,
-				dependsOn: /* @__PURE__ */ new Set(),
-				dependants: /* @__PURE__ */ new Set()
-			};
-			if (options.afterPhase) {
-				node.afterPhase = getPhase(options.afterPhase);
-				node.afterPhase.hasAfterPolicies = true;
-			}
-			policyMap.set(policyName, node);
-			getPhase(options.phase).policies.add(node);
-		}
-		for (const descriptor of this._policies) {
-			const { policy, options } = descriptor;
-			const policyName = policy.name;
-			const node = policyMap.get(policyName);
-			if (!node) throw new Error(`Missing node for policy ${policyName}`);
-			if (options.afterPolicies) for (const afterPolicyName of options.afterPolicies) {
-				const afterNode = policyMap.get(afterPolicyName);
-				if (afterNode) {
-					node.dependsOn.add(afterNode);
-					afterNode.dependants.add(node);
-				}
-			}
-			if (options.beforePolicies) for (const beforePolicyName of options.beforePolicies) {
-				const beforeNode = policyMap.get(beforePolicyName);
-				if (beforeNode) {
-					beforeNode.dependsOn.add(node);
-					node.dependants.add(beforeNode);
-				}
-			}
-		}
-		function walkPhase(phase) {
-			phase.hasRun = true;
-			for (const node of phase.policies) {
-				if (node.afterPhase && (!node.afterPhase.hasRun || node.afterPhase.policies.size)) continue;
-				if (node.dependsOn.size === 0) {
-					result.push(node.policy);
-					for (const dependant of node.dependants) dependant.dependsOn.delete(node);
-					policyMap.delete(node.policy.name);
-					phase.policies.delete(node);
-				}
-			}
-		}
-		function walkPhases() {
-			for (const phase of orderedPhases) {
-				walkPhase(phase);
-				if (phase.policies.size > 0 && phase !== noPhase) {
-					if (!noPhase.hasRun) walkPhase(noPhase);
-					return;
-				}
-				if (phase.hasAfterPolicies) walkPhase(noPhase);
-			}
-		}
-		let iteration = 0;
-		while (policyMap.size > 0) {
-			iteration++;
-			const initialResultLength = result.length;
-			walkPhases();
-			if (result.length <= initialResultLength && iteration > 1) throw new Error("Cannot satisfy policy dependencies due to requirements cycle.");
-		}
-		return result;
-	}
-};
-/**
-* Creates a totally empty pipeline.
-* Useful for testing or creating a custom one.
-*/
-function createEmptyPipeline$1() {
-	return HttpPipeline.create();
+async function concat$2(sources) {
+	return function() {
+		const streams = sources.map((x) => typeof x === "function" ? x() : x).map(toStream);
+		return Readable$1.from((async function* () {
+			for (const stream of streams) for await (const chunk of stream) yield chunk;
+		})());
+	};
 }
 //#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/nodeHttpClient.js
-var DEFAULT_TLS_SETTINGS = {};
-function isReadableStream(body) {
-	return body && typeof body.pipe === "function";
+//#region node_modules/@typespec/ts-http-runtime/dist/esm/policies/multipartPolicy.js
+function generateBoundary() {
+	return `----AzSDKFormBoundary${randomUUID$1()}`;
 }
-function isStreamComplete(stream) {
-	if (stream.readable === false) return Promise.resolve();
-	return new Promise((resolve) => {
-		const handler = () => {
-			resolve();
-			stream.removeListener("close", handler);
-			stream.removeListener("end", handler);
-			stream.removeListener("error", handler);
-		};
-		stream.on("close", handler);
-		stream.on("end", handler);
-		stream.on("error", handler);
-	});
+function encodeHeaders(headers) {
+	let result = "";
+	for (const [key, value] of headers) result += `${key}: ${value}\r\n`;
+	return result;
 }
-function isArrayBuffer(body) {
-	return body && typeof body.byteLength === "number";
+function getLength(source) {
+	if (source instanceof Uint8Array) return source.byteLength;
+	else if (isBlob(source)) return source.size === -1 ? void 0 : source.size;
+	else return;
 }
-var ReportTransform = class extends Transform {
-	loadedBytes = 0;
-	progressCallback;
-	_transform(chunk, _encoding, callback) {
-		this.push(chunk);
-		this.loadedBytes += chunk.length;
-		try {
-			this.progressCallback({ loadedBytes: this.loadedBytes });
-			callback();
-		} catch (e) {
-			callback(e);
-		}
+function getTotalLength(sources) {
+	let total = 0;
+	for (const source of sources) {
+		const partLength = getLength(source);
+		if (partLength === void 0) return;
+		else total += partLength;
 	}
-	constructor(progressCallback) {
-		super();
-		this.progressCallback = progressCallback;
-	}
-};
-/**
-* A HttpClient implementation that uses Node's "https" module to send HTTPS requests.
-* @internal
-*/
-var NodeHttpClient = class {
-	cachedHttpAgent;
-	cachedHttpsAgents = /* @__PURE__ */ new WeakMap();
-	/**
-	* Makes a request over an underlying transport layer and returns the response.
-	* @param request - The request to be made.
-	*/
-	async sendRequest(request) {
-		const abortController = new AbortController();
-		let abortListener;
-		if (request.abortSignal) {
-			if (request.abortSignal.aborted) throw new AbortError$1("The operation was aborted. Request has already been canceled.");
-			abortListener = (event) => {
-				if (event.type === "abort") abortController.abort();
-			};
-			request.abortSignal.addEventListener("abort", abortListener);
-		}
-		let timeoutId;
-		if (request.timeout > 0) timeoutId = setTimeout(() => {
-			const sanitizer = new Sanitizer();
-			logger$3.info(`request to '${sanitizer.sanitizeUrl(request.url)}' timed out. canceling...`);
-			abortController.abort();
-		}, request.timeout);
-		const acceptEncoding = request.headers.get("Accept-Encoding");
-		const shouldDecompress = acceptEncoding?.includes("gzip") || acceptEncoding?.includes("deflate");
-		let body = typeof request.body === "function" ? request.body() : request.body;
-		if (body && !request.headers.has("Content-Length")) {
-			const bodyLength = getBodyLength(body);
-			if (bodyLength !== null) request.headers.set("Content-Length", bodyLength);
-		}
-		let responseStream;
-		try {
-			if (body && request.onUploadProgress) {
-				const onUploadProgress = request.onUploadProgress;
-				const uploadReportStream = new ReportTransform(onUploadProgress);
-				uploadReportStream.on("error", (e) => {
-					logger$3.error("Error in upload progress", e);
-				});
-				if (isReadableStream(body)) body.pipe(uploadReportStream);
-				else uploadReportStream.end(body);
-				body = uploadReportStream;
-			}
-			const res = await this.makeRequest(request, abortController, body);
-			if (timeoutId !== void 0) clearTimeout(timeoutId);
-			const headers = getResponseHeaders(res);
-			const response = {
-				status: res.statusCode ?? 0,
-				headers,
-				request
-			};
-			if (request.method === "HEAD") {
-				res.resume();
-				return response;
-			}
-			responseStream = shouldDecompress ? getDecodedResponseStream(res, headers) : res;
-			const onDownloadProgress = request.onDownloadProgress;
-			if (onDownloadProgress) {
-				const downloadReportStream = new ReportTransform(onDownloadProgress);
-				downloadReportStream.on("error", (e) => {
-					logger$3.error("Error in download progress", e);
-				});
-				responseStream.pipe(downloadReportStream);
-				responseStream = downloadReportStream;
-			}
-			if (request.streamResponseStatusCodes?.has(Number.POSITIVE_INFINITY) || request.streamResponseStatusCodes?.has(response.status)) response.readableStreamBody = responseStream;
-			else response.bodyAsText = await streamToText(responseStream);
-			return response;
-		} finally {
-			if (request.abortSignal && abortListener) {
-				let uploadStreamDone = Promise.resolve();
-				if (isReadableStream(body)) uploadStreamDone = isStreamComplete(body);
-				let downloadStreamDone = Promise.resolve();
-				if (isReadableStream(responseStream)) downloadStreamDone = isStreamComplete(responseStream);
-				Promise.all([uploadStreamDone, downloadStreamDone]).then(() => {
-					if (abortListener) request.abortSignal?.removeEventListener("abort", abortListener);
-				}).catch((e) => {
-					logger$3.warning("Error when cleaning up abortListener on httpRequest", e);
-				});
-			}
-		}
-	}
-	makeRequest(request, abortController, body) {
-		const url = new URL(request.url);
-		const isInsecure = url.protocol !== "https:";
-		if (isInsecure && !request.allowInsecureConnection) throw new Error(`Cannot connect to ${request.url} while allowInsecureConnection is false.`);
-		const options = {
-			agent: request.agent ?? this.getOrCreateAgent(request, isInsecure),
-			hostname: url.hostname,
-			path: `${url.pathname}${url.search}`,
-			port: url.port,
-			method: request.method,
-			headers: request.headers.toJSON({ preserveCase: true }),
-			...request.requestOverrides
-		};
-		return new Promise((resolve, reject) => {
-			const req = isInsecure ? http.request(options, resolve) : https.request(options, resolve);
-			req.once("error", (err) => {
-				reject(new RestError$1(err.message, {
-					code: err.code ?? RestError$1.REQUEST_SEND_ERROR,
-					request
-				}));
-			});
-			abortController.signal.addEventListener("abort", () => {
-				const abortError = new AbortError$1("The operation was aborted. Rejecting from abort signal callback while making request.");
-				req.destroy(abortError);
-				reject(abortError);
-			});
-			if (body && isReadableStream(body)) body.pipe(req);
-			else if (body) if (typeof body === "string" || Buffer.isBuffer(body)) req.end(body);
-			else if (isArrayBuffer(body)) req.end(ArrayBuffer.isView(body) ? Buffer.from(body.buffer) : Buffer.from(body));
-			else {
-				logger$3.error("Unrecognized body type", body);
-				reject(new RestError$1("Unrecognized body type"));
-			}
-			else req.end();
-		});
-	}
-	getOrCreateAgent(request, isInsecure) {
-		const disableKeepAlive = request.disableKeepAlive;
-		if (isInsecure) {
-			if (disableKeepAlive) return http.globalAgent;
-			if (!this.cachedHttpAgent) this.cachedHttpAgent = new http.Agent({ keepAlive: true });
-			return this.cachedHttpAgent;
-		} else {
-			if (disableKeepAlive && !request.tlsSettings) return https.globalAgent;
-			const tlsSettings = request.tlsSettings ?? DEFAULT_TLS_SETTINGS;
-			let agent = this.cachedHttpsAgents.get(tlsSettings);
-			if (agent && agent.options.keepAlive === !disableKeepAlive) return agent;
-			logger$3.info("No cached TLS Agent exist, creating a new Agent");
-			agent = new https.Agent({
-				keepAlive: !disableKeepAlive,
-				...tlsSettings
-			});
-			this.cachedHttpsAgents.set(tlsSettings, agent);
-			return agent;
-		}
-	}
-};
-function getResponseHeaders(res) {
-	const headers = createHttpHeaders$1();
-	for (const header of Object.keys(res.headers)) {
-		const value = res.headers[header];
-		if (Array.isArray(value)) {
-			if (value.length > 0) headers.set(header, value[0]);
-		} else if (value) headers.set(header, value);
-	}
-	return headers;
+	return total;
 }
-function getDecodedResponseStream(stream, headers) {
-	const contentEncoding = headers.get("Content-Encoding");
-	if (contentEncoding === "gzip") {
-		const unzip = zlib.createGunzip();
-		stream.pipe(unzip);
-		return unzip;
-	} else if (contentEncoding === "deflate") {
-		const inflate = zlib.createInflate();
-		stream.pipe(inflate);
-		return inflate;
-	}
-	return stream;
-}
-function streamToText(stream) {
-	return new Promise((resolve, reject) => {
-		const buffer = [];
-		stream.on("data", (chunk) => {
-			if (Buffer.isBuffer(chunk)) buffer.push(chunk);
-			else buffer.push(Buffer.from(chunk));
-		});
-		stream.on("end", () => {
-			resolve(Buffer.concat(buffer).toString("utf8"));
-		});
-		stream.on("error", (e) => {
-			if (e && e?.name === "AbortError") reject(e);
-			else reject(new RestError$1(`Error reading response as text: ${e.message}`, { code: RestError$1.PARSE_ERROR }));
-		});
-	});
-}
-/** @internal */
-function getBodyLength(body) {
-	if (!body) return 0;
-	else if (Buffer.isBuffer(body)) return body.length;
-	else if (isReadableStream(body)) return null;
-	else if (isArrayBuffer(body)) return body.byteLength;
-	else if (typeof body === "string") return Buffer.from(body).length;
-	else return null;
+async function buildRequestBody(request, parts, boundary) {
+	const sources = [
+		stringToUint8Array(`--${boundary}`, "utf-8"),
+		...parts.flatMap((part) => [
+			stringToUint8Array("\r\n", "utf-8"),
+			stringToUint8Array(encodeHeaders(part.headers), "utf-8"),
+			stringToUint8Array("\r\n", "utf-8"),
+			part.body,
+			stringToUint8Array(`\r\n--${boundary}`, "utf-8")
+		]),
+		stringToUint8Array("--\r\n\r\n", "utf-8")
+	];
+	const contentLength = getTotalLength(sources);
+	if (contentLength) request.headers.set("Content-Length", contentLength);
+	request.body = await concat$2(sources);
 }
 /**
-* Create a new HttpClient instance for the NodeJS environment.
-* @internal
+* Name of multipart policy
 */
-function createNodeHttpClient() {
-	return new NodeHttpClient();
+var multipartPolicyName$1 = "multipartPolicy";
+var maxBoundaryLength = 70;
+var validBoundaryCharacters = /* @__PURE__ */ new Set(`abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'()+,-./:=?`);
+function assertValidBoundary(boundary) {
+	if (boundary.length > maxBoundaryLength) throw new Error(`Multipart boundary "${boundary}" exceeds maximum length of 70 characters`);
+	if (Array.from(boundary).some((x) => !validBoundaryCharacters.has(x))) throw new Error(`Multipart boundary "${boundary}" contains invalid characters`);
 }
-//#endregion
-//#region node_modules/@typespec/ts-http-runtime/dist/esm/defaultHttpClient.js
 /**
-* Create the correct HttpClient for the current environment.
+* Pipeline policy for multipart requests
 */
-function createDefaultHttpClient$1() {
-	return createNodeHttpClient();
+function multipartPolicy$1() {
+	return {
+		name: multipartPolicyName$1,
+		async sendRequest(request, next) {
+			if (!request.multipartBody) return next(request);
+			if (request.body) throw new Error("multipartBody and regular body cannot be set at the same time");
+			let boundary = request.multipartBody.boundary;
+			const contentTypeHeader = request.headers.get("Content-Type") ?? "multipart/mixed";
+			const parsedHeader = contentTypeHeader.match(/^(multipart\/[^ ;]+)(?:; *boundary=(.+))?$/);
+			if (!parsedHeader) throw new Error(`Got multipart request body, but content-type header was not multipart: ${contentTypeHeader}`);
+			const [, contentType, parsedBoundary] = parsedHeader;
+			if (parsedBoundary && boundary && parsedBoundary !== boundary) throw new Error(`Multipart boundary was specified as ${parsedBoundary} in the header, but got ${boundary} in the request body`);
+			boundary ??= parsedBoundary;
+			if (boundary) assertValidBoundary(boundary);
+			else boundary = generateBoundary();
+			request.headers.set("Content-Type", `${contentType}; boundary=${boundary}`);
+			await buildRequestBody(request, request.multipartBody.parts, boundary);
+			request.multipartBody = void 0;
+			return next(request);
+		}
+	};
 }
 //#endregion
 //#region node_modules/@azure/core-rest-pipeline/dist/esm/pipeline.js
@@ -11112,6 +11152,36 @@ function createDefaultHttpClient$1() {
 */
 function createEmptyPipeline() {
 	return createEmptyPipeline$1();
+}
+//#endregion
+//#region node_modules/@azure/logger/dist/esm/index.js
+var context = createLoggerContext({
+	logLevelEnvVarName: "AZURE_LOG_LEVEL",
+	namespace: "azure"
+});
+context.logger;
+/**
+* Creates a logger for use by the Azure SDKs that inherits from `AzureLogger`.
+* @param namespace - The name of the SDK package.
+* @hidden
+*/
+function createClientLogger(namespace) {
+	return context.createClientLogger(namespace);
+}
+//#endregion
+//#region node_modules/@azure/core-rest-pipeline/dist/esm/log.js
+var logger$3 = createClientLogger("core-rest-pipeline");
+//#endregion
+//#region node_modules/@azure/core-rest-pipeline/dist/esm/policies/logPolicy.js
+/**
+* A policy that logs all requests and responses.
+* @param options - Options to configure logPolicy.
+*/
+function logPolicy(options = {}) {
+	return logPolicy$1({
+		logger: logger$3.info,
+		...options
+	});
 }
 //#endregion
 //#region node_modules/@azure/core-rest-pipeline/dist/esm/policies/redirectPolicy.js
@@ -11698,7 +11768,7 @@ function tryCreateTracingClient() {
 			packageVersion: SDK_VERSION$1
 		});
 	} catch (e) {
-		logger$4.warning(`Error when creating the TracingClient: ${getErrorMessage(e)}`);
+		logger$3.warning(`Error when creating the TracingClient: ${getErrorMessage(e)}`);
 		return;
 	}
 }
@@ -11719,7 +11789,7 @@ function tryCreateSpan(tracingClient, request, spanAttributes) {
 			tracingContext: updatedOptions.tracingOptions.tracingContext
 		};
 	} catch (e) {
-		logger$4.warning(`Skipping creating a tracing span due to an error: ${getErrorMessage(e)}`);
+		logger$3.warning(`Skipping creating a tracing span due to an error: ${getErrorMessage(e)}`);
 		return;
 	}
 }
@@ -11732,7 +11802,7 @@ function tryProcessError(span, error) {
 		if (isRestError(error) && error.statusCode) span.setAttribute("http.status_code", error.statusCode);
 		span.end();
 	} catch (e) {
-		logger$4.warning(`Skipping tracing span processing due to an error: ${getErrorMessage(e)}`);
+		logger$3.warning(`Skipping tracing span processing due to an error: ${getErrorMessage(e)}`);
 	}
 }
 function tryProcessResponse(span, response) {
@@ -11743,7 +11813,7 @@ function tryProcessResponse(span, response) {
 		if (response.status >= 400) span.setStatus({ status: "error" });
 		span.end();
 	} catch (e) {
-		logger$4.warning(`Skipping tracing span processing due to an error: ${getErrorMessage(e)}`);
+		logger$3.warning(`Skipping tracing span processing due to an error: ${getErrorMessage(e)}`);
 	}
 }
 //#endregion
@@ -12043,7 +12113,7 @@ async function authorizeRequestOnCaeChallenge(onChallengeOptions, caeClaims) {
 */
 function bearerTokenAuthenticationPolicy(options) {
 	const { credential, scopes, challengeCallbacks } = options;
-	const logger = options.logger || logger$4;
+	const logger = options.logger || logger$3;
 	const callbacks = {
 		authorizeRequest: challengeCallbacks?.authorizeRequest?.bind(challengeCallbacks) ?? defaultAuthorizeRequest,
 		authorizeRequestOnChallenge: challengeCallbacks?.authorizeRequestOnChallenge?.bind(challengeCallbacks)
@@ -12173,3529 +12243,6 @@ function getCaeChallengeClaims(challenges) {
 function isTokenCredential(credential) {
 	const castCredential = credential;
 	return castCredential && typeof castCredential.getToken === "function" && (castCredential.signRequest === void 0 || castCredential.getToken.length > 0);
-}
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/utils/RetriableReadableStream.js
-/**
-* ONLY AVAILABLE IN NODE.JS RUNTIME.
-*
-* A Node.js ReadableStream will internally retry when internal ReadableStream unexpected ends.
-*/
-var RetriableReadableStream = class extends Readable {
-	start;
-	offset;
-	end;
-	getter;
-	source;
-	retries = 0;
-	maxRetryRequests;
-	onProgress;
-	options;
-	/**
-	* Creates an instance of RetriableReadableStream.
-	*
-	* @param source - The current ReadableStream returned from getter
-	* @param getter - A method calling downloading request returning
-	*                                      a new ReadableStream from specified offset
-	* @param offset - Offset position in original data source to read
-	* @param count - How much data in original data source to read
-	* @param options -
-	*/
-	constructor(source, getter, offset, count, options = {}) {
-		super({ highWaterMark: options.highWaterMark });
-		this.getter = getter;
-		this.source = source;
-		this.start = offset;
-		this.offset = offset;
-		this.end = offset + count - 1;
-		this.maxRetryRequests = options.maxRetryRequests && options.maxRetryRequests >= 0 ? options.maxRetryRequests : 0;
-		this.onProgress = options.onProgress;
-		this.options = options;
-		this.setSourceEventHandlers();
-	}
-	_read() {
-		this.source.resume();
-	}
-	setSourceEventHandlers() {
-		this.source.on("data", this.sourceDataHandler);
-		this.source.on("end", this.sourceErrorOrEndHandler);
-		this.source.on("error", this.sourceErrorOrEndHandler);
-		this.source.on("aborted", this.sourceAbortedHandler);
-	}
-	removeSourceEventHandlers() {
-		this.source.removeListener("data", this.sourceDataHandler);
-		this.source.removeListener("end", this.sourceErrorOrEndHandler);
-		this.source.removeListener("error", this.sourceErrorOrEndHandler);
-		this.source.removeListener("aborted", this.sourceAbortedHandler);
-	}
-	sourceDataHandler = (data) => {
-		if (this.options.doInjectErrorOnce) {
-			this.options.doInjectErrorOnce = void 0;
-			this.source.pause();
-			this.sourceErrorOrEndHandler();
-			this.source.destroy();
-			return;
-		}
-		this.offset += data.length;
-		if (this.onProgress) this.onProgress({ loadedBytes: this.offset - this.start });
-		if (!this.push(data)) this.source.pause();
-	};
-	sourceAbortedHandler = () => {
-		const abortError = new AbortError("The operation was aborted.");
-		this.destroy(abortError);
-	};
-	sourceErrorOrEndHandler = (err) => {
-		if (err && err.name === "AbortError") {
-			this.destroy(err);
-			return;
-		}
-		this.removeSourceEventHandlers();
-		if (this.offset - 1 === this.end) this.push(null);
-		else if (this.offset <= this.end) if (this.retries < this.maxRetryRequests) {
-			this.retries += 1;
-			this.getter(this.offset).then((newSource) => {
-				this.source = newSource;
-				this.setSourceEventHandlers();
-			}).catch((error) => {
-				this.destroy(error);
-			});
-		} else this.destroy(/* @__PURE__ */ new Error(`Data corruption failure: received less data than required and reached maxRetires limitation. Received data offset: ${this.offset - 1}, data needed offset: ${this.end}, retries: ${this.retries}, max retries: ${this.maxRetryRequests}`));
-		else this.destroy(/* @__PURE__ */ new Error(`Data corruption failure: Received more data than original request, data needed offset is ${this.end}, received offset: ${this.offset - 1}`));
-	};
-	_destroy(error, callback) {
-		this.removeSourceEventHandlers();
-		this.source.destroy();
-		callback(error === null ? void 0 : error);
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/BlobDownloadResponse.js
-/**
-* ONLY AVAILABLE IN NODE.JS RUNTIME.
-*
-* BlobDownloadResponse implements BlobDownloadResponseParsed interface, and in Node.js runtime it will
-* automatically retry when internal read stream unexpected ends. (This kind of unexpected ends cannot
-* trigger retries defined in pipeline retry policy.)
-*
-* The {@link readableStreamBody} stream will retry underlayer, you can just use it as a normal Node.js
-* Readable stream.
-*/
-var BlobDownloadResponse = class {
-	/**
-	* Indicates that the service supports
-	* requests for partial file content.
-	*
-	* @readonly
-	*/
-	get acceptRanges() {
-		return this.originalResponse.acceptRanges;
-	}
-	/**
-	* Returns if it was previously specified
-	* for the file.
-	*
-	* @readonly
-	*/
-	get cacheControl() {
-		return this.originalResponse.cacheControl;
-	}
-	/**
-	* Returns the value that was specified
-	* for the 'x-ms-content-disposition' header and specifies how to process the
-	* response.
-	*
-	* @readonly
-	*/
-	get contentDisposition() {
-		return this.originalResponse.contentDisposition;
-	}
-	/**
-	* Returns the value that was specified
-	* for the Content-Encoding request header.
-	*
-	* @readonly
-	*/
-	get contentEncoding() {
-		return this.originalResponse.contentEncoding;
-	}
-	/**
-	* Returns the value that was specified
-	* for the Content-Language request header.
-	*
-	* @readonly
-	*/
-	get contentLanguage() {
-		return this.originalResponse.contentLanguage;
-	}
-	/**
-	* The current sequence number for a
-	* page blob. This header is not returned for block blobs or append blobs.
-	*
-	* @readonly
-	*/
-	get blobSequenceNumber() {
-		return this.originalResponse.blobSequenceNumber;
-	}
-	/**
-	* The blob's type. Possible values include:
-	* 'BlockBlob', 'PageBlob', 'AppendBlob'.
-	*
-	* @readonly
-	*/
-	get blobType() {
-		return this.originalResponse.blobType;
-	}
-	/**
-	* The number of bytes present in the
-	* response body.
-	*
-	* @readonly
-	*/
-	get contentLength() {
-		return this.originalResponse.contentLength;
-	}
-	/**
-	* If the file has an MD5 hash and the
-	* request is to read the full file, this response header is returned so that
-	* the client can check for message content integrity. If the request is to
-	* read a specified range and the 'x-ms-range-get-content-md5' is set to
-	* true, then the request returns an MD5 hash for the range, as long as the
-	* range size is less than or equal to 4 MB. If neither of these sets of
-	* conditions is true, then no value is returned for the 'Content-MD5'
-	* header.
-	*
-	* @readonly
-	*/
-	get contentMD5() {
-		return this.originalResponse.contentMD5;
-	}
-	/**
-	* Indicates the range of bytes returned if
-	* the client requested a subset of the file by setting the Range request
-	* header.
-	*
-	* @readonly
-	*/
-	get contentRange() {
-		return this.originalResponse.contentRange;
-	}
-	/**
-	* The content type specified for the file.
-	* The default content type is 'application/octet-stream'
-	*
-	* @readonly
-	*/
-	get contentType() {
-		return this.originalResponse.contentType;
-	}
-	/**
-	* Conclusion time of the last attempted
-	* Copy File operation where this file was the destination file. This value
-	* can specify the time of a completed, aborted, or failed copy attempt.
-	*
-	* @readonly
-	*/
-	get copyCompletedOn() {
-		return this.originalResponse.copyCompletedOn;
-	}
-	/**
-	* String identifier for the last attempted Copy
-	* File operation where this file was the destination file.
-	*
-	* @readonly
-	*/
-	get copyId() {
-		return this.originalResponse.copyId;
-	}
-	/**
-	* Contains the number of bytes copied and
-	* the total bytes in the source in the last attempted Copy File operation
-	* where this file was the destination file. Can show between 0 and
-	* Content-Length bytes copied.
-	*
-	* @readonly
-	*/
-	get copyProgress() {
-		return this.originalResponse.copyProgress;
-	}
-	/**
-	* URL up to 2KB in length that specifies the
-	* source file used in the last attempted Copy File operation where this file
-	* was the destination file.
-	*
-	* @readonly
-	*/
-	get copySource() {
-		return this.originalResponse.copySource;
-	}
-	/**
-	* State of the copy operation
-	* identified by 'x-ms-copy-id'. Possible values include: 'pending',
-	* 'success', 'aborted', 'failed'
-	*
-	* @readonly
-	*/
-	get copyStatus() {
-		return this.originalResponse.copyStatus;
-	}
-	/**
-	* Only appears when
-	* x-ms-copy-status is failed or pending. Describes cause of fatal or
-	* non-fatal copy operation failure.
-	*
-	* @readonly
-	*/
-	get copyStatusDescription() {
-		return this.originalResponse.copyStatusDescription;
-	}
-	/**
-	* When a blob is leased,
-	* specifies whether the lease is of infinite or fixed duration. Possible
-	* values include: 'infinite', 'fixed'.
-	*
-	* @readonly
-	*/
-	get leaseDuration() {
-		return this.originalResponse.leaseDuration;
-	}
-	/**
-	* Lease state of the blob. Possible
-	* values include: 'available', 'leased', 'expired', 'breaking', 'broken'.
-	*
-	* @readonly
-	*/
-	get leaseState() {
-		return this.originalResponse.leaseState;
-	}
-	/**
-	* The current lease status of the
-	* blob. Possible values include: 'locked', 'unlocked'.
-	*
-	* @readonly
-	*/
-	get leaseStatus() {
-		return this.originalResponse.leaseStatus;
-	}
-	/**
-	* A UTC date/time value generated by the service that
-	* indicates the time at which the response was initiated.
-	*
-	* @readonly
-	*/
-	get date() {
-		return this.originalResponse.date;
-	}
-	/**
-	* The number of committed blocks
-	* present in the blob. This header is returned only for append blobs.
-	*
-	* @readonly
-	*/
-	get blobCommittedBlockCount() {
-		return this.originalResponse.blobCommittedBlockCount;
-	}
-	/**
-	* The ETag contains a value that you can use to
-	* perform operations conditionally, in quotes.
-	*
-	* @readonly
-	*/
-	get etag() {
-		return this.originalResponse.etag;
-	}
-	/**
-	* The number of tags associated with the blob
-	*
-	* @readonly
-	*/
-	get tagCount() {
-		return this.originalResponse.tagCount;
-	}
-	/**
-	* The error code.
-	*
-	* @readonly
-	*/
-	get errorCode() {
-		return this.originalResponse.errorCode;
-	}
-	/**
-	* The value of this header is set to
-	* true if the file data and application metadata are completely encrypted
-	* using the specified algorithm. Otherwise, the value is set to false (when
-	* the file is unencrypted, or if only parts of the file/application metadata
-	* are encrypted).
-	*
-	* @readonly
-	*/
-	get isServerEncrypted() {
-		return this.originalResponse.isServerEncrypted;
-	}
-	/**
-	* If the blob has a MD5 hash, and if
-	* request contains range header (Range or x-ms-range), this response header
-	* is returned with the value of the whole blob's MD5 value. This value may
-	* or may not be equal to the value returned in Content-MD5 header, with the
-	* latter calculated from the requested range.
-	*
-	* @readonly
-	*/
-	get blobContentMD5() {
-		return this.originalResponse.blobContentMD5;
-	}
-	/**
-	* Returns the date and time the file was last
-	* modified. Any operation that modifies the file or its properties updates
-	* the last modified time.
-	*
-	* @readonly
-	*/
-	get lastModified() {
-		return this.originalResponse.lastModified;
-	}
-	/**
-	* Returns the UTC date and time generated by the service that indicates the time at which the blob was
-	* last read or written to.
-	*
-	* @readonly
-	*/
-	get lastAccessed() {
-		return this.originalResponse.lastAccessed;
-	}
-	/**
-	* Returns the date and time the blob was created.
-	*
-	* @readonly
-	*/
-	get createdOn() {
-		return this.originalResponse.createdOn;
-	}
-	/**
-	* A name-value pair
-	* to associate with a file storage object.
-	*
-	* @readonly
-	*/
-	get metadata() {
-		return this.originalResponse.metadata;
-	}
-	/**
-	* This header uniquely identifies the request
-	* that was made and can be used for troubleshooting the request.
-	*
-	* @readonly
-	*/
-	get requestId() {
-		return this.originalResponse.requestId;
-	}
-	/**
-	* If a client request id header is sent in the request, this header will be present in the
-	* response with the same value.
-	*
-	* @readonly
-	*/
-	get clientRequestId() {
-		return this.originalResponse.clientRequestId;
-	}
-	/**
-	* Indicates the version of the Blob service used
-	* to execute the request.
-	*
-	* @readonly
-	*/
-	get version() {
-		return this.originalResponse.version;
-	}
-	/**
-	* Indicates the versionId of the downloaded blob version.
-	*
-	* @readonly
-	*/
-	get versionId() {
-		return this.originalResponse.versionId;
-	}
-	/**
-	* Indicates whether version of this blob is a current version.
-	*
-	* @readonly
-	*/
-	get isCurrentVersion() {
-		return this.originalResponse.isCurrentVersion;
-	}
-	/**
-	* The SHA-256 hash of the encryption key used to encrypt the blob. This value is only returned
-	* when the blob was encrypted with a customer-provided key.
-	*
-	* @readonly
-	*/
-	get encryptionKeySha256() {
-		return this.originalResponse.encryptionKeySha256;
-	}
-	/**
-	* If the request is to read a specified range and the x-ms-range-get-content-crc64 is set to
-	* true, then the request returns a crc64 for the range, as long as the range size is less than
-	* or equal to 4 MB. If both x-ms-range-get-content-crc64 & x-ms-range-get-content-md5 is
-	* specified in the same request, it will fail with 400(Bad Request)
-	*/
-	get contentCrc64() {
-		return this.originalResponse.contentCrc64;
-	}
-	/**
-	* Object Replication Policy Id of the destination blob.
-	*
-	* @readonly
-	*/
-	get objectReplicationDestinationPolicyId() {
-		return this.originalResponse.objectReplicationDestinationPolicyId;
-	}
-	/**
-	* Parsed Object Replication Policy Id, Rule Id(s) and status of the source blob.
-	*
-	* @readonly
-	*/
-	get objectReplicationSourceProperties() {
-		return this.originalResponse.objectReplicationSourceProperties;
-	}
-	/**
-	* If this blob has been sealed.
-	*
-	* @readonly
-	*/
-	get isSealed() {
-		return this.originalResponse.isSealed;
-	}
-	/**
-	* UTC date/time value generated by the service that indicates the time at which the blob immutability policy will expire.
-	*
-	* @readonly
-	*/
-	get immutabilityPolicyExpiresOn() {
-		return this.originalResponse.immutabilityPolicyExpiresOn;
-	}
-	/**
-	* Indicates immutability policy mode.
-	*
-	* @readonly
-	*/
-	get immutabilityPolicyMode() {
-		return this.originalResponse.immutabilityPolicyMode;
-	}
-	/**
-	* Indicates if a legal hold is present on the blob.
-	*
-	* @readonly
-	*/
-	get legalHold() {
-		return this.originalResponse.legalHold;
-	}
-	/**
-	* The response body as a browser Blob.
-	* Always undefined in node.js.
-	*
-	* @readonly
-	*/
-	get contentAsBlob() {
-		return this.originalResponse.blobBody;
-	}
-	/**
-	* The response body as a node.js Readable stream.
-	* Always undefined in the browser.
-	*
-	* It will automatically retry when internal read stream unexpected ends.
-	*
-	* @readonly
-	*/
-	get readableStreamBody() {
-		return isNodeLike ? this.blobDownloadStream : void 0;
-	}
-	/**
-	* The HTTP response.
-	*/
-	get _response() {
-		return this.originalResponse._response;
-	}
-	originalResponse;
-	blobDownloadStream;
-	/**
-	* Creates an instance of BlobDownloadResponse.
-	*
-	* @param originalResponse -
-	* @param getter -
-	* @param offset -
-	* @param count -
-	* @param options -
-	*/
-	constructor(originalResponse, getter, offset, count, options = {}) {
-		this.originalResponse = originalResponse;
-		this.blobDownloadStream = new RetriableReadableStream(this.originalResponse.readableStreamBody, getter, offset, count, options);
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/internal-avro/AvroConstants.js
-var AVRO_INIT_BYTES = new Uint8Array([
-	79,
-	98,
-	106,
-	1
-]);
-var AVRO_CODEC_KEY = "avro.codec";
-var AVRO_SCHEMA_KEY = "avro.schema";
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/internal-avro/AvroParser.js
-var AvroParser = class AvroParser {
-	/**
-	* Reads a fixed number of bytes from the stream.
-	*
-	* @param stream -
-	* @param length -
-	* @param options -
-	*/
-	static async readFixedBytes(stream, length, options = {}) {
-		const bytes = await stream.read(length, { abortSignal: options.abortSignal });
-		if (bytes.length !== length) throw new Error("Hit stream end.");
-		return bytes;
-	}
-	/**
-	* Reads a single byte from the stream.
-	*
-	* @param stream -
-	* @param options -
-	*/
-	static async readByte(stream, options = {}) {
-		return (await AvroParser.readFixedBytes(stream, 1, options))[0];
-	}
-	static async readZigZagLong(stream, options = {}) {
-		let zigZagEncoded = 0;
-		let significanceInBit = 0;
-		let byte, haveMoreByte, significanceInFloat;
-		do {
-			byte = await AvroParser.readByte(stream, options);
-			haveMoreByte = byte & 128;
-			zigZagEncoded |= (byte & 127) << significanceInBit;
-			significanceInBit += 7;
-		} while (haveMoreByte && significanceInBit < 28);
-		if (haveMoreByte) {
-			zigZagEncoded = zigZagEncoded;
-			significanceInFloat = 268435456;
-			do {
-				byte = await AvroParser.readByte(stream, options);
-				zigZagEncoded += (byte & 127) * significanceInFloat;
-				significanceInFloat *= 128;
-			} while (byte & 128);
-			const res = (zigZagEncoded % 2 ? -(zigZagEncoded + 1) : zigZagEncoded) / 2;
-			if (res < Number.MIN_SAFE_INTEGER || res > Number.MAX_SAFE_INTEGER) throw new Error("Integer overflow.");
-			return res;
-		}
-		return zigZagEncoded >> 1 ^ -(zigZagEncoded & 1);
-	}
-	static async readLong(stream, options = {}) {
-		return AvroParser.readZigZagLong(stream, options);
-	}
-	static async readInt(stream, options = {}) {
-		return AvroParser.readZigZagLong(stream, options);
-	}
-	static async readNull() {
-		return null;
-	}
-	static async readBoolean(stream, options = {}) {
-		const b = await AvroParser.readByte(stream, options);
-		if (b === 1) return true;
-		else if (b === 0) return false;
-		else throw new Error("Byte was not a boolean.");
-	}
-	static async readFloat(stream, options = {}) {
-		const u8arr = await AvroParser.readFixedBytes(stream, 4, options);
-		return new DataView(u8arr.buffer, u8arr.byteOffset, u8arr.byteLength).getFloat32(0, true);
-	}
-	static async readDouble(stream, options = {}) {
-		const u8arr = await AvroParser.readFixedBytes(stream, 8, options);
-		return new DataView(u8arr.buffer, u8arr.byteOffset, u8arr.byteLength).getFloat64(0, true);
-	}
-	static async readBytes(stream, options = {}) {
-		const size = await AvroParser.readLong(stream, options);
-		if (size < 0) throw new Error("Bytes size was negative.");
-		return stream.read(size, { abortSignal: options.abortSignal });
-	}
-	static async readString(stream, options = {}) {
-		const u8arr = await AvroParser.readBytes(stream, options);
-		return new TextDecoder().decode(u8arr);
-	}
-	static async readMapPair(stream, readItemMethod, options = {}) {
-		return {
-			key: await AvroParser.readString(stream, options),
-			value: await readItemMethod(stream, options)
-		};
-	}
-	static async readMap(stream, readItemMethod, options = {}) {
-		const readPairMethod = (s, opts = {}) => {
-			return AvroParser.readMapPair(s, readItemMethod, opts);
-		};
-		const pairs = await AvroParser.readArray(stream, readPairMethod, options);
-		const dict = {};
-		for (const pair of pairs) dict[pair.key] = pair.value;
-		return dict;
-	}
-	static async readArray(stream, readItemMethod, options = {}) {
-		const items = [];
-		for (let count = await AvroParser.readLong(stream, options); count !== 0; count = await AvroParser.readLong(stream, options)) {
-			if (count < 0) {
-				await AvroParser.readLong(stream, options);
-				count = -count;
-			}
-			while (count--) {
-				const item = await readItemMethod(stream, options);
-				items.push(item);
-			}
-		}
-		return items;
-	}
-};
-var AvroComplex;
-(function(AvroComplex) {
-	AvroComplex["RECORD"] = "record";
-	AvroComplex["ENUM"] = "enum";
-	AvroComplex["ARRAY"] = "array";
-	AvroComplex["MAP"] = "map";
-	AvroComplex["UNION"] = "union";
-	AvroComplex["FIXED"] = "fixed";
-})(AvroComplex || (AvroComplex = {}));
-var AvroPrimitive;
-(function(AvroPrimitive) {
-	AvroPrimitive["NULL"] = "null";
-	AvroPrimitive["BOOLEAN"] = "boolean";
-	AvroPrimitive["INT"] = "int";
-	AvroPrimitive["LONG"] = "long";
-	AvroPrimitive["FLOAT"] = "float";
-	AvroPrimitive["DOUBLE"] = "double";
-	AvroPrimitive["BYTES"] = "bytes";
-	AvroPrimitive["STRING"] = "string";
-})(AvroPrimitive || (AvroPrimitive = {}));
-var AvroType = class AvroType {
-	/**
-	* Determines the AvroType from the Avro Schema.
-	*/
-	static fromSchema(schema) {
-		if (typeof schema === "string") return AvroType.fromStringSchema(schema);
-		else if (Array.isArray(schema)) return AvroType.fromArraySchema(schema);
-		else return AvroType.fromObjectSchema(schema);
-	}
-	static fromStringSchema(schema) {
-		switch (schema) {
-			case AvroPrimitive.NULL:
-			case AvroPrimitive.BOOLEAN:
-			case AvroPrimitive.INT:
-			case AvroPrimitive.LONG:
-			case AvroPrimitive.FLOAT:
-			case AvroPrimitive.DOUBLE:
-			case AvroPrimitive.BYTES:
-			case AvroPrimitive.STRING: return new AvroPrimitiveType(schema);
-			default: throw new Error(`Unexpected Avro type ${schema}`);
-		}
-	}
-	static fromArraySchema(schema) {
-		return new AvroUnionType(schema.map(AvroType.fromSchema));
-	}
-	static fromObjectSchema(schema) {
-		const type = schema.type;
-		try {
-			return AvroType.fromStringSchema(type);
-		} catch {}
-		switch (type) {
-			case AvroComplex.RECORD:
-				if (schema.aliases) throw new Error(`aliases currently is not supported, schema: ${schema}`);
-				if (!schema.name) throw new Error(`Required attribute 'name' doesn't exist on schema: ${schema}`);
-				const fields = {};
-				if (!schema.fields) throw new Error(`Required attribute 'fields' doesn't exist on schema: ${schema}`);
-				for (const field of schema.fields) fields[field.name] = AvroType.fromSchema(field.type);
-				return new AvroRecordType(fields, schema.name);
-			case AvroComplex.ENUM:
-				if (schema.aliases) throw new Error(`aliases currently is not supported, schema: ${schema}`);
-				if (!schema.symbols) throw new Error(`Required attribute 'symbols' doesn't exist on schema: ${schema}`);
-				return new AvroEnumType(schema.symbols);
-			case AvroComplex.MAP:
-				if (!schema.values) throw new Error(`Required attribute 'values' doesn't exist on schema: ${schema}`);
-				return new AvroMapType(AvroType.fromSchema(schema.values));
-			case AvroComplex.ARRAY:
-			case AvroComplex.FIXED:
-			default: throw new Error(`Unexpected Avro type ${type} in ${schema}`);
-		}
-	}
-};
-var AvroPrimitiveType = class extends AvroType {
-	_primitive;
-	constructor(primitive) {
-		super();
-		this._primitive = primitive;
-	}
-	read(stream, options = {}) {
-		switch (this._primitive) {
-			case AvroPrimitive.NULL: return AvroParser.readNull();
-			case AvroPrimitive.BOOLEAN: return AvroParser.readBoolean(stream, options);
-			case AvroPrimitive.INT: return AvroParser.readInt(stream, options);
-			case AvroPrimitive.LONG: return AvroParser.readLong(stream, options);
-			case AvroPrimitive.FLOAT: return AvroParser.readFloat(stream, options);
-			case AvroPrimitive.DOUBLE: return AvroParser.readDouble(stream, options);
-			case AvroPrimitive.BYTES: return AvroParser.readBytes(stream, options);
-			case AvroPrimitive.STRING: return AvroParser.readString(stream, options);
-			default: throw new Error("Unknown Avro Primitive");
-		}
-	}
-};
-var AvroEnumType = class extends AvroType {
-	_symbols;
-	constructor(symbols) {
-		super();
-		this._symbols = symbols;
-	}
-	async read(stream, options = {}) {
-		const value = await AvroParser.readInt(stream, options);
-		return this._symbols[value];
-	}
-};
-var AvroUnionType = class extends AvroType {
-	_types;
-	constructor(types) {
-		super();
-		this._types = types;
-	}
-	async read(stream, options = {}) {
-		const typeIndex = await AvroParser.readInt(stream, options);
-		return this._types[typeIndex].read(stream, options);
-	}
-};
-var AvroMapType = class extends AvroType {
-	_itemType;
-	constructor(itemType) {
-		super();
-		this._itemType = itemType;
-	}
-	read(stream, options = {}) {
-		const readItemMethod = (s, opts) => {
-			return this._itemType.read(s, opts);
-		};
-		return AvroParser.readMap(stream, readItemMethod, options);
-	}
-};
-var AvroRecordType = class extends AvroType {
-	_name;
-	_fields;
-	constructor(fields, name) {
-		super();
-		this._fields = fields;
-		this._name = name;
-	}
-	async read(stream, options = {}) {
-		const record = {};
-		record["$schema"] = this._name;
-		for (const key in this._fields) if (Object.prototype.hasOwnProperty.call(this._fields, key)) record[key] = await this._fields[key].read(stream, options);
-		return record;
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/internal-avro/utils/utils.common.js
-function arraysEqual(a, b) {
-	if (a === b) return true;
-	if (a == null || b == null) return false;
-	if (a.length !== b.length) return false;
-	for (let i = 0; i < a.length; ++i) if (a[i] !== b[i]) return false;
-	return true;
-}
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/internal-avro/AvroReader.js
-var AvroReader = class {
-	_dataStream;
-	_headerStream;
-	_syncMarker;
-	_metadata;
-	_itemType;
-	_itemsRemainingInBlock;
-	_initialBlockOffset;
-	_blockOffset;
-	get blockOffset() {
-		return this._blockOffset;
-	}
-	_objectIndex;
-	get objectIndex() {
-		return this._objectIndex;
-	}
-	_initialized;
-	constructor(dataStream, headerStream, currentBlockOffset, indexWithinCurrentBlock) {
-		this._dataStream = dataStream;
-		this._headerStream = headerStream || dataStream;
-		this._initialized = false;
-		this._blockOffset = currentBlockOffset || 0;
-		this._objectIndex = indexWithinCurrentBlock || 0;
-		this._initialBlockOffset = currentBlockOffset || 0;
-	}
-	async initialize(options = {}) {
-		if (!arraysEqual(await AvroParser.readFixedBytes(this._headerStream, AVRO_INIT_BYTES.length, { abortSignal: options.abortSignal }), AVRO_INIT_BYTES)) throw new Error("Stream is not an Avro file.");
-		this._metadata = await AvroParser.readMap(this._headerStream, AvroParser.readString, { abortSignal: options.abortSignal });
-		const codec = this._metadata[AVRO_CODEC_KEY];
-		if (!(codec === void 0 || codec === null || codec === "null")) throw new Error("Codecs are not supported");
-		this._syncMarker = await AvroParser.readFixedBytes(this._headerStream, 16, { abortSignal: options.abortSignal });
-		const schema = JSON.parse(this._metadata[AVRO_SCHEMA_KEY]);
-		this._itemType = AvroType.fromSchema(schema);
-		if (this._blockOffset === 0) this._blockOffset = this._initialBlockOffset + this._dataStream.position;
-		this._itemsRemainingInBlock = await AvroParser.readLong(this._dataStream, { abortSignal: options.abortSignal });
-		await AvroParser.readLong(this._dataStream, { abortSignal: options.abortSignal });
-		this._initialized = true;
-		if (this._objectIndex && this._objectIndex > 0) for (let i = 0; i < this._objectIndex; i++) {
-			await this._itemType.read(this._dataStream, { abortSignal: options.abortSignal });
-			this._itemsRemainingInBlock--;
-		}
-	}
-	hasNext() {
-		return !this._initialized || this._itemsRemainingInBlock > 0;
-	}
-	async *parseObjects(options = {}) {
-		if (!this._initialized) await this.initialize(options);
-		while (this.hasNext()) {
-			const result = await this._itemType.read(this._dataStream, { abortSignal: options.abortSignal });
-			this._itemsRemainingInBlock--;
-			this._objectIndex++;
-			if (this._itemsRemainingInBlock === 0) {
-				const marker = await AvroParser.readFixedBytes(this._dataStream, 16, { abortSignal: options.abortSignal });
-				this._blockOffset = this._initialBlockOffset + this._dataStream.position;
-				this._objectIndex = 0;
-				if (!arraysEqual(this._syncMarker, marker)) throw new Error("Stream is not a valid Avro file.");
-				try {
-					this._itemsRemainingInBlock = await AvroParser.readLong(this._dataStream, { abortSignal: options.abortSignal });
-				} catch {
-					this._itemsRemainingInBlock = 0;
-				}
-				if (this._itemsRemainingInBlock > 0) await AvroParser.readLong(this._dataStream, { abortSignal: options.abortSignal });
-			}
-			yield result;
-		}
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/internal-avro/AvroReadable.js
-var AvroReadable = class {};
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/internal-avro/AvroReadableFromStream.js
-var ABORT_ERROR = new AbortError("Reading from the avro stream was aborted.");
-var AvroReadableFromStream = class extends AvroReadable {
-	_position;
-	_readable;
-	toUint8Array(data) {
-		if (typeof data === "string") return Buffer$1.from(data);
-		return data;
-	}
-	constructor(readable) {
-		super();
-		this._readable = readable;
-		this._position = 0;
-	}
-	get position() {
-		return this._position;
-	}
-	async read(size, options = {}) {
-		if (options.abortSignal?.aborted) throw ABORT_ERROR;
-		if (size < 0) throw new Error(`size parameter should be positive: ${size}`);
-		if (size === 0) return /* @__PURE__ */ new Uint8Array();
-		if (!this._readable.readable) throw new Error("Stream no longer readable.");
-		const chunk = this._readable.read(size);
-		if (chunk) {
-			this._position += chunk.length;
-			return this.toUint8Array(chunk);
-		} else return new Promise((resolve, reject) => {
-			const cleanUp = () => {
-				this._readable.removeListener("readable", readableCallback);
-				this._readable.removeListener("error", rejectCallback);
-				this._readable.removeListener("end", rejectCallback);
-				this._readable.removeListener("close", rejectCallback);
-				if (options.abortSignal) options.abortSignal.removeEventListener("abort", abortHandler);
-			};
-			const readableCallback = () => {
-				const callbackChunk = this._readable.read(size);
-				if (callbackChunk) {
-					this._position += callbackChunk.length;
-					cleanUp();
-					resolve(this.toUint8Array(callbackChunk));
-				}
-			};
-			const rejectCallback = () => {
-				cleanUp();
-				reject();
-			};
-			const abortHandler = () => {
-				cleanUp();
-				reject(ABORT_ERROR);
-			};
-			this._readable.on("readable", readableCallback);
-			this._readable.once("error", rejectCallback);
-			this._readable.once("end", rejectCallback);
-			this._readable.once("close", rejectCallback);
-			if (options.abortSignal) options.abortSignal.addEventListener("abort", abortHandler);
-		});
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/utils/BlobQuickQueryStream.js
-/**
-* ONLY AVAILABLE IN NODE.JS RUNTIME.
-*
-* A Node.js BlobQuickQueryStream will internally parse avro data stream for blob query.
-*/
-var BlobQuickQueryStream = class extends Readable {
-	source;
-	avroReader;
-	avroIter;
-	avroPaused = true;
-	onProgress;
-	onError;
-	/**
-	* Creates an instance of BlobQuickQueryStream.
-	*
-	* @param source - The current ReadableStream returned from getter
-	* @param options -
-	*/
-	constructor(source, options = {}) {
-		super();
-		this.source = source;
-		this.onProgress = options.onProgress;
-		this.onError = options.onError;
-		this.avroReader = new AvroReader(new AvroReadableFromStream(this.source));
-		this.avroIter = this.avroReader.parseObjects({ abortSignal: options.abortSignal });
-	}
-	_read() {
-		if (this.avroPaused) this.readInternal().catch((err) => {
-			this.emit("error", err);
-		});
-	}
-	async readInternal() {
-		this.avroPaused = false;
-		let avroNext;
-		do {
-			avroNext = await this.avroIter.next();
-			if (avroNext.done) break;
-			const obj = avroNext.value;
-			const schema = obj.$schema;
-			if (typeof schema !== "string") throw Error("Missing schema in avro record.");
-			switch (schema) {
-				case "com.microsoft.azure.storage.queryBlobContents.resultData":
-					{
-						const data = obj.data;
-						if (data instanceof Uint8Array === false) throw Error("Invalid data in avro result record.");
-						if (!this.push(Buffer.from(data))) this.avroPaused = true;
-					}
-					break;
-				case "com.microsoft.azure.storage.queryBlobContents.progress":
-					{
-						const bytesScanned = obj.bytesScanned;
-						if (typeof bytesScanned !== "number") throw Error("Invalid bytesScanned in avro progress record.");
-						if (this.onProgress) this.onProgress({ loadedBytes: bytesScanned });
-					}
-					break;
-				case "com.microsoft.azure.storage.queryBlobContents.end":
-					if (this.onProgress) {
-						const totalBytes = obj.totalBytes;
-						if (typeof totalBytes !== "number") throw Error("Invalid totalBytes in avro end record.");
-						this.onProgress({ loadedBytes: totalBytes });
-					}
-					this.push(null);
-					break;
-				case "com.microsoft.azure.storage.queryBlobContents.error":
-					if (this.onError) {
-						const fatal = obj.fatal;
-						if (typeof fatal !== "boolean") throw Error("Invalid fatal in avro error record.");
-						const name = obj.name;
-						if (typeof name !== "string") throw Error("Invalid name in avro error record.");
-						const description = obj.description;
-						if (typeof description !== "string") throw Error("Invalid description in avro error record.");
-						const position = obj.position;
-						if (typeof position !== "number") throw Error("Invalid position in avro error record.");
-						this.onError({
-							position,
-							name,
-							isFatal: fatal,
-							description
-						});
-					}
-					break;
-				default: throw Error(`Unknown schema ${schema} in avro progress record.`);
-			}
-		} while (!avroNext.done && !this.avroPaused);
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/BlobQueryResponse.js
-/**
-* ONLY AVAILABLE IN NODE.JS RUNTIME.
-*
-* BlobQueryResponse implements BlobDownloadResponseModel interface, and in Node.js runtime it will
-* parse avro data returned by blob query.
-*/
-var BlobQueryResponse = class {
-	/**
-	* Indicates that the service supports
-	* requests for partial file content.
-	*
-	* @readonly
-	*/
-	get acceptRanges() {
-		return this.originalResponse.acceptRanges;
-	}
-	/**
-	* Returns if it was previously specified
-	* for the file.
-	*
-	* @readonly
-	*/
-	get cacheControl() {
-		return this.originalResponse.cacheControl;
-	}
-	/**
-	* Returns the value that was specified
-	* for the 'x-ms-content-disposition' header and specifies how to process the
-	* response.
-	*
-	* @readonly
-	*/
-	get contentDisposition() {
-		return this.originalResponse.contentDisposition;
-	}
-	/**
-	* Returns the value that was specified
-	* for the Content-Encoding request header.
-	*
-	* @readonly
-	*/
-	get contentEncoding() {
-		return this.originalResponse.contentEncoding;
-	}
-	/**
-	* Returns the value that was specified
-	* for the Content-Language request header.
-	*
-	* @readonly
-	*/
-	get contentLanguage() {
-		return this.originalResponse.contentLanguage;
-	}
-	/**
-	* The current sequence number for a
-	* page blob. This header is not returned for block blobs or append blobs.
-	*
-	* @readonly
-	*/
-	get blobSequenceNumber() {
-		return this.originalResponse.blobSequenceNumber;
-	}
-	/**
-	* The blob's type. Possible values include:
-	* 'BlockBlob', 'PageBlob', 'AppendBlob'.
-	*
-	* @readonly
-	*/
-	get blobType() {
-		return this.originalResponse.blobType;
-	}
-	/**
-	* The number of bytes present in the
-	* response body.
-	*
-	* @readonly
-	*/
-	get contentLength() {
-		return this.originalResponse.contentLength;
-	}
-	/**
-	* If the file has an MD5 hash and the
-	* request is to read the full file, this response header is returned so that
-	* the client can check for message content integrity. If the request is to
-	* read a specified range and the 'x-ms-range-get-content-md5' is set to
-	* true, then the request returns an MD5 hash for the range, as long as the
-	* range size is less than or equal to 4 MB. If neither of these sets of
-	* conditions is true, then no value is returned for the 'Content-MD5'
-	* header.
-	*
-	* @readonly
-	*/
-	get contentMD5() {
-		return this.originalResponse.contentMD5;
-	}
-	/**
-	* Indicates the range of bytes returned if
-	* the client requested a subset of the file by setting the Range request
-	* header.
-	*
-	* @readonly
-	*/
-	get contentRange() {
-		return this.originalResponse.contentRange;
-	}
-	/**
-	* The content type specified for the file.
-	* The default content type is 'application/octet-stream'
-	*
-	* @readonly
-	*/
-	get contentType() {
-		return this.originalResponse.contentType;
-	}
-	/**
-	* Conclusion time of the last attempted
-	* Copy File operation where this file was the destination file. This value
-	* can specify the time of a completed, aborted, or failed copy attempt.
-	*
-	* @readonly
-	*/
-	get copyCompletedOn() {}
-	/**
-	* String identifier for the last attempted Copy
-	* File operation where this file was the destination file.
-	*
-	* @readonly
-	*/
-	get copyId() {
-		return this.originalResponse.copyId;
-	}
-	/**
-	* Contains the number of bytes copied and
-	* the total bytes in the source in the last attempted Copy File operation
-	* where this file was the destination file. Can show between 0 and
-	* Content-Length bytes copied.
-	*
-	* @readonly
-	*/
-	get copyProgress() {
-		return this.originalResponse.copyProgress;
-	}
-	/**
-	* URL up to 2KB in length that specifies the
-	* source file used in the last attempted Copy File operation where this file
-	* was the destination file.
-	*
-	* @readonly
-	*/
-	get copySource() {
-		return this.originalResponse.copySource;
-	}
-	/**
-	* State of the copy operation
-	* identified by 'x-ms-copy-id'. Possible values include: 'pending',
-	* 'success', 'aborted', 'failed'
-	*
-	* @readonly
-	*/
-	get copyStatus() {
-		return this.originalResponse.copyStatus;
-	}
-	/**
-	* Only appears when
-	* x-ms-copy-status is failed or pending. Describes cause of fatal or
-	* non-fatal copy operation failure.
-	*
-	* @readonly
-	*/
-	get copyStatusDescription() {
-		return this.originalResponse.copyStatusDescription;
-	}
-	/**
-	* When a blob is leased,
-	* specifies whether the lease is of infinite or fixed duration. Possible
-	* values include: 'infinite', 'fixed'.
-	*
-	* @readonly
-	*/
-	get leaseDuration() {
-		return this.originalResponse.leaseDuration;
-	}
-	/**
-	* Lease state of the blob. Possible
-	* values include: 'available', 'leased', 'expired', 'breaking', 'broken'.
-	*
-	* @readonly
-	*/
-	get leaseState() {
-		return this.originalResponse.leaseState;
-	}
-	/**
-	* The current lease status of the
-	* blob. Possible values include: 'locked', 'unlocked'.
-	*
-	* @readonly
-	*/
-	get leaseStatus() {
-		return this.originalResponse.leaseStatus;
-	}
-	/**
-	* A UTC date/time value generated by the service that
-	* indicates the time at which the response was initiated.
-	*
-	* @readonly
-	*/
-	get date() {
-		return this.originalResponse.date;
-	}
-	/**
-	* The number of committed blocks
-	* present in the blob. This header is returned only for append blobs.
-	*
-	* @readonly
-	*/
-	get blobCommittedBlockCount() {
-		return this.originalResponse.blobCommittedBlockCount;
-	}
-	/**
-	* The ETag contains a value that you can use to
-	* perform operations conditionally, in quotes.
-	*
-	* @readonly
-	*/
-	get etag() {
-		return this.originalResponse.etag;
-	}
-	/**
-	* The error code.
-	*
-	* @readonly
-	*/
-	get errorCode() {
-		return this.originalResponse.errorCode;
-	}
-	/**
-	* The value of this header is set to
-	* true if the file data and application metadata are completely encrypted
-	* using the specified algorithm. Otherwise, the value is set to false (when
-	* the file is unencrypted, or if only parts of the file/application metadata
-	* are encrypted).
-	*
-	* @readonly
-	*/
-	get isServerEncrypted() {
-		return this.originalResponse.isServerEncrypted;
-	}
-	/**
-	* If the blob has a MD5 hash, and if
-	* request contains range header (Range or x-ms-range), this response header
-	* is returned with the value of the whole blob's MD5 value. This value may
-	* or may not be equal to the value returned in Content-MD5 header, with the
-	* latter calculated from the requested range.
-	*
-	* @readonly
-	*/
-	get blobContentMD5() {
-		return this.originalResponse.blobContentMD5;
-	}
-	/**
-	* Returns the date and time the file was last
-	* modified. Any operation that modifies the file or its properties updates
-	* the last modified time.
-	*
-	* @readonly
-	*/
-	get lastModified() {
-		return this.originalResponse.lastModified;
-	}
-	/**
-	* A name-value pair
-	* to associate with a file storage object.
-	*
-	* @readonly
-	*/
-	get metadata() {
-		return this.originalResponse.metadata;
-	}
-	/**
-	* This header uniquely identifies the request
-	* that was made and can be used for troubleshooting the request.
-	*
-	* @readonly
-	*/
-	get requestId() {
-		return this.originalResponse.requestId;
-	}
-	/**
-	* If a client request id header is sent in the request, this header will be present in the
-	* response with the same value.
-	*
-	* @readonly
-	*/
-	get clientRequestId() {
-		return this.originalResponse.clientRequestId;
-	}
-	/**
-	* Indicates the version of the File service used
-	* to execute the request.
-	*
-	* @readonly
-	*/
-	get version() {
-		return this.originalResponse.version;
-	}
-	/**
-	* The SHA-256 hash of the encryption key used to encrypt the blob. This value is only returned
-	* when the blob was encrypted with a customer-provided key.
-	*
-	* @readonly
-	*/
-	get encryptionKeySha256() {
-		return this.originalResponse.encryptionKeySha256;
-	}
-	/**
-	* If the request is to read a specified range and the x-ms-range-get-content-crc64 is set to
-	* true, then the request returns a crc64 for the range, as long as the range size is less than
-	* or equal to 4 MB. If both x-ms-range-get-content-crc64 & x-ms-range-get-content-md5 is
-	* specified in the same request, it will fail with 400(Bad Request)
-	*/
-	get contentCrc64() {
-		return this.originalResponse.contentCrc64;
-	}
-	/**
-	* The response body as a browser Blob.
-	* Always undefined in node.js.
-	*
-	* @readonly
-	*/
-	get blobBody() {}
-	/**
-	* The response body as a node.js Readable stream.
-	* Always undefined in the browser.
-	*
-	* It will parse avor data returned by blob query.
-	*
-	* @readonly
-	*/
-	get readableStreamBody() {
-		return isNodeLike ? this.blobDownloadStream : void 0;
-	}
-	/**
-	* The HTTP response.
-	*/
-	get _response() {
-		return this.originalResponse._response;
-	}
-	originalResponse;
-	blobDownloadStream;
-	/**
-	* Creates an instance of BlobQueryResponse.
-	*
-	* @param originalResponse -
-	* @param options -
-	*/
-	constructor(originalResponse, options = {}) {
-		this.originalResponse = originalResponse;
-		this.blobDownloadStream = new BlobQuickQueryStream(this.originalResponse.readableStreamBody, options);
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/BuffersStream.js
-/**
-* This class generates a readable stream from the data in an array of buffers.
-*/
-var BuffersStream = class extends Readable {
-	buffers;
-	byteLength;
-	/**
-	* The offset of data to be read in the current buffer.
-	*/
-	byteOffsetInCurrentBuffer;
-	/**
-	* The index of buffer to be read in the array of buffers.
-	*/
-	bufferIndex;
-	/**
-	* The total length of data already read.
-	*/
-	pushedBytesLength;
-	/**
-	* Creates an instance of BuffersStream that will emit the data
-	* contained in the array of buffers.
-	*
-	* @param buffers - Array of buffers containing the data
-	* @param byteLength - The total length of data contained in the buffers
-	*/
-	constructor(buffers, byteLength, options) {
-		super(options);
-		this.buffers = buffers;
-		this.byteLength = byteLength;
-		this.byteOffsetInCurrentBuffer = 0;
-		this.bufferIndex = 0;
-		this.pushedBytesLength = 0;
-		let buffersLength = 0;
-		for (const buf of this.buffers) buffersLength += buf.byteLength;
-		if (buffersLength < this.byteLength) throw new Error("Data size shouldn't be larger than the total length of buffers.");
-	}
-	/**
-	* Internal _read() that will be called when the stream wants to pull more data in.
-	*
-	* @param size - Optional. The size of data to be read
-	*/
-	_read(size) {
-		if (this.pushedBytesLength >= this.byteLength) this.push(null);
-		if (!size) size = this.readableHighWaterMark;
-		const outBuffers = [];
-		let i = 0;
-		while (i < size && this.pushedBytesLength < this.byteLength) {
-			const remainingDataInAllBuffers = this.byteLength - this.pushedBytesLength;
-			const remainingCapacityInThisBuffer = this.buffers[this.bufferIndex].byteLength - this.byteOffsetInCurrentBuffer;
-			const remaining = Math.min(remainingCapacityInThisBuffer, remainingDataInAllBuffers);
-			if (remaining > size - i) {
-				const end = this.byteOffsetInCurrentBuffer + size - i;
-				outBuffers.push(this.buffers[this.bufferIndex].slice(this.byteOffsetInCurrentBuffer, end));
-				this.pushedBytesLength += size - i;
-				this.byteOffsetInCurrentBuffer = end;
-				i = size;
-				break;
-			} else {
-				const end = this.byteOffsetInCurrentBuffer + remaining;
-				outBuffers.push(this.buffers[this.bufferIndex].slice(this.byteOffsetInCurrentBuffer, end));
-				if (remaining === remainingCapacityInThisBuffer) {
-					this.byteOffsetInCurrentBuffer = 0;
-					this.bufferIndex++;
-				} else this.byteOffsetInCurrentBuffer = end;
-				this.pushedBytesLength += remaining;
-				i += remaining;
-			}
-		}
-		if (outBuffers.length > 1) this.push(Buffer.concat(outBuffers));
-		else if (outBuffers.length === 1) this.push(outBuffers[0]);
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/PooledBuffer.js
-/**
-* maxBufferLength is max size of each buffer in the pooled buffers.
-*/
-var maxBufferLength = buffer.constants.MAX_LENGTH;
-/**
-* This class provides a buffer container which conceptually has no hard size limit.
-* It accepts a capacity, an array of input buffers and the total length of input data.
-* It will allocate an internal "buffer" of the capacity and fill the data in the input buffers
-* into the internal "buffer" serially with respect to the total length.
-* Then by calling PooledBuffer.getReadableStream(), you can get a readable stream
-* assembled from all the data in the internal "buffer".
-*/
-var PooledBuffer = class {
-	/**
-	* Internal buffers used to keep the data.
-	* Each buffer has a length of the maxBufferLength except last one.
-	*/
-	buffers = [];
-	/**
-	* The total size of internal buffers.
-	*/
-	capacity;
-	/**
-	* The total size of data contained in internal buffers.
-	*/
-	_size;
-	/**
-	* The size of the data contained in the pooled buffers.
-	*/
-	get size() {
-		return this._size;
-	}
-	constructor(capacity, buffers, totalLength) {
-		this.capacity = capacity;
-		this._size = 0;
-		const bufferNum = Math.ceil(capacity / maxBufferLength);
-		for (let i = 0; i < bufferNum; i++) {
-			let len = i === bufferNum - 1 ? capacity % maxBufferLength : maxBufferLength;
-			if (len === 0) len = maxBufferLength;
-			this.buffers.push(Buffer.allocUnsafe(len));
-		}
-		if (buffers) this.fill(buffers, totalLength);
-	}
-	/**
-	* Fill the internal buffers with data in the input buffers serially
-	* with respect to the total length and the total capacity of the internal buffers.
-	* Data copied will be shift out of the input buffers.
-	*
-	* @param buffers - Input buffers containing the data to be filled in the pooled buffer
-	* @param totalLength - Total length of the data to be filled in.
-	*
-	*/
-	fill(buffers, totalLength) {
-		this._size = Math.min(this.capacity, totalLength);
-		let i = 0, j = 0, targetOffset = 0, sourceOffset = 0, totalCopiedNum = 0;
-		while (totalCopiedNum < this._size) {
-			const source = buffers[i];
-			const target = this.buffers[j];
-			const copiedNum = source.copy(target, targetOffset, sourceOffset);
-			totalCopiedNum += copiedNum;
-			sourceOffset += copiedNum;
-			targetOffset += copiedNum;
-			if (sourceOffset === source.length) {
-				i++;
-				sourceOffset = 0;
-			}
-			if (targetOffset === target.length) {
-				j++;
-				targetOffset = 0;
-			}
-		}
-		buffers.splice(0, i);
-		if (buffers.length > 0) buffers[0] = buffers[0].slice(sourceOffset);
-	}
-	/**
-	* Get the readable stream assembled from all the data in the internal buffers.
-	*
-	*/
-	getReadableStream() {
-		return new BuffersStream(this.buffers, this.size);
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/BufferScheduler.js
-/**
-* This class accepts a Node.js Readable stream as input, and keeps reading data
-* from the stream into the internal buffer structure, until it reaches maxBuffers.
-* Every available buffer will try to trigger outgoingHandler.
-*
-* The internal buffer structure includes an incoming buffer array, and a outgoing
-* buffer array. The incoming buffer array includes the "empty" buffers can be filled
-* with new incoming data. The outgoing array includes the filled buffers to be
-* handled by outgoingHandler. Every above buffer size is defined by parameter bufferSize.
-*
-* NUM_OF_ALL_BUFFERS = BUFFERS_IN_INCOMING + BUFFERS_IN_OUTGOING + BUFFERS_UNDER_HANDLING
-*
-* NUM_OF_ALL_BUFFERS lesser than or equal to maxBuffers
-*
-* PERFORMANCE IMPROVEMENT TIPS:
-* 1. Input stream highWaterMark is better to set a same value with bufferSize
-*    parameter, which will avoid Buffer.concat() operations.
-* 2. concurrency should set a smaller value than maxBuffers, which is helpful to
-*    reduce the possibility when a outgoing handler waits for the stream data.
-*    in this situation, outgoing handlers are blocked.
-*    Outgoing queue shouldn't be empty.
-*/
-var BufferScheduler = class {
-	/**
-	* Size of buffers in incoming and outgoing queues. This class will try to align
-	* data read from Readable stream into buffer chunks with bufferSize defined.
-	*/
-	bufferSize;
-	/**
-	* How many buffers can be created or maintained.
-	*/
-	maxBuffers;
-	/**
-	* A Node.js Readable stream.
-	*/
-	readable;
-	/**
-	* OutgoingHandler is an async function triggered by BufferScheduler when there
-	* are available buffers in outgoing array.
-	*/
-	outgoingHandler;
-	/**
-	* An internal event emitter.
-	*/
-	emitter = new EventEmitter();
-	/**
-	* Concurrency of executing outgoingHandlers. (0 lesser than concurrency lesser than or equal to maxBuffers)
-	*/
-	concurrency;
-	/**
-	* An internal offset marker to track data offset in bytes of next outgoingHandler.
-	*/
-	offset = 0;
-	/**
-	* An internal marker to track whether stream is end.
-	*/
-	isStreamEnd = false;
-	/**
-	* An internal marker to track whether stream or outgoingHandler returns error.
-	*/
-	isError = false;
-	/**
-	* How many handlers are executing.
-	*/
-	executingOutgoingHandlers = 0;
-	/**
-	* Encoding of the input Readable stream which has string data type instead of Buffer.
-	*/
-	encoding;
-	/**
-	* How many buffers have been allocated.
-	*/
-	numBuffers = 0;
-	/**
-	* Because this class doesn't know how much data every time stream pops, which
-	* is defined by highWaterMarker of the stream. So BufferScheduler will cache
-	* data received from the stream, when data in unresolvedDataArray exceeds the
-	* blockSize defined, it will try to concat a blockSize of buffer, fill into available
-	* buffers from incoming and push to outgoing array.
-	*/
-	unresolvedDataArray = [];
-	/**
-	* How much data consisted in unresolvedDataArray.
-	*/
-	unresolvedLength = 0;
-	/**
-	* The array includes all the available buffers can be used to fill data from stream.
-	*/
-	incoming = [];
-	/**
-	* The array (queue) includes all the buffers filled from stream data.
-	*/
-	outgoing = [];
-	/**
-	* Creates an instance of BufferScheduler.
-	*
-	* @param readable - A Node.js Readable stream
-	* @param bufferSize - Buffer size of every maintained buffer
-	* @param maxBuffers - How many buffers can be allocated
-	* @param outgoingHandler - An async function scheduled to be
-	*                                          triggered when a buffer fully filled
-	*                                          with stream data
-	* @param concurrency - Concurrency of executing outgoingHandlers (&gt;0)
-	* @param encoding - [Optional] Encoding of Readable stream when it's a string stream
-	*/
-	constructor(readable, bufferSize, maxBuffers, outgoingHandler, concurrency, encoding) {
-		if (bufferSize <= 0) throw new RangeError(`bufferSize must be larger than 0, current is ${bufferSize}`);
-		if (maxBuffers <= 0) throw new RangeError(`maxBuffers must be larger than 0, current is ${maxBuffers}`);
-		if (concurrency <= 0) throw new RangeError(`concurrency must be larger than 0, current is ${concurrency}`);
-		this.bufferSize = bufferSize;
-		this.maxBuffers = maxBuffers;
-		this.readable = readable;
-		this.outgoingHandler = outgoingHandler;
-		this.concurrency = concurrency;
-		this.encoding = encoding;
-	}
-	/**
-	* Start the scheduler, will return error when stream of any of the outgoingHandlers
-	* returns error.
-	*
-	*/
-	async do() {
-		return new Promise((resolve, reject) => {
-			this.readable.on("data", (data) => {
-				data = typeof data === "string" ? Buffer.from(data, this.encoding) : data;
-				this.appendUnresolvedData(data);
-				if (!this.resolveData()) this.readable.pause();
-			});
-			this.readable.on("error", (err) => {
-				this.emitter.emit("error", err);
-			});
-			this.readable.on("end", () => {
-				this.isStreamEnd = true;
-				this.emitter.emit("checkEnd");
-			});
-			this.emitter.on("error", (err) => {
-				this.isError = true;
-				this.readable.pause();
-				reject(err);
-			});
-			this.emitter.on("checkEnd", () => {
-				if (this.outgoing.length > 0) {
-					this.triggerOutgoingHandlers();
-					return;
-				}
-				if (this.isStreamEnd && this.executingOutgoingHandlers === 0) if (this.unresolvedLength > 0 && this.unresolvedLength < this.bufferSize) {
-					const buffer = this.shiftBufferFromUnresolvedDataArray();
-					this.outgoingHandler(() => buffer.getReadableStream(), buffer.size, this.offset).then(resolve).catch(reject);
-				} else if (this.unresolvedLength >= this.bufferSize) return;
-				else resolve();
-			});
-		});
-	}
-	/**
-	* Insert a new data into unresolved array.
-	*
-	* @param data -
-	*/
-	appendUnresolvedData(data) {
-		this.unresolvedDataArray.push(data);
-		this.unresolvedLength += data.length;
-	}
-	/**
-	* Try to shift a buffer with size in blockSize. The buffer returned may be less
-	* than blockSize when data in unresolvedDataArray is less than bufferSize.
-	*
-	*/
-	shiftBufferFromUnresolvedDataArray(buffer) {
-		if (!buffer) buffer = new PooledBuffer(this.bufferSize, this.unresolvedDataArray, this.unresolvedLength);
-		else buffer.fill(this.unresolvedDataArray, this.unresolvedLength);
-		this.unresolvedLength -= buffer.size;
-		return buffer;
-	}
-	/**
-	* Resolve data in unresolvedDataArray. For every buffer with size in blockSize
-	* shifted, it will try to get (or allocate a buffer) from incoming, and fill it,
-	* then push it into outgoing to be handled by outgoing handler.
-	*
-	* Return false when available buffers in incoming are not enough, else true.
-	*
-	* @returns Return false when buffers in incoming are not enough, else true.
-	*/
-	resolveData() {
-		while (this.unresolvedLength >= this.bufferSize) {
-			let buffer;
-			if (this.incoming.length > 0) {
-				buffer = this.incoming.shift();
-				this.shiftBufferFromUnresolvedDataArray(buffer);
-			} else if (this.numBuffers < this.maxBuffers) {
-				buffer = this.shiftBufferFromUnresolvedDataArray();
-				this.numBuffers++;
-			} else return false;
-			this.outgoing.push(buffer);
-			this.triggerOutgoingHandlers();
-		}
-		return true;
-	}
-	/**
-	* Try to trigger a outgoing handler for every buffer in outgoing. Stop when
-	* concurrency reaches.
-	*/
-	async triggerOutgoingHandlers() {
-		let buffer;
-		do {
-			if (this.executingOutgoingHandlers >= this.concurrency) return;
-			buffer = this.outgoing.shift();
-			if (buffer) this.triggerOutgoingHandler(buffer);
-		} while (buffer);
-	}
-	/**
-	* Trigger a outgoing handler for a buffer shifted from outgoing.
-	*
-	* @param buffer -
-	*/
-	async triggerOutgoingHandler(buffer) {
-		const bufferLength = buffer.size;
-		this.executingOutgoingHandlers++;
-		this.offset += bufferLength;
-		try {
-			await this.outgoingHandler(() => buffer.getReadableStream(), bufferLength, this.offset - bufferLength);
-		} catch (err) {
-			this.emitter.emit("error", err);
-			return;
-		}
-		this.executingOutgoingHandlers--;
-		this.reuseBuffer(buffer);
-		this.emitter.emit("checkEnd");
-	}
-	/**
-	* Return buffer used by outgoing handler into incoming.
-	*
-	* @param buffer -
-	*/
-	reuseBuffer(buffer) {
-		this.incoming.push(buffer);
-		if (!this.isError && this.resolveData() && !this.isStreamEnd) this.readable.resume();
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/cache.js
-var _defaultHttpClient;
-function getCachedDefaultHttpClient$1() {
-	if (!_defaultHttpClient) _defaultHttpClient = createDefaultHttpClient();
-	return _defaultHttpClient;
-}
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/policies/RequestPolicy.js
-/**
-* The base class from which all request policies derive.
-*/
-var BaseRequestPolicy = class {
-	_nextPolicy;
-	_options;
-	/**
-	* The main method to implement that manipulates a request/response.
-	*/
-	constructor(_nextPolicy, _options) {
-		this._nextPolicy = _nextPolicy;
-		this._options = _options;
-	}
-	/**
-	* Get whether or not a log with the provided log level should be logged.
-	* @param logLevel - The log level of the log that will be logged.
-	* @returns Whether or not a log with the provided log level should be logged.
-	*/
-	shouldLog(logLevel) {
-		return this._options.shouldLog(logLevel);
-	}
-	/**
-	* Attempt to log the provided message to the provided logger. If no logger was provided or if
-	* the log level does not meat the logger's threshold, then nothing will be logged.
-	* @param logLevel - The log level of this log.
-	* @param message - The message of this log.
-	*/
-	log(logLevel, message) {
-		this._options.log(logLevel, message);
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/utils/constants.js
-var URLConstants$1 = { Parameters: {
-	FORCE_BROWSER_NO_CACHE: "_",
-	SIGNATURE: "sig",
-	SNAPSHOT: "snapshot",
-	VERSIONID: "versionid",
-	TIMEOUT: "timeout"
-} };
-var HeaderConstants = {
-	AUTHORIZATION: "Authorization",
-	AUTHORIZATION_SCHEME: "Bearer",
-	CONTENT_ENCODING: "Content-Encoding",
-	CONTENT_ID: "Content-ID",
-	CONTENT_LANGUAGE: "Content-Language",
-	CONTENT_LENGTH: "Content-Length",
-	CONTENT_MD5: "Content-Md5",
-	CONTENT_TRANSFER_ENCODING: "Content-Transfer-Encoding",
-	CONTENT_TYPE: "Content-Type",
-	COOKIE: "Cookie",
-	DATE: "date",
-	IF_MATCH: "if-match",
-	IF_MODIFIED_SINCE: "if-modified-since",
-	IF_NONE_MATCH: "if-none-match",
-	IF_UNMODIFIED_SINCE: "if-unmodified-since",
-	PREFIX_FOR_STORAGE: "x-ms-",
-	RANGE: "Range",
-	USER_AGENT: "User-Agent",
-	X_MS_CLIENT_REQUEST_ID: "x-ms-client-request-id",
-	X_MS_COPY_SOURCE: "x-ms-copy-source",
-	X_MS_DATE: "x-ms-date",
-	X_MS_ERROR_CODE: "x-ms-error-code",
-	X_MS_VERSION: "x-ms-version",
-	X_MS_CopySourceErrorCode: "x-ms-copy-source-error-code"
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/utils/utils.common.js
-/**
-* Set URL parameter name and value. If name exists in URL parameters, old value
-* will be replaced by name key. If not provide value, the parameter will be deleted.
-*
-* @param url - Source URL string
-* @param name - Parameter name
-* @param value - Parameter value
-* @returns An updated URL string
-*/
-function setURLParameter$1(url, name, value) {
-	const urlParsed = new URL(url);
-	const encodedName = encodeURIComponent(name);
-	const encodedValue = value ? encodeURIComponent(value) : void 0;
-	const searchString = urlParsed.search === "" ? "?" : urlParsed.search;
-	const searchPieces = [];
-	for (const pair of searchString.slice(1).split("&")) if (pair) {
-		const [key] = pair.split("=", 2);
-		if (key !== encodedName) searchPieces.push(pair);
-	}
-	if (encodedValue) searchPieces.push(`${encodedName}=${encodedValue}`);
-	urlParsed.search = searchPieces.length ? `?${searchPieces.join("&")}` : "";
-	return urlParsed.toString();
-}
-/**
-* Set URL host.
-*
-* @param url - Source URL string
-* @param host - New host string
-* @returns An updated URL string
-*/
-function setURLHost(url, host) {
-	const urlParsed = new URL(url);
-	urlParsed.hostname = host;
-	return urlParsed.toString();
-}
-/**
-* Get URL path from an URL string.
-*
-* @param url - Source URL string
-*/
-function getURLPath(url) {
-	try {
-		return new URL(url).pathname;
-	} catch (e) {
-		return;
-	}
-}
-/**
-* Get URL query key value pairs from an URL string.
-*
-* @param url -
-*/
-function getURLQueries(url) {
-	let queryString = new URL(url).search;
-	if (!queryString) return {};
-	queryString = queryString.trim();
-	queryString = queryString.startsWith("?") ? queryString.substring(1) : queryString;
-	let querySubStrings = queryString.split("&");
-	querySubStrings = querySubStrings.filter((value) => {
-		const indexOfEqual = value.indexOf("=");
-		const lastIndexOfEqual = value.lastIndexOf("=");
-		return indexOfEqual > 0 && indexOfEqual === lastIndexOfEqual && lastIndexOfEqual < value.length - 1;
-	});
-	const queries = {};
-	for (const querySubString of querySubStrings) {
-		const splitResults = querySubString.split("=");
-		const key = splitResults[0];
-		queries[key] = splitResults[1];
-	}
-	return queries;
-}
-/**
-* Delay specified time interval.
-*
-* @param timeInMs -
-* @param aborter -
-* @param abortError -
-*/
-async function delay(timeInMs, aborter, abortError) {
-	return new Promise((resolve, reject) => {
-		let timeout;
-		const abortHandler = () => {
-			if (timeout !== void 0) clearTimeout(timeout);
-			reject(abortError);
-		};
-		const resolveHandler = () => {
-			if (aborter !== void 0) aborter.removeEventListener("abort", abortHandler);
-			resolve();
-		};
-		timeout = setTimeout(resolveHandler, timeInMs);
-		if (aborter !== void 0) aborter.addEventListener("abort", abortHandler);
-	});
-}
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/policies/StorageBrowserPolicy.js
-/**
-* StorageBrowserPolicy will handle differences between Node.js and browser runtime, including:
-*
-* 1. Browsers cache GET/HEAD requests by adding conditional headers such as 'IF_MODIFIED_SINCE'.
-* StorageBrowserPolicy is a policy used to add a timestamp query to GET/HEAD request URL
-* thus avoid the browser cache.
-*
-* 2. Remove cookie header for security
-*
-* 3. Remove content-length header to avoid browsers warning
-*/
-var StorageBrowserPolicy = class extends BaseRequestPolicy {
-	/**
-	* Creates an instance of StorageBrowserPolicy.
-	* @param nextPolicy -
-	* @param options -
-	*/
-	constructor(nextPolicy, options) {
-		super(nextPolicy, options);
-	}
-	/**
-	* Sends out request.
-	*
-	* @param request -
-	*/
-	async sendRequest(request) {
-		if (isNodeLike) return this._nextPolicy.sendRequest(request);
-		if (request.method.toUpperCase() === "GET" || request.method.toUpperCase() === "HEAD") request.url = setURLParameter$1(request.url, URLConstants$1.Parameters.FORCE_BROWSER_NO_CACHE, (/* @__PURE__ */ new Date()).getTime().toString());
-		request.headers.remove(HeaderConstants.COOKIE);
-		request.headers.remove(HeaderConstants.CONTENT_LENGTH);
-		return this._nextPolicy.sendRequest(request);
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/StorageBrowserPolicyFactory.js
-/**
-* StorageBrowserPolicyFactory is a factory class helping generating StorageBrowserPolicy objects.
-*/
-var StorageBrowserPolicyFactory = class {
-	/**
-	* Creates a StorageBrowserPolicyFactory object.
-	*
-	* @param nextPolicy -
-	* @param options -
-	*/
-	create(nextPolicy, options) {
-		return new StorageBrowserPolicy(nextPolicy, options);
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/policies/CredentialPolicy.js
-/**
-* Credential policy used to sign HTTP(S) requests before sending. This is an
-* abstract class.
-*/
-var CredentialPolicy = class extends BaseRequestPolicy {
-	/**
-	* Sends out request.
-	*
-	* @param request -
-	*/
-	sendRequest(request) {
-		return this._nextPolicy.sendRequest(this.signRequest(request));
-	}
-	/**
-	* Child classes must implement this method with request signing. This method
-	* will be executed in {@link sendRequest}.
-	*
-	* @param request -
-	*/
-	signRequest(request) {
-		return request;
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/policies/AnonymousCredentialPolicy.js
-/**
-* AnonymousCredentialPolicy is used with HTTP(S) requests that read public resources
-* or for use with Shared Access Signatures (SAS).
-*/
-var AnonymousCredentialPolicy = class extends CredentialPolicy {
-	/**
-	* Creates an instance of AnonymousCredentialPolicy.
-	* @param nextPolicy -
-	* @param options -
-	*/
-	constructor(nextPolicy, options) {
-		super(nextPolicy, options);
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/credentials/Credential.js
-/**
-* Credential is an abstract class for Azure Storage HTTP requests signing. This
-* class will host an credentialPolicyCreator factory which generates CredentialPolicy.
-*/
-var Credential = class {
-	/**
-	* Creates a RequestPolicy object.
-	*
-	* @param _nextPolicy -
-	* @param _options -
-	*/
-	create(_nextPolicy, _options) {
-		throw new Error("Method should be implemented in children classes.");
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/credentials/AnonymousCredential.js
-/**
-* AnonymousCredential provides a credentialPolicyCreator member used to create
-* AnonymousCredentialPolicy objects. AnonymousCredentialPolicy is used with
-* HTTP(S) requests that read public resources or for use with Shared Access
-* Signatures (SAS).
-*/
-var AnonymousCredential = class extends Credential {
-	/**
-	* Creates an {@link AnonymousCredentialPolicy} object.
-	*
-	* @param nextPolicy -
-	* @param options -
-	*/
-	create(nextPolicy, options) {
-		return new AnonymousCredentialPolicy(nextPolicy, options);
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/utils/SharedKeyComparator.js
-var table_lv0 = new Uint32Array([
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	1820,
-	0,
-	1823,
-	1825,
-	1827,
-	1829,
-	0,
-	0,
-	0,
-	1837,
-	2051,
-	0,
-	0,
-	1843,
-	0,
-	3331,
-	3354,
-	3356,
-	3358,
-	3360,
-	3362,
-	3364,
-	3366,
-	3368,
-	3370,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	3586,
-	3593,
-	3594,
-	3610,
-	3617,
-	3619,
-	3621,
-	3628,
-	3634,
-	3637,
-	3638,
-	3656,
-	3665,
-	3696,
-	3708,
-	3710,
-	3721,
-	3722,
-	3729,
-	3737,
-	3743,
-	3746,
-	3748,
-	3750,
-	3751,
-	3753,
-	0,
-	0,
-	0,
-	1859,
-	1860,
-	1864,
-	3586,
-	3593,
-	3594,
-	3610,
-	3617,
-	3619,
-	3621,
-	3628,
-	3634,
-	3637,
-	3638,
-	3656,
-	3665,
-	3696,
-	3708,
-	3710,
-	3721,
-	3722,
-	3729,
-	3737,
-	3743,
-	3746,
-	3748,
-	3750,
-	3751,
-	3753,
-	0,
-	1868,
-	0,
-	1872,
-	0
-]);
-var table_lv2 = new Uint32Array([
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	18,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0
-]);
-var table_lv4 = new Uint32Array([
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	32786,
-	0,
-	0,
-	0,
-	0,
-	0,
-	33298,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0
-]);
-function compareHeader(lhs, rhs) {
-	if (isLessThan(lhs, rhs)) return -1;
-	return 1;
-}
-function isLessThan(lhs, rhs) {
-	const tables = [
-		table_lv0,
-		table_lv2,
-		table_lv4
-	];
-	let curr_level = 0;
-	let i = 0;
-	let j = 0;
-	while (curr_level < tables.length) {
-		if (curr_level === tables.length - 1 && i !== j) return i > j;
-		const weight1 = i < lhs.length ? tables[curr_level][lhs[i].charCodeAt(0)] : 1;
-		const weight2 = j < rhs.length ? tables[curr_level][rhs[j].charCodeAt(0)] : 1;
-		if (weight1 === 1 && weight2 === 1) {
-			i = 0;
-			j = 0;
-			++curr_level;
-		} else if (weight1 === weight2) {
-			++i;
-			++j;
-		} else if (weight1 === 0) ++i;
-		else if (weight2 === 0) ++j;
-		else return weight1 < weight2;
-	}
-	return false;
-}
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/policies/StorageSharedKeyCredentialPolicy.js
-/**
-* StorageSharedKeyCredentialPolicy is a policy used to sign HTTP request with a shared key.
-*/
-var StorageSharedKeyCredentialPolicy = class extends CredentialPolicy {
-	/**
-	* Reference to StorageSharedKeyCredential which generates StorageSharedKeyCredentialPolicy
-	*/
-	factory;
-	/**
-	* Creates an instance of StorageSharedKeyCredentialPolicy.
-	* @param nextPolicy -
-	* @param options -
-	* @param factory -
-	*/
-	constructor(nextPolicy, options, factory) {
-		super(nextPolicy, options);
-		this.factory = factory;
-	}
-	/**
-	* Signs request.
-	*
-	* @param request -
-	*/
-	signRequest(request) {
-		request.headers.set(HeaderConstants.X_MS_DATE, (/* @__PURE__ */ new Date()).toUTCString());
-		if (request.body && (typeof request.body === "string" || request.body !== void 0) && request.body.length > 0) request.headers.set(HeaderConstants.CONTENT_LENGTH, Buffer.byteLength(request.body));
-		const stringToSign = [
-			request.method.toUpperCase(),
-			this.getHeaderValueToSign(request, HeaderConstants.CONTENT_LANGUAGE),
-			this.getHeaderValueToSign(request, HeaderConstants.CONTENT_ENCODING),
-			this.getHeaderValueToSign(request, HeaderConstants.CONTENT_LENGTH),
-			this.getHeaderValueToSign(request, HeaderConstants.CONTENT_MD5),
-			this.getHeaderValueToSign(request, HeaderConstants.CONTENT_TYPE),
-			this.getHeaderValueToSign(request, HeaderConstants.DATE),
-			this.getHeaderValueToSign(request, HeaderConstants.IF_MODIFIED_SINCE),
-			this.getHeaderValueToSign(request, HeaderConstants.IF_MATCH),
-			this.getHeaderValueToSign(request, HeaderConstants.IF_NONE_MATCH),
-			this.getHeaderValueToSign(request, HeaderConstants.IF_UNMODIFIED_SINCE),
-			this.getHeaderValueToSign(request, HeaderConstants.RANGE)
-		].join("\n") + "\n" + this.getCanonicalizedHeadersString(request) + this.getCanonicalizedResourceString(request);
-		const signature = this.factory.computeHMACSHA256(stringToSign);
-		request.headers.set(HeaderConstants.AUTHORIZATION, `SharedKey ${this.factory.accountName}:${signature}`);
-		return request;
-	}
-	/**
-	* Retrieve header value according to shared key sign rules.
-	* @see https://learn.microsoft.com/rest/api/storageservices/authenticate-with-shared-key
-	*
-	* @param request -
-	* @param headerName -
-	*/
-	getHeaderValueToSign(request, headerName) {
-		const value = request.headers.get(headerName);
-		if (!value) return "";
-		if (headerName === HeaderConstants.CONTENT_LENGTH && value === "0") return "";
-		return value;
-	}
-	/**
-	* To construct the CanonicalizedHeaders portion of the signature string, follow these steps:
-	* 1. Retrieve all headers for the resource that begin with x-ms-, including the x-ms-date header.
-	* 2. Convert each HTTP header name to lowercase.
-	* 3. Sort the headers lexicographically by header name, in ascending order.
-	*    Each header may appear only once in the string.
-	* 4. Replace any linear whitespace in the header value with a single space.
-	* 5. Trim any whitespace around the colon in the header.
-	* 6. Finally, append a new-line character to each canonicalized header in the resulting list.
-	*    Construct the CanonicalizedHeaders string by concatenating all headers in this list into a single string.
-	*
-	* @param request -
-	*/
-	getCanonicalizedHeadersString(request) {
-		let headersArray = request.headers.headersArray().filter((value) => {
-			return value.name.toLowerCase().startsWith(HeaderConstants.PREFIX_FOR_STORAGE);
-		});
-		headersArray.sort((a, b) => {
-			return compareHeader(a.name.toLowerCase(), b.name.toLowerCase());
-		});
-		headersArray = headersArray.filter((value, index, array) => {
-			if (index > 0 && value.name.toLowerCase() === array[index - 1].name.toLowerCase()) return false;
-			return true;
-		});
-		let canonicalizedHeadersStringToSign = "";
-		headersArray.forEach((header) => {
-			canonicalizedHeadersStringToSign += `${header.name.toLowerCase().trimRight()}:${header.value.trimLeft()}\n`;
-		});
-		return canonicalizedHeadersStringToSign;
-	}
-	/**
-	* Retrieves the webResource canonicalized resource string.
-	*
-	* @param request -
-	*/
-	getCanonicalizedResourceString(request) {
-		const path = getURLPath(request.url) || "/";
-		let canonicalizedResourceString = "";
-		canonicalizedResourceString += `/${this.factory.accountName}${path}`;
-		const queries = getURLQueries(request.url);
-		const lowercaseQueries = {};
-		if (queries) {
-			const queryKeys = [];
-			for (const key in queries) if (Object.prototype.hasOwnProperty.call(queries, key)) {
-				const lowercaseKey = key.toLowerCase();
-				lowercaseQueries[lowercaseKey] = queries[key];
-				queryKeys.push(lowercaseKey);
-			}
-			queryKeys.sort();
-			for (const key of queryKeys) canonicalizedResourceString += `\n${key}:${decodeURIComponent(lowercaseQueries[key])}`;
-		}
-		return canonicalizedResourceString;
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/credentials/StorageSharedKeyCredential.js
-/**
-* ONLY AVAILABLE IN NODE.JS RUNTIME.
-*
-* StorageSharedKeyCredential for account key authorization of Azure Storage service.
-*/
-var StorageSharedKeyCredential = class extends Credential {
-	/**
-	* Azure Storage account name; readonly.
-	*/
-	accountName;
-	/**
-	* Azure Storage account key; readonly.
-	*/
-	accountKey;
-	/**
-	* Creates an instance of StorageSharedKeyCredential.
-	* @param accountName -
-	* @param accountKey -
-	*/
-	constructor(accountName, accountKey) {
-		super();
-		this.accountName = accountName;
-		this.accountKey = Buffer.from(accountKey, "base64");
-	}
-	/**
-	* Creates a StorageSharedKeyCredentialPolicy object.
-	*
-	* @param nextPolicy -
-	* @param options -
-	*/
-	create(nextPolicy, options) {
-		return new StorageSharedKeyCredentialPolicy(nextPolicy, options, this);
-	}
-	/**
-	* Generates a hash signature for an HTTP request or for a SAS.
-	*
-	* @param stringToSign -
-	*/
-	computeHMACSHA256(stringToSign) {
-		return createHmac("sha256", this.accountKey).update(stringToSign, "utf8").digest("base64");
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/log.js
-/**
-* The `@azure/logger` configuration for this package.
-*/
-var logger$2 = createClientLogger("storage-common");
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/policies/StorageRetryPolicyType.js
-/**
-* RetryPolicy types.
-*/
-var StorageRetryPolicyType;
-(function(StorageRetryPolicyType) {
-	/**
-	* Exponential retry. Retry time delay grows exponentially.
-	*/
-	StorageRetryPolicyType[StorageRetryPolicyType["EXPONENTIAL"] = 0] = "EXPONENTIAL";
-	/**
-	* Linear retry. Retry time delay grows linearly.
-	*/
-	StorageRetryPolicyType[StorageRetryPolicyType["FIXED"] = 1] = "FIXED";
-})(StorageRetryPolicyType || (StorageRetryPolicyType = {}));
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/policies/StorageRetryPolicy.js
-var DEFAULT_RETRY_OPTIONS$1 = {
-	maxRetryDelayInMs: 120 * 1e3,
-	maxTries: 4,
-	retryDelayInMs: 4 * 1e3,
-	retryPolicyType: StorageRetryPolicyType.EXPONENTIAL,
-	secondaryHost: "",
-	tryTimeoutInMs: void 0
-};
-var RETRY_ABORT_ERROR$1 = new AbortError("The operation was aborted.");
-/**
-* Retry policy with exponential retry and linear retry implemented.
-*/
-var StorageRetryPolicy = class extends BaseRequestPolicy {
-	/**
-	* RetryOptions.
-	*/
-	retryOptions;
-	/**
-	* Creates an instance of RetryPolicy.
-	*
-	* @param nextPolicy -
-	* @param options -
-	* @param retryOptions -
-	*/
-	constructor(nextPolicy, options, retryOptions = DEFAULT_RETRY_OPTIONS$1) {
-		super(nextPolicy, options);
-		this.retryOptions = {
-			retryPolicyType: retryOptions.retryPolicyType ? retryOptions.retryPolicyType : DEFAULT_RETRY_OPTIONS$1.retryPolicyType,
-			maxTries: retryOptions.maxTries && retryOptions.maxTries >= 1 ? Math.floor(retryOptions.maxTries) : DEFAULT_RETRY_OPTIONS$1.maxTries,
-			tryTimeoutInMs: retryOptions.tryTimeoutInMs && retryOptions.tryTimeoutInMs >= 0 ? retryOptions.tryTimeoutInMs : DEFAULT_RETRY_OPTIONS$1.tryTimeoutInMs,
-			retryDelayInMs: retryOptions.retryDelayInMs && retryOptions.retryDelayInMs >= 0 ? Math.min(retryOptions.retryDelayInMs, retryOptions.maxRetryDelayInMs ? retryOptions.maxRetryDelayInMs : DEFAULT_RETRY_OPTIONS$1.maxRetryDelayInMs) : DEFAULT_RETRY_OPTIONS$1.retryDelayInMs,
-			maxRetryDelayInMs: retryOptions.maxRetryDelayInMs && retryOptions.maxRetryDelayInMs >= 0 ? retryOptions.maxRetryDelayInMs : DEFAULT_RETRY_OPTIONS$1.maxRetryDelayInMs,
-			secondaryHost: retryOptions.secondaryHost ? retryOptions.secondaryHost : DEFAULT_RETRY_OPTIONS$1.secondaryHost
-		};
-	}
-	/**
-	* Sends request.
-	*
-	* @param request -
-	*/
-	async sendRequest(request) {
-		return this.attemptSendRequest(request, false, 1);
-	}
-	/**
-	* Decide and perform next retry. Won't mutate request parameter.
-	*
-	* @param request -
-	* @param secondaryHas404 -  If attempt was against the secondary & it returned a StatusNotFound (404), then
-	*                                   the resource was not found. This may be due to replication delay. So, in this
-	*                                   case, we'll never try the secondary again for this operation.
-	* @param attempt -           How many retries has been attempted to performed, starting from 1, which includes
-	*                                   the attempt will be performed by this method call.
-	*/
-	async attemptSendRequest(request, secondaryHas404, attempt) {
-		const newRequest = request.clone();
-		const isPrimaryRetry = secondaryHas404 || !this.retryOptions.secondaryHost || !(request.method === "GET" || request.method === "HEAD" || request.method === "OPTIONS") || attempt % 2 === 1;
-		if (!isPrimaryRetry) newRequest.url = setURLHost(newRequest.url, this.retryOptions.secondaryHost);
-		if (this.retryOptions.tryTimeoutInMs) newRequest.url = setURLParameter$1(newRequest.url, URLConstants$1.Parameters.TIMEOUT, Math.floor(this.retryOptions.tryTimeoutInMs / 1e3).toString());
-		let response;
-		try {
-			logger$2.info(`RetryPolicy: =====> Try=${attempt} ${isPrimaryRetry ? "Primary" : "Secondary"}`);
-			response = await this._nextPolicy.sendRequest(newRequest);
-			if (!this.shouldRetry(isPrimaryRetry, attempt, response)) return response;
-			secondaryHas404 = secondaryHas404 || !isPrimaryRetry && response.status === 404;
-		} catch (err) {
-			logger$2.error(`RetryPolicy: Caught error, message: ${err.message}, code: ${err.code}`);
-			if (!this.shouldRetry(isPrimaryRetry, attempt, response, err)) throw err;
-		}
-		await this.delay(isPrimaryRetry, attempt, request.abortSignal);
-		return this.attemptSendRequest(request, secondaryHas404, ++attempt);
-	}
-	/**
-	* Decide whether to retry according to last HTTP response and retry counters.
-	*
-	* @param isPrimaryRetry -
-	* @param attempt -
-	* @param response -
-	* @param err -
-	*/
-	shouldRetry(isPrimaryRetry, attempt, response, err) {
-		if (attempt >= this.retryOptions.maxTries) {
-			logger$2.info(`RetryPolicy: Attempt(s) ${attempt} >= maxTries ${this.retryOptions.maxTries}, no further try.`);
-			return false;
-		}
-		const retriableErrors = [
-			"ETIMEDOUT",
-			"ESOCKETTIMEDOUT",
-			"ECONNREFUSED",
-			"ECONNRESET",
-			"ENOENT",
-			"ENOTFOUND",
-			"TIMEOUT",
-			"EPIPE",
-			"REQUEST_SEND_ERROR"
-		];
-		if (err) {
-			for (const retriableError of retriableErrors) if (err.name.toUpperCase().includes(retriableError) || err.message.toUpperCase().includes(retriableError) || err.code && err.code.toString().toUpperCase() === retriableError) {
-				logger$2.info(`RetryPolicy: Network error ${retriableError} found, will retry.`);
-				return true;
-			}
-		}
-		if (response || err) {
-			const statusCode = response ? response.status : err ? err.statusCode : 0;
-			if (!isPrimaryRetry && statusCode === 404) {
-				logger$2.info(`RetryPolicy: Secondary access with 404, will retry.`);
-				return true;
-			}
-			if (statusCode === 503 || statusCode === 500) {
-				logger$2.info(`RetryPolicy: Will retry for status code ${statusCode}.`);
-				return true;
-			}
-		}
-		if (response) {
-			if (response?.status >= 400) {
-				const copySourceError = response.headers.get(HeaderConstants.X_MS_CopySourceErrorCode);
-				if (copySourceError !== void 0) switch (copySourceError) {
-					case "InternalError":
-					case "OperationTimedOut":
-					case "ServerBusy": return true;
-				}
-			}
-		}
-		if (err?.code === "PARSE_ERROR" && err?.message.startsWith(`Error "Error: Unclosed root tag`)) {
-			logger$2.info("RetryPolicy: Incomplete XML response likely due to service timeout, will retry.");
-			return true;
-		}
-		return false;
-	}
-	/**
-	* Delay a calculated time between retries.
-	*
-	* @param isPrimaryRetry -
-	* @param attempt -
-	* @param abortSignal -
-	*/
-	async delay(isPrimaryRetry, attempt, abortSignal) {
-		let delayTimeInMs = 0;
-		if (isPrimaryRetry) switch (this.retryOptions.retryPolicyType) {
-			case StorageRetryPolicyType.EXPONENTIAL:
-				delayTimeInMs = Math.min((Math.pow(2, attempt - 1) - 1) * this.retryOptions.retryDelayInMs, this.retryOptions.maxRetryDelayInMs);
-				break;
-			case StorageRetryPolicyType.FIXED:
-				delayTimeInMs = this.retryOptions.retryDelayInMs;
-				break;
-		}
-		else delayTimeInMs = Math.random() * 1e3;
-		logger$2.info(`RetryPolicy: Delay for ${delayTimeInMs}ms`);
-		return delay(delayTimeInMs, abortSignal, RETRY_ABORT_ERROR$1);
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/StorageRetryPolicyFactory.js
-/**
-* StorageRetryPolicyFactory is a factory class helping generating {@link StorageRetryPolicy} objects.
-*/
-var StorageRetryPolicyFactory = class {
-	retryOptions;
-	/**
-	* Creates an instance of StorageRetryPolicyFactory.
-	* @param retryOptions -
-	*/
-	constructor(retryOptions) {
-		this.retryOptions = retryOptions;
-	}
-	/**
-	* Creates a StorageRetryPolicy object.
-	*
-	* @param nextPolicy -
-	* @param options -
-	*/
-	create(nextPolicy, options) {
-		return new StorageRetryPolicy(nextPolicy, options, this.retryOptions);
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/policies/StorageBrowserPolicyV2.js
-/**
-* The programmatic identifier of the StorageBrowserPolicy.
-*/
-var storageBrowserPolicyName = "storageBrowserPolicy";
-/**
-* storageBrowserPolicy is a policy used to prevent browsers from caching requests
-* and to remove cookies and explicit content-length headers.
-*/
-function storageBrowserPolicy() {
-	return {
-		name: storageBrowserPolicyName,
-		async sendRequest(request, next) {
-			if (isNodeLike) return next(request);
-			if (request.method === "GET" || request.method === "HEAD") request.url = setURLParameter$1(request.url, URLConstants$1.Parameters.FORCE_BROWSER_NO_CACHE, (/* @__PURE__ */ new Date()).getTime().toString());
-			request.headers.delete(HeaderConstants.COOKIE);
-			request.headers.delete(HeaderConstants.CONTENT_LENGTH);
-			return next(request);
-		}
-	};
-}
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/policies/StorageCorrectContentLengthPolicy.js
-/**
-* The programmatic identifier of the storageCorrectContentLengthPolicy.
-*/
-var storageCorrectContentLengthPolicyName = "StorageCorrectContentLengthPolicy";
-/**
-* storageCorrectContentLengthPolicy to correctly set Content-Length header with request body length.
-*/
-function storageCorrectContentLengthPolicy() {
-	function correctContentLength(request) {
-		if (request.body && (typeof request.body === "string" || Buffer.isBuffer(request.body)) && request.body.length > 0) request.headers.set(HeaderConstants.CONTENT_LENGTH, Buffer.byteLength(request.body));
-	}
-	return {
-		name: storageCorrectContentLengthPolicyName,
-		async sendRequest(request, next) {
-			correctContentLength(request);
-			return next(request);
-		}
-	};
-}
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/policies/StorageRetryPolicyV2.js
-/**
-* Name of the {@link storageRetryPolicy}
-*/
-var storageRetryPolicyName = "storageRetryPolicy";
-var DEFAULT_RETRY_OPTIONS = {
-	maxRetryDelayInMs: 120 * 1e3,
-	maxTries: 4,
-	retryDelayInMs: 4 * 1e3,
-	retryPolicyType: StorageRetryPolicyType.EXPONENTIAL,
-	secondaryHost: "",
-	tryTimeoutInMs: void 0
-};
-var retriableErrors = [
-	"ETIMEDOUT",
-	"ESOCKETTIMEDOUT",
-	"ECONNREFUSED",
-	"ECONNRESET",
-	"ENOENT",
-	"ENOTFOUND",
-	"TIMEOUT",
-	"EPIPE",
-	"REQUEST_SEND_ERROR"
-];
-var RETRY_ABORT_ERROR = new AbortError("The operation was aborted.");
-/**
-* Retry policy with exponential retry and linear retry implemented.
-*/
-function storageRetryPolicy(options = {}) {
-	const retryPolicyType = options.retryPolicyType ?? DEFAULT_RETRY_OPTIONS.retryPolicyType;
-	const maxTries = options.maxTries ?? DEFAULT_RETRY_OPTIONS.maxTries;
-	const retryDelayInMs = options.retryDelayInMs ?? DEFAULT_RETRY_OPTIONS.retryDelayInMs;
-	const maxRetryDelayInMs = options.maxRetryDelayInMs ?? DEFAULT_RETRY_OPTIONS.maxRetryDelayInMs;
-	const secondaryHost = options.secondaryHost ?? DEFAULT_RETRY_OPTIONS.secondaryHost;
-	const tryTimeoutInMs = options.tryTimeoutInMs ?? DEFAULT_RETRY_OPTIONS.tryTimeoutInMs;
-	function shouldRetry({ isPrimaryRetry, attempt, response, error }) {
-		if (attempt >= maxTries) {
-			logger$2.info(`RetryPolicy: Attempt(s) ${attempt} >= maxTries ${maxTries}, no further try.`);
-			return false;
-		}
-		if (error) {
-			for (const retriableError of retriableErrors) if (error.name.toUpperCase().includes(retriableError) || error.message.toUpperCase().includes(retriableError) || error.code && error.code.toString().toUpperCase() === retriableError) {
-				logger$2.info(`RetryPolicy: Network error ${retriableError} found, will retry.`);
-				return true;
-			}
-			if (error?.code === "PARSE_ERROR" && error?.message.startsWith(`Error "Error: Unclosed root tag`)) {
-				logger$2.info("RetryPolicy: Incomplete XML response likely due to service timeout, will retry.");
-				return true;
-			}
-		}
-		if (response || error) {
-			const statusCode = response?.status ?? error?.statusCode ?? 0;
-			if (!isPrimaryRetry && statusCode === 404) {
-				logger$2.info(`RetryPolicy: Secondary access with 404, will retry.`);
-				return true;
-			}
-			if (statusCode === 503 || statusCode === 500) {
-				logger$2.info(`RetryPolicy: Will retry for status code ${statusCode}.`);
-				return true;
-			}
-		}
-		if (response) {
-			if (response?.status >= 400) {
-				const copySourceError = response.headers.get(HeaderConstants.X_MS_CopySourceErrorCode);
-				if (copySourceError !== void 0) switch (copySourceError) {
-					case "InternalError":
-					case "OperationTimedOut":
-					case "ServerBusy": return true;
-				}
-			}
-		}
-		return false;
-	}
-	function calculateDelay(isPrimaryRetry, attempt) {
-		let delayTimeInMs = 0;
-		if (isPrimaryRetry) switch (retryPolicyType) {
-			case StorageRetryPolicyType.EXPONENTIAL:
-				delayTimeInMs = Math.min((Math.pow(2, attempt - 1) - 1) * retryDelayInMs, maxRetryDelayInMs);
-				break;
-			case StorageRetryPolicyType.FIXED:
-				delayTimeInMs = retryDelayInMs;
-				break;
-		}
-		else delayTimeInMs = Math.random() * 1e3;
-		logger$2.info(`RetryPolicy: Delay for ${delayTimeInMs}ms`);
-		return delayTimeInMs;
-	}
-	return {
-		name: storageRetryPolicyName,
-		async sendRequest(request, next) {
-			if (tryTimeoutInMs) request.url = setURLParameter$1(request.url, URLConstants$1.Parameters.TIMEOUT, String(Math.floor(tryTimeoutInMs / 1e3)));
-			const primaryUrl = request.url;
-			const secondaryUrl = secondaryHost ? setURLHost(request.url, secondaryHost) : void 0;
-			let secondaryHas404 = false;
-			let attempt = 1;
-			let retryAgain = true;
-			let response;
-			let error;
-			while (retryAgain) {
-				const isPrimaryRetry = secondaryHas404 || !secondaryUrl || ![
-					"GET",
-					"HEAD",
-					"OPTIONS"
-				].includes(request.method) || attempt % 2 === 1;
-				request.url = isPrimaryRetry ? primaryUrl : secondaryUrl;
-				response = void 0;
-				error = void 0;
-				try {
-					logger$2.info(`RetryPolicy: =====> Try=${attempt} ${isPrimaryRetry ? "Primary" : "Secondary"}`);
-					response = await next(request);
-					secondaryHas404 = secondaryHas404 || !isPrimaryRetry && response.status === 404;
-				} catch (e) {
-					if (isRestError(e)) {
-						logger$2.error(`RetryPolicy: Caught error, message: ${e.message}, code: ${e.code}`);
-						error = e;
-					} else {
-						logger$2.error(`RetryPolicy: Caught error, message: ${getErrorMessage(e)}`);
-						throw e;
-					}
-				}
-				retryAgain = shouldRetry({
-					isPrimaryRetry,
-					attempt,
-					response,
-					error
-				});
-				if (retryAgain) await delay(calculateDelay(isPrimaryRetry, attempt), request.abortSignal, RETRY_ABORT_ERROR);
-				attempt++;
-			}
-			if (response) return response;
-			throw error ?? new RestError("RetryPolicy failed without known error.");
-		}
-	};
-}
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/policies/StorageSharedKeyCredentialPolicyV2.js
-/**
-* The programmatic identifier of the storageSharedKeyCredentialPolicy.
-*/
-var storageSharedKeyCredentialPolicyName = "storageSharedKeyCredentialPolicy";
-/**
-* storageSharedKeyCredentialPolicy handles signing requests using storage account keys.
-*/
-function storageSharedKeyCredentialPolicy(options) {
-	function signRequest(request) {
-		request.headers.set(HeaderConstants.X_MS_DATE, (/* @__PURE__ */ new Date()).toUTCString());
-		if (request.body && (typeof request.body === "string" || Buffer.isBuffer(request.body)) && request.body.length > 0) request.headers.set(HeaderConstants.CONTENT_LENGTH, Buffer.byteLength(request.body));
-		const stringToSign = [
-			request.method.toUpperCase(),
-			getHeaderValueToSign(request, HeaderConstants.CONTENT_LANGUAGE),
-			getHeaderValueToSign(request, HeaderConstants.CONTENT_ENCODING),
-			getHeaderValueToSign(request, HeaderConstants.CONTENT_LENGTH),
-			getHeaderValueToSign(request, HeaderConstants.CONTENT_MD5),
-			getHeaderValueToSign(request, HeaderConstants.CONTENT_TYPE),
-			getHeaderValueToSign(request, HeaderConstants.DATE),
-			getHeaderValueToSign(request, HeaderConstants.IF_MODIFIED_SINCE),
-			getHeaderValueToSign(request, HeaderConstants.IF_MATCH),
-			getHeaderValueToSign(request, HeaderConstants.IF_NONE_MATCH),
-			getHeaderValueToSign(request, HeaderConstants.IF_UNMODIFIED_SINCE),
-			getHeaderValueToSign(request, HeaderConstants.RANGE)
-		].join("\n") + "\n" + getCanonicalizedHeadersString(request) + getCanonicalizedResourceString(request);
-		const signature = createHmac("sha256", options.accountKey).update(stringToSign, "utf8").digest("base64");
-		request.headers.set(HeaderConstants.AUTHORIZATION, `SharedKey ${options.accountName}:${signature}`);
-	}
-	/**
-	* Retrieve header value according to shared key sign rules.
-	* @see https://learn.microsoft.com/rest/api/storageservices/authenticate-with-shared-key
-	*/
-	function getHeaderValueToSign(request, headerName) {
-		const value = request.headers.get(headerName);
-		if (!value) return "";
-		if (headerName === HeaderConstants.CONTENT_LENGTH && value === "0") return "";
-		return value;
-	}
-	/**
-	* To construct the CanonicalizedHeaders portion of the signature string, follow these steps:
-	* 1. Retrieve all headers for the resource that begin with x-ms-, including the x-ms-date header.
-	* 2. Convert each HTTP header name to lowercase.
-	* 3. Sort the headers lexicographically by header name, in ascending order.
-	*    Each header may appear only once in the string.
-	* 4. Replace any linear whitespace in the header value with a single space.
-	* 5. Trim any whitespace around the colon in the header.
-	* 6. Finally, append a new-line character to each canonicalized header in the resulting list.
-	*    Construct the CanonicalizedHeaders string by concatenating all headers in this list into a single string.
-	*
-	*/
-	function getCanonicalizedHeadersString(request) {
-		let headersArray = [];
-		for (const [name, value] of request.headers) if (name.toLowerCase().startsWith(HeaderConstants.PREFIX_FOR_STORAGE)) headersArray.push({
-			name,
-			value
-		});
-		headersArray.sort((a, b) => {
-			return compareHeader(a.name.toLowerCase(), b.name.toLowerCase());
-		});
-		headersArray = headersArray.filter((value, index, array) => {
-			if (index > 0 && value.name.toLowerCase() === array[index - 1].name.toLowerCase()) return false;
-			return true;
-		});
-		let canonicalizedHeadersStringToSign = "";
-		headersArray.forEach((header) => {
-			canonicalizedHeadersStringToSign += `${header.name.toLowerCase().trimRight()}:${header.value.trimLeft()}\n`;
-		});
-		return canonicalizedHeadersStringToSign;
-	}
-	function getCanonicalizedResourceString(request) {
-		const path = getURLPath(request.url) || "/";
-		let canonicalizedResourceString = "";
-		canonicalizedResourceString += `/${options.accountName}${path}`;
-		const queries = getURLQueries(request.url);
-		const lowercaseQueries = {};
-		if (queries) {
-			const queryKeys = [];
-			for (const key in queries) if (Object.prototype.hasOwnProperty.call(queries, key)) {
-				const lowercaseKey = key.toLowerCase();
-				lowercaseQueries[lowercaseKey] = queries[key];
-				queryKeys.push(lowercaseKey);
-			}
-			queryKeys.sort();
-			for (const key of queryKeys) canonicalizedResourceString += `\n${key}:${decodeURIComponent(lowercaseQueries[key])}`;
-		}
-		return canonicalizedResourceString;
-	}
-	return {
-		name: storageSharedKeyCredentialPolicyName,
-		async sendRequest(request, next) {
-			signRequest(request);
-			return next(request);
-		}
-	};
-}
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/policies/StorageRequestFailureDetailsParserPolicy.js
-/**
-* The programmatic identifier of the StorageRequestFailureDetailsParserPolicy.
-*/
-var storageRequestFailureDetailsParserPolicyName = "storageRequestFailureDetailsParserPolicy";
-/**
-* StorageRequestFailureDetailsParserPolicy
-*/
-function storageRequestFailureDetailsParserPolicy() {
-	return {
-		name: storageRequestFailureDetailsParserPolicyName,
-		async sendRequest(request, next) {
-			try {
-				return await next(request);
-			} catch (err) {
-				if (typeof err === "object" && err !== null && err.response && err.response.parsedBody) {
-					if (err.response.parsedBody.code === "InvalidHeaderValue" && err.response.parsedBody.HeaderName === "x-ms-version") err.message = "The provided service version is not enabled on this storage account. Please see https://learn.microsoft.com/rest/api/storageservices/versioning-for-the-azure-storage-services for additional information.\n";
-				}
-				throw err;
-			}
-		}
-	};
-}
-//#endregion
-//#region node_modules/@azure/storage-common/dist/esm/credentials/UserDelegationKeyCredential.js
-/**
-* ONLY AVAILABLE IN NODE.JS RUNTIME.
-*
-* UserDelegationKeyCredential is only used for generation of user delegation SAS.
-* @see https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas
-*/
-var UserDelegationKeyCredential = class {
-	/**
-	* Azure Storage account name; readonly.
-	*/
-	accountName;
-	/**
-	* Azure Storage user delegation key; readonly.
-	*/
-	userDelegationKey;
-	/**
-	* Key value in Buffer type.
-	*/
-	key;
-	/**
-	* Creates an instance of UserDelegationKeyCredential.
-	* @param accountName -
-	* @param userDelegationKey -
-	*/
-	constructor(accountName, userDelegationKey) {
-		this.accountName = accountName;
-		this.userDelegationKey = userDelegationKey;
-		this.key = Buffer.from(userDelegationKey.value, "base64");
-	}
-	/**
-	* Generates a hash signature for an HTTP request or for a SAS.
-	*
-	* @param stringToSign -
-	*/
-	computeHMACSHA256(stringToSign) {
-		return createHmac("sha256", this.key).update(stringToSign, "utf8").digest("base64");
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/utils/constants.js
-var SDK_VERSION = "12.31.0";
-var SERVICE_VERSION = "2026-02-06";
-var BLOCK_BLOB_MAX_UPLOAD_BLOB_BYTES = 256 * 1024 * 1024;
-var BLOCK_BLOB_MAX_STAGE_BLOCK_BYTES = 4e3 * 1024 * 1024;
-var BLOCK_BLOB_MAX_BLOCKS = 5e4;
-var DEFAULT_BLOCK_BUFFER_SIZE_BYTES = 8 * 1024 * 1024;
-var DEFAULT_BLOB_DOWNLOAD_BLOCK_BYTES = 4 * 1024 * 1024;
-var REQUEST_TIMEOUT = 100 * 1e3;
-var URLConstants = { Parameters: {
-	FORCE_BROWSER_NO_CACHE: "_",
-	SIGNATURE: "sig",
-	SNAPSHOT: "snapshot",
-	VERSIONID: "versionid",
-	TIMEOUT: "timeout"
-} };
-var EncryptionAlgorithmAES25 = "AES256";
-var DevelopmentConnectionString = `DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;`;
-var StorageBlobLoggingAllowedHeaderNames = [
-	"Access-Control-Allow-Origin",
-	"Cache-Control",
-	"Content-Length",
-	"Content-Type",
-	"Date",
-	"Request-Id",
-	"traceparent",
-	"Transfer-Encoding",
-	"User-Agent",
-	"x-ms-client-request-id",
-	"x-ms-date",
-	"x-ms-error-code",
-	"x-ms-request-id",
-	"x-ms-return-client-request-id",
-	"x-ms-version",
-	"Accept-Ranges",
-	"Content-Disposition",
-	"Content-Encoding",
-	"Content-Language",
-	"Content-MD5",
-	"Content-Range",
-	"ETag",
-	"Last-Modified",
-	"Server",
-	"Vary",
-	"x-ms-content-crc64",
-	"x-ms-copy-action",
-	"x-ms-copy-completion-time",
-	"x-ms-copy-id",
-	"x-ms-copy-progress",
-	"x-ms-copy-status",
-	"x-ms-has-immutability-policy",
-	"x-ms-has-legal-hold",
-	"x-ms-lease-state",
-	"x-ms-lease-status",
-	"x-ms-range",
-	"x-ms-request-server-encrypted",
-	"x-ms-server-encrypted",
-	"x-ms-snapshot",
-	"x-ms-source-range",
-	"If-Match",
-	"If-Modified-Since",
-	"If-None-Match",
-	"If-Unmodified-Since",
-	"x-ms-access-tier",
-	"x-ms-access-tier-change-time",
-	"x-ms-access-tier-inferred",
-	"x-ms-account-kind",
-	"x-ms-archive-status",
-	"x-ms-blob-append-offset",
-	"x-ms-blob-cache-control",
-	"x-ms-blob-committed-block-count",
-	"x-ms-blob-condition-appendpos",
-	"x-ms-blob-condition-maxsize",
-	"x-ms-blob-content-disposition",
-	"x-ms-blob-content-encoding",
-	"x-ms-blob-content-language",
-	"x-ms-blob-content-length",
-	"x-ms-blob-content-md5",
-	"x-ms-blob-content-type",
-	"x-ms-blob-public-access",
-	"x-ms-blob-sequence-number",
-	"x-ms-blob-type",
-	"x-ms-copy-destination-snapshot",
-	"x-ms-creation-time",
-	"x-ms-default-encryption-scope",
-	"x-ms-delete-snapshots",
-	"x-ms-delete-type-permanent",
-	"x-ms-deny-encryption-scope-override",
-	"x-ms-encryption-algorithm",
-	"x-ms-if-sequence-number-eq",
-	"x-ms-if-sequence-number-le",
-	"x-ms-if-sequence-number-lt",
-	"x-ms-incremental-copy",
-	"x-ms-lease-action",
-	"x-ms-lease-break-period",
-	"x-ms-lease-duration",
-	"x-ms-lease-id",
-	"x-ms-lease-time",
-	"x-ms-page-write",
-	"x-ms-proposed-lease-id",
-	"x-ms-range-get-content-md5",
-	"x-ms-rehydrate-priority",
-	"x-ms-sequence-number-action",
-	"x-ms-sku-name",
-	"x-ms-source-content-md5",
-	"x-ms-source-if-match",
-	"x-ms-source-if-modified-since",
-	"x-ms-source-if-none-match",
-	"x-ms-source-if-unmodified-since",
-	"x-ms-tag-count",
-	"x-ms-encryption-key-sha256",
-	"x-ms-copy-source-error-code",
-	"x-ms-copy-source-status-code",
-	"x-ms-if-tags",
-	"x-ms-source-if-tags"
-];
-var StorageBlobLoggingAllowedQueryParameters = [
-	"comp",
-	"maxresults",
-	"rscc",
-	"rscd",
-	"rsce",
-	"rscl",
-	"rsct",
-	"se",
-	"si",
-	"sip",
-	"sp",
-	"spr",
-	"sr",
-	"srt",
-	"ss",
-	"st",
-	"sv",
-	"include",
-	"marker",
-	"prefix",
-	"copyid",
-	"restype",
-	"blockid",
-	"blocklisttype",
-	"delimiter",
-	"prevsnapshot",
-	"ske",
-	"skoid",
-	"sks",
-	"skt",
-	"sktid",
-	"skv",
-	"snapshot"
-];
-var PathStylePorts = [
-	"10000",
-	"10001",
-	"10002",
-	"10003",
-	"10004",
-	"10100",
-	"10101",
-	"10102",
-	"10103",
-	"10104",
-	"11000",
-	"11001",
-	"11002",
-	"11003",
-	"11004",
-	"11100",
-	"11101",
-	"11102",
-	"11103",
-	"11104"
-];
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/models.js
-/**
-* Represents the access tier on a blob.
-* For detailed information about block blob level tiering see {@link https://learn.microsoft.com/azure/storage/blobs/storage-blob-storage-tiers|Hot, cool and archive storage tiers.}
-*/
-var BlockBlobTier;
-(function(BlockBlobTier) {
-	/**
-	* Optimized for storing data that is accessed frequently.
-	*/
-	BlockBlobTier["Hot"] = "Hot";
-	/**
-	* Optimized for storing data that is infrequently accessed and stored for at least 30 days.
-	*/
-	BlockBlobTier["Cool"] = "Cool";
-	/**
-	* Optimized for storing data that is rarely accessed.
-	*/
-	BlockBlobTier["Cold"] = "Cold";
-	/**
-	* Optimized for storing data that is rarely accessed and stored for at least 180 days
-	* with flexible latency requirements (on the order of hours).
-	*/
-	BlockBlobTier["Archive"] = "Archive";
-})(BlockBlobTier || (BlockBlobTier = {}));
-/**
-* Specifies the page blob tier to set the blob to. This is only applicable to page blobs on premium storage accounts.
-* Please see {@link https://learn.microsoft.com/azure/storage/storage-premium-storage#scalability-and-performance-targets|here}
-* for detailed information on the corresponding IOPS and throughput per PageBlobTier.
-*/
-var PremiumPageBlobTier;
-(function(PremiumPageBlobTier) {
-	/**
-	* P4 Tier.
-	*/
-	PremiumPageBlobTier["P4"] = "P4";
-	/**
-	* P6 Tier.
-	*/
-	PremiumPageBlobTier["P6"] = "P6";
-	/**
-	* P10 Tier.
-	*/
-	PremiumPageBlobTier["P10"] = "P10";
-	/**
-	* P15 Tier.
-	*/
-	PremiumPageBlobTier["P15"] = "P15";
-	/**
-	* P20 Tier.
-	*/
-	PremiumPageBlobTier["P20"] = "P20";
-	/**
-	* P30 Tier.
-	*/
-	PremiumPageBlobTier["P30"] = "P30";
-	/**
-	* P40 Tier.
-	*/
-	PremiumPageBlobTier["P40"] = "P40";
-	/**
-	* P50 Tier.
-	*/
-	PremiumPageBlobTier["P50"] = "P50";
-	/**
-	* P60 Tier.
-	*/
-	PremiumPageBlobTier["P60"] = "P60";
-	/**
-	* P70 Tier.
-	*/
-	PremiumPageBlobTier["P70"] = "P70";
-	/**
-	* P80 Tier.
-	*/
-	PremiumPageBlobTier["P80"] = "P80";
-})(PremiumPageBlobTier || (PremiumPageBlobTier = {}));
-function toAccessTier(tier) {
-	if (tier === void 0) return;
-	return tier;
-}
-function ensureCpkIfSpecified(cpk, isHttps) {
-	if (cpk && !isHttps) throw new RangeError("Customer-provided encryption key must be used over HTTPS.");
-	if (cpk && !cpk.encryptionAlgorithm) cpk.encryptionAlgorithm = EncryptionAlgorithmAES25;
-}
-/**
-* Defines the known cloud audiences for Storage.
-*/
-var StorageBlobAudience;
-(function(StorageBlobAudience) {
-	/**
-	* The OAuth scope to use to retrieve an AAD token for Azure Storage.
-	*/
-	StorageBlobAudience["StorageOAuthScopes"] = "https://storage.azure.com/.default";
-	/**
-	* The OAuth scope to use to retrieve an AAD token for Azure Disk.
-	*/
-	StorageBlobAudience["DiskComputeOAuthScopes"] = "https://disk.compute.azure.com/.default";
-})(StorageBlobAudience || (StorageBlobAudience = {}));
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/PageBlobRangeResponse.js
-/**
-* Function that converts PageRange and ClearRange to a common Range object.
-* PageRange and ClearRange have start and end while Range offset and count
-* this function normalizes to Range.
-* @param response - Model PageBlob Range response
-*/
-function rangeResponseFromModel(response) {
-	const pageRange = (response._response.parsedBody.pageRange || []).map((x) => ({
-		offset: x.start,
-		count: x.end - x.start
-	}));
-	const clearRange = (response._response.parsedBody.clearRange || []).map((x) => ({
-		offset: x.start,
-		count: x.end - x.start
-	}));
-	return {
-		...response,
-		pageRange,
-		clearRange,
-		_response: {
-			...response._response,
-			parsedBody: {
-				pageRange,
-				clearRange
-			}
-		}
-	};
 }
 //#endregion
 //#region node_modules/@azure/core-http-compat/dist/esm/policies/disableKeepAlivePolicy.js
@@ -16457,7 +13004,8 @@ function deserializationPolicy(options = {}) {
 	return {
 		name: deserializationPolicyName,
 		async sendRequest(request, next) {
-			return deserializeResponseBody(jsonContentTypes, xmlContentTypes, await next(request), updatedOptions, parseXML);
+			const response = await next(request);
+			return deserializeResponseBody(jsonContentTypes, xmlContentTypes, response, updatedOptions, parseXML);
 		}
 	};
 }
@@ -16750,7 +13298,7 @@ function createClientPipeline(options = {}) {
 //#endregion
 //#region node_modules/@azure/core-client/dist/esm/httpClientCache.js
 var cachedHttpClient;
-function getCachedDefaultHttpClient() {
+function getCachedDefaultHttpClient$1() {
 	if (!cachedHttpClient) cachedHttpClient = createDefaultHttpClient();
 	return cachedHttpClient;
 }
@@ -16889,7 +13437,7 @@ function appendQueryParams(url, queryParams, sequenceParams, noOverwrite = false
 }
 //#endregion
 //#region node_modules/@azure/core-client/dist/esm/log.js
-var logger$1 = createClientLogger("core-client");
+var logger$2 = createClientLogger("core-client");
 //#endregion
 //#region node_modules/@azure/core-client/dist/esm/serviceClient.js
 /**
@@ -16925,9 +13473,9 @@ var ServiceClient = class {
 	constructor(options = {}) {
 		this._requestContentType = options.requestContentType;
 		this._endpoint = options.endpoint ?? options.baseUri;
-		if (options.baseUri) logger$1.warning("The baseUri option for SDK Clients has been deprecated, please use endpoint instead.");
+		if (options.baseUri) logger$2.warning("The baseUri option for SDK Clients has been deprecated, please use endpoint instead.");
 		this._allowInsecureConnection = options.allowInsecureConnection;
-		this._httpClient = options.httpClient || getCachedDefaultHttpClient();
+		this._httpClient = options.httpClient || getCachedDefaultHttpClient$1();
 		this.pipeline = options.pipeline || createDefaultPipeline(options);
 		if (options.additionalPolicies?.length) for (const { policy, position } of options.additionalPolicies) {
 			const afterPhase = position === "perRetry" ? "Sign" : void 0;
@@ -21918,7 +18466,1993 @@ async function parseXML(str, opts = {}) {
 /**
 * The `@azure/logger` configuration for this package.
 */
-var logger = createClientLogger("storage-blob");
+var logger$1 = createClientLogger("storage-blob");
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/BuffersStream.js
+/**
+* This class generates a readable stream from the data in an array of buffers.
+*/
+var BuffersStream = class extends Readable {
+	buffers;
+	byteLength;
+	/**
+	* The offset of data to be read in the current buffer.
+	*/
+	byteOffsetInCurrentBuffer;
+	/**
+	* The index of buffer to be read in the array of buffers.
+	*/
+	bufferIndex;
+	/**
+	* The total length of data already read.
+	*/
+	pushedBytesLength;
+	/**
+	* Creates an instance of BuffersStream that will emit the data
+	* contained in the array of buffers.
+	*
+	* @param buffers - Array of buffers containing the data
+	* @param byteLength - The total length of data contained in the buffers
+	*/
+	constructor(buffers, byteLength, options) {
+		super(options);
+		this.buffers = buffers;
+		this.byteLength = byteLength;
+		this.byteOffsetInCurrentBuffer = 0;
+		this.bufferIndex = 0;
+		this.pushedBytesLength = 0;
+		let buffersLength = 0;
+		for (const buf of this.buffers) buffersLength += buf.byteLength;
+		if (buffersLength < this.byteLength) throw new Error("Data size shouldn't be larger than the total length of buffers.");
+	}
+	/**
+	* Internal _read() that will be called when the stream wants to pull more data in.
+	*
+	* @param size - Optional. The size of data to be read
+	*/
+	_read(size) {
+		if (this.pushedBytesLength >= this.byteLength) this.push(null);
+		if (!size) size = this.readableHighWaterMark;
+		const outBuffers = [];
+		let i = 0;
+		while (i < size && this.pushedBytesLength < this.byteLength) {
+			const remainingDataInAllBuffers = this.byteLength - this.pushedBytesLength;
+			const remainingCapacityInThisBuffer = this.buffers[this.bufferIndex].byteLength - this.byteOffsetInCurrentBuffer;
+			const remaining = Math.min(remainingCapacityInThisBuffer, remainingDataInAllBuffers);
+			if (remaining > size - i) {
+				const end = this.byteOffsetInCurrentBuffer + size - i;
+				outBuffers.push(this.buffers[this.bufferIndex].slice(this.byteOffsetInCurrentBuffer, end));
+				this.pushedBytesLength += size - i;
+				this.byteOffsetInCurrentBuffer = end;
+				i = size;
+				break;
+			} else {
+				const end = this.byteOffsetInCurrentBuffer + remaining;
+				outBuffers.push(this.buffers[this.bufferIndex].slice(this.byteOffsetInCurrentBuffer, end));
+				if (remaining === remainingCapacityInThisBuffer) {
+					this.byteOffsetInCurrentBuffer = 0;
+					this.bufferIndex++;
+				} else this.byteOffsetInCurrentBuffer = end;
+				this.pushedBytesLength += remaining;
+				i += remaining;
+			}
+		}
+		if (outBuffers.length > 1) this.push(Buffer.concat(outBuffers));
+		else if (outBuffers.length === 1) this.push(outBuffers[0]);
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/PooledBuffer.js
+/**
+* maxBufferLength is max size of each buffer in the pooled buffers.
+*/
+var maxBufferLength = buffer.constants.MAX_LENGTH;
+/**
+* This class provides a buffer container which conceptually has no hard size limit.
+* It accepts a capacity, an array of input buffers and the total length of input data.
+* It will allocate an internal "buffer" of the capacity and fill the data in the input buffers
+* into the internal "buffer" serially with respect to the total length.
+* Then by calling PooledBuffer.getReadableStream(), you can get a readable stream
+* assembled from all the data in the internal "buffer".
+*/
+var PooledBuffer = class {
+	/**
+	* Internal buffers used to keep the data.
+	* Each buffer has a length of the maxBufferLength except last one.
+	*/
+	buffers = [];
+	/**
+	* The total size of internal buffers.
+	*/
+	capacity;
+	/**
+	* The total size of data contained in internal buffers.
+	*/
+	_size;
+	/**
+	* The size of the data contained in the pooled buffers.
+	*/
+	get size() {
+		return this._size;
+	}
+	constructor(capacity, buffers, totalLength) {
+		this.capacity = capacity;
+		this._size = 0;
+		const bufferNum = Math.ceil(capacity / maxBufferLength);
+		for (let i = 0; i < bufferNum; i++) {
+			let len = i === bufferNum - 1 ? capacity % maxBufferLength : maxBufferLength;
+			if (len === 0) len = maxBufferLength;
+			this.buffers.push(Buffer.allocUnsafe(len));
+		}
+		if (buffers) this.fill(buffers, totalLength);
+	}
+	/**
+	* Fill the internal buffers with data in the input buffers serially
+	* with respect to the total length and the total capacity of the internal buffers.
+	* Data copied will be shift out of the input buffers.
+	*
+	* @param buffers - Input buffers containing the data to be filled in the pooled buffer
+	* @param totalLength - Total length of the data to be filled in.
+	*
+	*/
+	fill(buffers, totalLength) {
+		this._size = Math.min(this.capacity, totalLength);
+		let i = 0, j = 0, targetOffset = 0, sourceOffset = 0, totalCopiedNum = 0;
+		while (totalCopiedNum < this._size) {
+			const source = buffers[i];
+			const target = this.buffers[j];
+			const copiedNum = source.copy(target, targetOffset, sourceOffset);
+			totalCopiedNum += copiedNum;
+			sourceOffset += copiedNum;
+			targetOffset += copiedNum;
+			if (sourceOffset === source.length) {
+				i++;
+				sourceOffset = 0;
+			}
+			if (targetOffset === target.length) {
+				j++;
+				targetOffset = 0;
+			}
+		}
+		buffers.splice(0, i);
+		if (buffers.length > 0) buffers[0] = buffers[0].slice(sourceOffset);
+	}
+	/**
+	* Get the readable stream assembled from all the data in the internal buffers.
+	*
+	*/
+	getReadableStream() {
+		return new BuffersStream(this.buffers, this.size);
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/BufferScheduler.js
+/**
+* This class accepts a Node.js Readable stream as input, and keeps reading data
+* from the stream into the internal buffer structure, until it reaches maxBuffers.
+* Every available buffer will try to trigger outgoingHandler.
+*
+* The internal buffer structure includes an incoming buffer array, and a outgoing
+* buffer array. The incoming buffer array includes the "empty" buffers can be filled
+* with new incoming data. The outgoing array includes the filled buffers to be
+* handled by outgoingHandler. Every above buffer size is defined by parameter bufferSize.
+*
+* NUM_OF_ALL_BUFFERS = BUFFERS_IN_INCOMING + BUFFERS_IN_OUTGOING + BUFFERS_UNDER_HANDLING
+*
+* NUM_OF_ALL_BUFFERS lesser than or equal to maxBuffers
+*
+* PERFORMANCE IMPROVEMENT TIPS:
+* 1. Input stream highWaterMark is better to set a same value with bufferSize
+*    parameter, which will avoid Buffer.concat() operations.
+* 2. concurrency should set a smaller value than maxBuffers, which is helpful to
+*    reduce the possibility when a outgoing handler waits for the stream data.
+*    in this situation, outgoing handlers are blocked.
+*    Outgoing queue shouldn't be empty.
+*/
+var BufferScheduler = class {
+	/**
+	* Size of buffers in incoming and outgoing queues. This class will try to align
+	* data read from Readable stream into buffer chunks with bufferSize defined.
+	*/
+	bufferSize;
+	/**
+	* How many buffers can be created or maintained.
+	*/
+	maxBuffers;
+	/**
+	* A Node.js Readable stream.
+	*/
+	readable;
+	/**
+	* OutgoingHandler is an async function triggered by BufferScheduler when there
+	* are available buffers in outgoing array.
+	*/
+	outgoingHandler;
+	/**
+	* An internal event emitter.
+	*/
+	emitter = new EventEmitter();
+	/**
+	* Concurrency of executing outgoingHandlers. (0 lesser than concurrency lesser than or equal to maxBuffers)
+	*/
+	concurrency;
+	/**
+	* An internal offset marker to track data offset in bytes of next outgoingHandler.
+	*/
+	offset = 0;
+	/**
+	* An internal marker to track whether stream is end.
+	*/
+	isStreamEnd = false;
+	/**
+	* An internal marker to track whether stream or outgoingHandler returns error.
+	*/
+	isError = false;
+	/**
+	* How many handlers are executing.
+	*/
+	executingOutgoingHandlers = 0;
+	/**
+	* Encoding of the input Readable stream which has string data type instead of Buffer.
+	*/
+	encoding;
+	/**
+	* How many buffers have been allocated.
+	*/
+	numBuffers = 0;
+	/**
+	* Because this class doesn't know how much data every time stream pops, which
+	* is defined by highWaterMarker of the stream. So BufferScheduler will cache
+	* data received from the stream, when data in unresolvedDataArray exceeds the
+	* blockSize defined, it will try to concat a blockSize of buffer, fill into available
+	* buffers from incoming and push to outgoing array.
+	*/
+	unresolvedDataArray = [];
+	/**
+	* How much data consisted in unresolvedDataArray.
+	*/
+	unresolvedLength = 0;
+	/**
+	* The array includes all the available buffers can be used to fill data from stream.
+	*/
+	incoming = [];
+	/**
+	* The array (queue) includes all the buffers filled from stream data.
+	*/
+	outgoing = [];
+	/**
+	* Creates an instance of BufferScheduler.
+	*
+	* @param readable - A Node.js Readable stream
+	* @param bufferSize - Buffer size of every maintained buffer
+	* @param maxBuffers - How many buffers can be allocated
+	* @param outgoingHandler - An async function scheduled to be
+	*                                          triggered when a buffer fully filled
+	*                                          with stream data
+	* @param concurrency - Concurrency of executing outgoingHandlers (&gt;0)
+	* @param encoding - [Optional] Encoding of Readable stream when it's a string stream
+	*/
+	constructor(readable, bufferSize, maxBuffers, outgoingHandler, concurrency, encoding) {
+		if (bufferSize <= 0) throw new RangeError(`bufferSize must be larger than 0, current is ${bufferSize}`);
+		if (maxBuffers <= 0) throw new RangeError(`maxBuffers must be larger than 0, current is ${maxBuffers}`);
+		if (concurrency <= 0) throw new RangeError(`concurrency must be larger than 0, current is ${concurrency}`);
+		this.bufferSize = bufferSize;
+		this.maxBuffers = maxBuffers;
+		this.readable = readable;
+		this.outgoingHandler = outgoingHandler;
+		this.concurrency = concurrency;
+		this.encoding = encoding;
+	}
+	/**
+	* Start the scheduler, will return error when stream of any of the outgoingHandlers
+	* returns error.
+	*
+	*/
+	async do() {
+		return new Promise((resolve, reject) => {
+			this.readable.on("data", (data) => {
+				data = typeof data === "string" ? Buffer.from(data, this.encoding) : data;
+				this.appendUnresolvedData(data);
+				if (!this.resolveData()) this.readable.pause();
+			});
+			this.readable.on("error", (err) => {
+				this.emitter.emit("error", err);
+			});
+			this.readable.on("end", () => {
+				this.isStreamEnd = true;
+				this.emitter.emit("checkEnd");
+			});
+			this.emitter.on("error", (err) => {
+				this.isError = true;
+				this.readable.pause();
+				reject(err);
+			});
+			this.emitter.on("checkEnd", () => {
+				if (this.outgoing.length > 0) {
+					this.triggerOutgoingHandlers();
+					return;
+				}
+				if (this.isStreamEnd && this.executingOutgoingHandlers === 0) if (this.unresolvedLength > 0 && this.unresolvedLength < this.bufferSize) {
+					const buffer = this.shiftBufferFromUnresolvedDataArray();
+					this.outgoingHandler(() => buffer.getReadableStream(), buffer.size, this.offset).then(resolve).catch(reject);
+				} else if (this.unresolvedLength >= this.bufferSize) return;
+				else resolve();
+			});
+		});
+	}
+	/**
+	* Insert a new data into unresolved array.
+	*
+	* @param data -
+	*/
+	appendUnresolvedData(data) {
+		this.unresolvedDataArray.push(data);
+		this.unresolvedLength += data.length;
+	}
+	/**
+	* Try to shift a buffer with size in blockSize. The buffer returned may be less
+	* than blockSize when data in unresolvedDataArray is less than bufferSize.
+	*
+	*/
+	shiftBufferFromUnresolvedDataArray(buffer) {
+		if (!buffer) buffer = new PooledBuffer(this.bufferSize, this.unresolvedDataArray, this.unresolvedLength);
+		else buffer.fill(this.unresolvedDataArray, this.unresolvedLength);
+		this.unresolvedLength -= buffer.size;
+		return buffer;
+	}
+	/**
+	* Resolve data in unresolvedDataArray. For every buffer with size in blockSize
+	* shifted, it will try to get (or allocate a buffer) from incoming, and fill it,
+	* then push it into outgoing to be handled by outgoing handler.
+	*
+	* Return false when available buffers in incoming are not enough, else true.
+	*
+	* @returns Return false when buffers in incoming are not enough, else true.
+	*/
+	resolveData() {
+		while (this.unresolvedLength >= this.bufferSize) {
+			let buffer;
+			if (this.incoming.length > 0) {
+				buffer = this.incoming.shift();
+				this.shiftBufferFromUnresolvedDataArray(buffer);
+			} else if (this.numBuffers < this.maxBuffers) {
+				buffer = this.shiftBufferFromUnresolvedDataArray();
+				this.numBuffers++;
+			} else return false;
+			this.outgoing.push(buffer);
+			this.triggerOutgoingHandlers();
+		}
+		return true;
+	}
+	/**
+	* Try to trigger a outgoing handler for every buffer in outgoing. Stop when
+	* concurrency reaches.
+	*/
+	async triggerOutgoingHandlers() {
+		let buffer;
+		do {
+			if (this.executingOutgoingHandlers >= this.concurrency) return;
+			buffer = this.outgoing.shift();
+			if (buffer) this.triggerOutgoingHandler(buffer);
+		} while (buffer);
+	}
+	/**
+	* Trigger a outgoing handler for a buffer shifted from outgoing.
+	*
+	* @param buffer -
+	*/
+	async triggerOutgoingHandler(buffer) {
+		const bufferLength = buffer.size;
+		this.executingOutgoingHandlers++;
+		this.offset += bufferLength;
+		try {
+			await this.outgoingHandler(() => buffer.getReadableStream(), bufferLength, this.offset - bufferLength);
+		} catch (err) {
+			this.emitter.emit("error", err);
+			return;
+		}
+		this.executingOutgoingHandlers--;
+		this.reuseBuffer(buffer);
+		this.emitter.emit("checkEnd");
+	}
+	/**
+	* Return buffer used by outgoing handler into incoming.
+	*
+	* @param buffer -
+	*/
+	reuseBuffer(buffer) {
+		this.incoming.push(buffer);
+		if (!this.isError && this.resolveData() && !this.isStreamEnd) this.readable.resume();
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/cache.js
+var _defaultHttpClient;
+function getCachedDefaultHttpClient() {
+	if (!_defaultHttpClient) _defaultHttpClient = createDefaultHttpClient();
+	return _defaultHttpClient;
+}
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/policies/RequestPolicy.js
+/**
+* The base class from which all request policies derive.
+*/
+var BaseRequestPolicy = class {
+	_nextPolicy;
+	_options;
+	/**
+	* The main method to implement that manipulates a request/response.
+	*/
+	constructor(_nextPolicy, _options) {
+		this._nextPolicy = _nextPolicy;
+		this._options = _options;
+	}
+	/**
+	* Get whether or not a log with the provided log level should be logged.
+	* @param logLevel - The log level of the log that will be logged.
+	* @returns Whether or not a log with the provided log level should be logged.
+	*/
+	shouldLog(logLevel) {
+		return this._options.shouldLog(logLevel);
+	}
+	/**
+	* Attempt to log the provided message to the provided logger. If no logger was provided or if
+	* the log level does not meat the logger's threshold, then nothing will be logged.
+	* @param logLevel - The log level of this log.
+	* @param message - The message of this log.
+	*/
+	log(logLevel, message) {
+		this._options.log(logLevel, message);
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/utils/constants.js
+var URLConstants$1 = { Parameters: {
+	FORCE_BROWSER_NO_CACHE: "_",
+	SIGNATURE: "sig",
+	SNAPSHOT: "snapshot",
+	VERSIONID: "versionid",
+	TIMEOUT: "timeout"
+} };
+var HeaderConstants = {
+	AUTHORIZATION: "Authorization",
+	AUTHORIZATION_SCHEME: "Bearer",
+	CONTENT_ENCODING: "Content-Encoding",
+	CONTENT_ID: "Content-ID",
+	CONTENT_LANGUAGE: "Content-Language",
+	CONTENT_LENGTH: "Content-Length",
+	CONTENT_MD5: "Content-Md5",
+	CONTENT_TRANSFER_ENCODING: "Content-Transfer-Encoding",
+	CONTENT_TYPE: "Content-Type",
+	COOKIE: "Cookie",
+	DATE: "date",
+	IF_MATCH: "if-match",
+	IF_MODIFIED_SINCE: "if-modified-since",
+	IF_NONE_MATCH: "if-none-match",
+	IF_UNMODIFIED_SINCE: "if-unmodified-since",
+	PREFIX_FOR_STORAGE: "x-ms-",
+	RANGE: "Range",
+	USER_AGENT: "User-Agent",
+	X_MS_CLIENT_REQUEST_ID: "x-ms-client-request-id",
+	X_MS_COPY_SOURCE: "x-ms-copy-source",
+	X_MS_DATE: "x-ms-date",
+	X_MS_ERROR_CODE: "x-ms-error-code",
+	X_MS_VERSION: "x-ms-version",
+	X_MS_CopySourceErrorCode: "x-ms-copy-source-error-code"
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/utils/utils.common.js
+/**
+* Set URL parameter name and value. If name exists in URL parameters, old value
+* will be replaced by name key. If not provide value, the parameter will be deleted.
+*
+* @param url - Source URL string
+* @param name - Parameter name
+* @param value - Parameter value
+* @returns An updated URL string
+*/
+function setURLParameter$1(url, name, value) {
+	const urlParsed = new URL(url);
+	const encodedName = encodeURIComponent(name);
+	const encodedValue = value ? encodeURIComponent(value) : void 0;
+	const searchString = urlParsed.search === "" ? "?" : urlParsed.search;
+	const searchPieces = [];
+	for (const pair of searchString.slice(1).split("&")) if (pair) {
+		const [key] = pair.split("=", 2);
+		if (key !== encodedName) searchPieces.push(pair);
+	}
+	if (encodedValue) searchPieces.push(`${encodedName}=${encodedValue}`);
+	urlParsed.search = searchPieces.length ? `?${searchPieces.join("&")}` : "";
+	return urlParsed.toString();
+}
+/**
+* Set URL host.
+*
+* @param url - Source URL string
+* @param host - New host string
+* @returns An updated URL string
+*/
+function setURLHost(url, host) {
+	const urlParsed = new URL(url);
+	urlParsed.hostname = host;
+	return urlParsed.toString();
+}
+/**
+* Get URL path from an URL string.
+*
+* @param url - Source URL string
+*/
+function getURLPath(url) {
+	try {
+		return new URL(url).pathname;
+	} catch (e) {
+		return;
+	}
+}
+/**
+* Get URL query key value pairs from an URL string.
+*
+* @param url -
+*/
+function getURLQueries(url) {
+	let queryString = new URL(url).search;
+	if (!queryString) return {};
+	queryString = queryString.trim();
+	queryString = queryString.startsWith("?") ? queryString.substring(1) : queryString;
+	let querySubStrings = queryString.split("&");
+	querySubStrings = querySubStrings.filter((value) => {
+		const indexOfEqual = value.indexOf("=");
+		const lastIndexOfEqual = value.lastIndexOf("=");
+		return indexOfEqual > 0 && indexOfEqual === lastIndexOfEqual && lastIndexOfEqual < value.length - 1;
+	});
+	const queries = {};
+	for (const querySubString of querySubStrings) {
+		const splitResults = querySubString.split("=");
+		const key = splitResults[0];
+		queries[key] = splitResults[1];
+	}
+	return queries;
+}
+/**
+* Delay specified time interval.
+*
+* @param timeInMs -
+* @param aborter -
+* @param abortError -
+*/
+async function delay(timeInMs, aborter, abortError) {
+	return new Promise((resolve, reject) => {
+		let timeout;
+		const abortHandler = () => {
+			if (timeout !== void 0) clearTimeout(timeout);
+			reject(abortError);
+		};
+		const resolveHandler = () => {
+			if (aborter !== void 0) aborter.removeEventListener("abort", abortHandler);
+			resolve();
+		};
+		timeout = setTimeout(resolveHandler, timeInMs);
+		if (aborter !== void 0) aborter.addEventListener("abort", abortHandler);
+	});
+}
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/policies/StorageBrowserPolicy.js
+/**
+* StorageBrowserPolicy will handle differences between Node.js and browser runtime, including:
+*
+* 1. Browsers cache GET/HEAD requests by adding conditional headers such as 'IF_MODIFIED_SINCE'.
+* StorageBrowserPolicy is a policy used to add a timestamp query to GET/HEAD request URL
+* thus avoid the browser cache.
+*
+* 2. Remove cookie header for security
+*
+* 3. Remove content-length header to avoid browsers warning
+*/
+var StorageBrowserPolicy = class extends BaseRequestPolicy {
+	/**
+	* Creates an instance of StorageBrowserPolicy.
+	* @param nextPolicy -
+	* @param options -
+	*/
+	constructor(nextPolicy, options) {
+		super(nextPolicy, options);
+	}
+	/**
+	* Sends out request.
+	*
+	* @param request -
+	*/
+	async sendRequest(request) {
+		if (isNodeLike) return this._nextPolicy.sendRequest(request);
+		if (request.method.toUpperCase() === "GET" || request.method.toUpperCase() === "HEAD") request.url = setURLParameter$1(request.url, URLConstants$1.Parameters.FORCE_BROWSER_NO_CACHE, (/* @__PURE__ */ new Date()).getTime().toString());
+		request.headers.remove(HeaderConstants.COOKIE);
+		request.headers.remove(HeaderConstants.CONTENT_LENGTH);
+		return this._nextPolicy.sendRequest(request);
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/StorageBrowserPolicyFactory.js
+/**
+* StorageBrowserPolicyFactory is a factory class helping generating StorageBrowserPolicy objects.
+*/
+var StorageBrowserPolicyFactory = class {
+	/**
+	* Creates a StorageBrowserPolicyFactory object.
+	*
+	* @param nextPolicy -
+	* @param options -
+	*/
+	create(nextPolicy, options) {
+		return new StorageBrowserPolicy(nextPolicy, options);
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/policies/CredentialPolicy.js
+/**
+* Credential policy used to sign HTTP(S) requests before sending. This is an
+* abstract class.
+*/
+var CredentialPolicy = class extends BaseRequestPolicy {
+	/**
+	* Sends out request.
+	*
+	* @param request -
+	*/
+	sendRequest(request) {
+		return this._nextPolicy.sendRequest(this.signRequest(request));
+	}
+	/**
+	* Child classes must implement this method with request signing. This method
+	* will be executed in {@link sendRequest}.
+	*
+	* @param request -
+	*/
+	signRequest(request) {
+		return request;
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/policies/AnonymousCredentialPolicy.js
+/**
+* AnonymousCredentialPolicy is used with HTTP(S) requests that read public resources
+* or for use with Shared Access Signatures (SAS).
+*/
+var AnonymousCredentialPolicy = class extends CredentialPolicy {
+	/**
+	* Creates an instance of AnonymousCredentialPolicy.
+	* @param nextPolicy -
+	* @param options -
+	*/
+	constructor(nextPolicy, options) {
+		super(nextPolicy, options);
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/credentials/Credential.js
+/**
+* Credential is an abstract class for Azure Storage HTTP requests signing. This
+* class will host an credentialPolicyCreator factory which generates CredentialPolicy.
+*/
+var Credential = class {
+	/**
+	* Creates a RequestPolicy object.
+	*
+	* @param _nextPolicy -
+	* @param _options -
+	*/
+	create(_nextPolicy, _options) {
+		throw new Error("Method should be implemented in children classes.");
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/credentials/AnonymousCredential.js
+/**
+* AnonymousCredential provides a credentialPolicyCreator member used to create
+* AnonymousCredentialPolicy objects. AnonymousCredentialPolicy is used with
+* HTTP(S) requests that read public resources or for use with Shared Access
+* Signatures (SAS).
+*/
+var AnonymousCredential = class extends Credential {
+	/**
+	* Creates an {@link AnonymousCredentialPolicy} object.
+	*
+	* @param nextPolicy -
+	* @param options -
+	*/
+	create(nextPolicy, options) {
+		return new AnonymousCredentialPolicy(nextPolicy, options);
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/utils/SharedKeyComparator.js
+var table_lv0 = new Uint32Array([
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	1820,
+	0,
+	1823,
+	1825,
+	1827,
+	1829,
+	0,
+	0,
+	0,
+	1837,
+	2051,
+	0,
+	0,
+	1843,
+	0,
+	3331,
+	3354,
+	3356,
+	3358,
+	3360,
+	3362,
+	3364,
+	3366,
+	3368,
+	3370,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	3586,
+	3593,
+	3594,
+	3610,
+	3617,
+	3619,
+	3621,
+	3628,
+	3634,
+	3637,
+	3638,
+	3656,
+	3665,
+	3696,
+	3708,
+	3710,
+	3721,
+	3722,
+	3729,
+	3737,
+	3743,
+	3746,
+	3748,
+	3750,
+	3751,
+	3753,
+	0,
+	0,
+	0,
+	1859,
+	1860,
+	1864,
+	3586,
+	3593,
+	3594,
+	3610,
+	3617,
+	3619,
+	3621,
+	3628,
+	3634,
+	3637,
+	3638,
+	3656,
+	3665,
+	3696,
+	3708,
+	3710,
+	3721,
+	3722,
+	3729,
+	3737,
+	3743,
+	3746,
+	3748,
+	3750,
+	3751,
+	3753,
+	0,
+	1868,
+	0,
+	1872,
+	0
+]);
+var table_lv2 = new Uint32Array([
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	18,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0
+]);
+var table_lv4 = new Uint32Array([
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	32786,
+	0,
+	0,
+	0,
+	0,
+	0,
+	33298,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0
+]);
+function compareHeader(lhs, rhs) {
+	if (isLessThan(lhs, rhs)) return -1;
+	return 1;
+}
+function isLessThan(lhs, rhs) {
+	const tables = [
+		table_lv0,
+		table_lv2,
+		table_lv4
+	];
+	let curr_level = 0;
+	let i = 0;
+	let j = 0;
+	while (curr_level < tables.length) {
+		if (curr_level === tables.length - 1 && i !== j) return i > j;
+		const weight1 = i < lhs.length ? tables[curr_level][lhs[i].charCodeAt(0)] : 1;
+		const weight2 = j < rhs.length ? tables[curr_level][rhs[j].charCodeAt(0)] : 1;
+		if (weight1 === 1 && weight2 === 1) {
+			i = 0;
+			j = 0;
+			++curr_level;
+		} else if (weight1 === weight2) {
+			++i;
+			++j;
+		} else if (weight1 === 0) ++i;
+		else if (weight2 === 0) ++j;
+		else return weight1 < weight2;
+	}
+	return false;
+}
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/policies/StorageSharedKeyCredentialPolicy.js
+/**
+* StorageSharedKeyCredentialPolicy is a policy used to sign HTTP request with a shared key.
+*/
+var StorageSharedKeyCredentialPolicy = class extends CredentialPolicy {
+	/**
+	* Reference to StorageSharedKeyCredential which generates StorageSharedKeyCredentialPolicy
+	*/
+	factory;
+	/**
+	* Creates an instance of StorageSharedKeyCredentialPolicy.
+	* @param nextPolicy -
+	* @param options -
+	* @param factory -
+	*/
+	constructor(nextPolicy, options, factory) {
+		super(nextPolicy, options);
+		this.factory = factory;
+	}
+	/**
+	* Signs request.
+	*
+	* @param request -
+	*/
+	signRequest(request) {
+		request.headers.set(HeaderConstants.X_MS_DATE, (/* @__PURE__ */ new Date()).toUTCString());
+		if (request.body && (typeof request.body === "string" || request.body !== void 0) && request.body.length > 0) request.headers.set(HeaderConstants.CONTENT_LENGTH, Buffer.byteLength(request.body));
+		const stringToSign = [
+			request.method.toUpperCase(),
+			this.getHeaderValueToSign(request, HeaderConstants.CONTENT_LANGUAGE),
+			this.getHeaderValueToSign(request, HeaderConstants.CONTENT_ENCODING),
+			this.getHeaderValueToSign(request, HeaderConstants.CONTENT_LENGTH),
+			this.getHeaderValueToSign(request, HeaderConstants.CONTENT_MD5),
+			this.getHeaderValueToSign(request, HeaderConstants.CONTENT_TYPE),
+			this.getHeaderValueToSign(request, HeaderConstants.DATE),
+			this.getHeaderValueToSign(request, HeaderConstants.IF_MODIFIED_SINCE),
+			this.getHeaderValueToSign(request, HeaderConstants.IF_MATCH),
+			this.getHeaderValueToSign(request, HeaderConstants.IF_NONE_MATCH),
+			this.getHeaderValueToSign(request, HeaderConstants.IF_UNMODIFIED_SINCE),
+			this.getHeaderValueToSign(request, HeaderConstants.RANGE)
+		].join("\n") + "\n" + this.getCanonicalizedHeadersString(request) + this.getCanonicalizedResourceString(request);
+		const signature = this.factory.computeHMACSHA256(stringToSign);
+		request.headers.set(HeaderConstants.AUTHORIZATION, `SharedKey ${this.factory.accountName}:${signature}`);
+		return request;
+	}
+	/**
+	* Retrieve header value according to shared key sign rules.
+	* @see https://learn.microsoft.com/rest/api/storageservices/authenticate-with-shared-key
+	*
+	* @param request -
+	* @param headerName -
+	*/
+	getHeaderValueToSign(request, headerName) {
+		const value = request.headers.get(headerName);
+		if (!value) return "";
+		if (headerName === HeaderConstants.CONTENT_LENGTH && value === "0") return "";
+		return value;
+	}
+	/**
+	* To construct the CanonicalizedHeaders portion of the signature string, follow these steps:
+	* 1. Retrieve all headers for the resource that begin with x-ms-, including the x-ms-date header.
+	* 2. Convert each HTTP header name to lowercase.
+	* 3. Sort the headers lexicographically by header name, in ascending order.
+	*    Each header may appear only once in the string.
+	* 4. Replace any linear whitespace in the header value with a single space.
+	* 5. Trim any whitespace around the colon in the header.
+	* 6. Finally, append a new-line character to each canonicalized header in the resulting list.
+	*    Construct the CanonicalizedHeaders string by concatenating all headers in this list into a single string.
+	*
+	* @param request -
+	*/
+	getCanonicalizedHeadersString(request) {
+		let headersArray = request.headers.headersArray().filter((value) => {
+			return value.name.toLowerCase().startsWith(HeaderConstants.PREFIX_FOR_STORAGE);
+		});
+		headersArray.sort((a, b) => {
+			return compareHeader(a.name.toLowerCase(), b.name.toLowerCase());
+		});
+		headersArray = headersArray.filter((value, index, array) => {
+			if (index > 0 && value.name.toLowerCase() === array[index - 1].name.toLowerCase()) return false;
+			return true;
+		});
+		let canonicalizedHeadersStringToSign = "";
+		headersArray.forEach((header) => {
+			canonicalizedHeadersStringToSign += `${header.name.toLowerCase().trimRight()}:${header.value.trimLeft()}\n`;
+		});
+		return canonicalizedHeadersStringToSign;
+	}
+	/**
+	* Retrieves the webResource canonicalized resource string.
+	*
+	* @param request -
+	*/
+	getCanonicalizedResourceString(request) {
+		const path = getURLPath(request.url) || "/";
+		let canonicalizedResourceString = "";
+		canonicalizedResourceString += `/${this.factory.accountName}${path}`;
+		const queries = getURLQueries(request.url);
+		const lowercaseQueries = {};
+		if (queries) {
+			const queryKeys = [];
+			for (const key in queries) if (Object.prototype.hasOwnProperty.call(queries, key)) {
+				const lowercaseKey = key.toLowerCase();
+				lowercaseQueries[lowercaseKey] = queries[key];
+				queryKeys.push(lowercaseKey);
+			}
+			queryKeys.sort();
+			for (const key of queryKeys) canonicalizedResourceString += `\n${key}:${decodeURIComponent(lowercaseQueries[key])}`;
+		}
+		return canonicalizedResourceString;
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/credentials/StorageSharedKeyCredential.js
+/**
+* ONLY AVAILABLE IN NODE.JS RUNTIME.
+*
+* StorageSharedKeyCredential for account key authorization of Azure Storage service.
+*/
+var StorageSharedKeyCredential = class extends Credential {
+	/**
+	* Azure Storage account name; readonly.
+	*/
+	accountName;
+	/**
+	* Azure Storage account key; readonly.
+	*/
+	accountKey;
+	/**
+	* Creates an instance of StorageSharedKeyCredential.
+	* @param accountName -
+	* @param accountKey -
+	*/
+	constructor(accountName, accountKey) {
+		super();
+		this.accountName = accountName;
+		this.accountKey = Buffer.from(accountKey, "base64");
+	}
+	/**
+	* Creates a StorageSharedKeyCredentialPolicy object.
+	*
+	* @param nextPolicy -
+	* @param options -
+	*/
+	create(nextPolicy, options) {
+		return new StorageSharedKeyCredentialPolicy(nextPolicy, options, this);
+	}
+	/**
+	* Generates a hash signature for an HTTP request or for a SAS.
+	*
+	* @param stringToSign -
+	*/
+	computeHMACSHA256(stringToSign) {
+		return createHmac("sha256", this.accountKey).update(stringToSign, "utf8").digest("base64");
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/log.js
+/**
+* The `@azure/logger` configuration for this package.
+*/
+var logger = createClientLogger("storage-common");
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/policies/StorageRetryPolicyType.js
+/**
+* RetryPolicy types.
+*/
+var StorageRetryPolicyType;
+(function(StorageRetryPolicyType) {
+	/**
+	* Exponential retry. Retry time delay grows exponentially.
+	*/
+	StorageRetryPolicyType[StorageRetryPolicyType["EXPONENTIAL"] = 0] = "EXPONENTIAL";
+	/**
+	* Linear retry. Retry time delay grows linearly.
+	*/
+	StorageRetryPolicyType[StorageRetryPolicyType["FIXED"] = 1] = "FIXED";
+})(StorageRetryPolicyType || (StorageRetryPolicyType = {}));
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/policies/StorageRetryPolicy.js
+var DEFAULT_RETRY_OPTIONS$1 = {
+	maxRetryDelayInMs: 120 * 1e3,
+	maxTries: 4,
+	retryDelayInMs: 4 * 1e3,
+	retryPolicyType: StorageRetryPolicyType.EXPONENTIAL,
+	secondaryHost: "",
+	tryTimeoutInMs: void 0
+};
+var RETRY_ABORT_ERROR$1 = new AbortError("The operation was aborted.");
+/**
+* Retry policy with exponential retry and linear retry implemented.
+*/
+var StorageRetryPolicy = class extends BaseRequestPolicy {
+	/**
+	* RetryOptions.
+	*/
+	retryOptions;
+	/**
+	* Creates an instance of RetryPolicy.
+	*
+	* @param nextPolicy -
+	* @param options -
+	* @param retryOptions -
+	*/
+	constructor(nextPolicy, options, retryOptions = DEFAULT_RETRY_OPTIONS$1) {
+		super(nextPolicy, options);
+		this.retryOptions = {
+			retryPolicyType: retryOptions.retryPolicyType ? retryOptions.retryPolicyType : DEFAULT_RETRY_OPTIONS$1.retryPolicyType,
+			maxTries: retryOptions.maxTries && retryOptions.maxTries >= 1 ? Math.floor(retryOptions.maxTries) : DEFAULT_RETRY_OPTIONS$1.maxTries,
+			tryTimeoutInMs: retryOptions.tryTimeoutInMs && retryOptions.tryTimeoutInMs >= 0 ? retryOptions.tryTimeoutInMs : DEFAULT_RETRY_OPTIONS$1.tryTimeoutInMs,
+			retryDelayInMs: retryOptions.retryDelayInMs && retryOptions.retryDelayInMs >= 0 ? Math.min(retryOptions.retryDelayInMs, retryOptions.maxRetryDelayInMs ? retryOptions.maxRetryDelayInMs : DEFAULT_RETRY_OPTIONS$1.maxRetryDelayInMs) : DEFAULT_RETRY_OPTIONS$1.retryDelayInMs,
+			maxRetryDelayInMs: retryOptions.maxRetryDelayInMs && retryOptions.maxRetryDelayInMs >= 0 ? retryOptions.maxRetryDelayInMs : DEFAULT_RETRY_OPTIONS$1.maxRetryDelayInMs,
+			secondaryHost: retryOptions.secondaryHost ? retryOptions.secondaryHost : DEFAULT_RETRY_OPTIONS$1.secondaryHost
+		};
+	}
+	/**
+	* Sends request.
+	*
+	* @param request -
+	*/
+	async sendRequest(request) {
+		return this.attemptSendRequest(request, false, 1);
+	}
+	/**
+	* Decide and perform next retry. Won't mutate request parameter.
+	*
+	* @param request -
+	* @param secondaryHas404 -  If attempt was against the secondary & it returned a StatusNotFound (404), then
+	*                                   the resource was not found. This may be due to replication delay. So, in this
+	*                                   case, we'll never try the secondary again for this operation.
+	* @param attempt -           How many retries has been attempted to performed, starting from 1, which includes
+	*                                   the attempt will be performed by this method call.
+	*/
+	async attemptSendRequest(request, secondaryHas404, attempt) {
+		const newRequest = request.clone();
+		const isPrimaryRetry = secondaryHas404 || !this.retryOptions.secondaryHost || !(request.method === "GET" || request.method === "HEAD" || request.method === "OPTIONS") || attempt % 2 === 1;
+		if (!isPrimaryRetry) newRequest.url = setURLHost(newRequest.url, this.retryOptions.secondaryHost);
+		if (this.retryOptions.tryTimeoutInMs) newRequest.url = setURLParameter$1(newRequest.url, URLConstants$1.Parameters.TIMEOUT, Math.floor(this.retryOptions.tryTimeoutInMs / 1e3).toString());
+		let response;
+		try {
+			logger.info(`RetryPolicy: =====> Try=${attempt} ${isPrimaryRetry ? "Primary" : "Secondary"}`);
+			response = await this._nextPolicy.sendRequest(newRequest);
+			if (!this.shouldRetry(isPrimaryRetry, attempt, response)) return response;
+			secondaryHas404 = secondaryHas404 || !isPrimaryRetry && response.status === 404;
+		} catch (err) {
+			logger.error(`RetryPolicy: Caught error, message: ${err.message}, code: ${err.code}`);
+			if (!this.shouldRetry(isPrimaryRetry, attempt, response, err)) throw err;
+		}
+		await this.delay(isPrimaryRetry, attempt, request.abortSignal);
+		return this.attemptSendRequest(request, secondaryHas404, ++attempt);
+	}
+	/**
+	* Decide whether to retry according to last HTTP response and retry counters.
+	*
+	* @param isPrimaryRetry -
+	* @param attempt -
+	* @param response -
+	* @param err -
+	*/
+	shouldRetry(isPrimaryRetry, attempt, response, err) {
+		if (attempt >= this.retryOptions.maxTries) {
+			logger.info(`RetryPolicy: Attempt(s) ${attempt} >= maxTries ${this.retryOptions.maxTries}, no further try.`);
+			return false;
+		}
+		const retriableErrors = [
+			"ETIMEDOUT",
+			"ESOCKETTIMEDOUT",
+			"ECONNREFUSED",
+			"ECONNRESET",
+			"ENOENT",
+			"ENOTFOUND",
+			"TIMEOUT",
+			"EPIPE",
+			"REQUEST_SEND_ERROR"
+		];
+		if (err) {
+			for (const retriableError of retriableErrors) if (err.name.toUpperCase().includes(retriableError) || err.message.toUpperCase().includes(retriableError) || err.code && err.code.toString().toUpperCase() === retriableError) {
+				logger.info(`RetryPolicy: Network error ${retriableError} found, will retry.`);
+				return true;
+			}
+		}
+		if (response || err) {
+			const statusCode = response ? response.status : err ? err.statusCode : 0;
+			if (!isPrimaryRetry && statusCode === 404) {
+				logger.info(`RetryPolicy: Secondary access with 404, will retry.`);
+				return true;
+			}
+			if (statusCode === 503 || statusCode === 500) {
+				logger.info(`RetryPolicy: Will retry for status code ${statusCode}.`);
+				return true;
+			}
+		}
+		if (response) {
+			if (response?.status >= 400) {
+				const copySourceError = response.headers.get(HeaderConstants.X_MS_CopySourceErrorCode);
+				if (copySourceError !== void 0) switch (copySourceError) {
+					case "InternalError":
+					case "OperationTimedOut":
+					case "ServerBusy": return true;
+				}
+			}
+		}
+		if (err?.code === "PARSE_ERROR" && err?.message.startsWith(`Error "Error: Unclosed root tag`)) {
+			logger.info("RetryPolicy: Incomplete XML response likely due to service timeout, will retry.");
+			return true;
+		}
+		return false;
+	}
+	/**
+	* Delay a calculated time between retries.
+	*
+	* @param isPrimaryRetry -
+	* @param attempt -
+	* @param abortSignal -
+	*/
+	async delay(isPrimaryRetry, attempt, abortSignal) {
+		let delayTimeInMs = 0;
+		if (isPrimaryRetry) switch (this.retryOptions.retryPolicyType) {
+			case StorageRetryPolicyType.EXPONENTIAL:
+				delayTimeInMs = Math.min((Math.pow(2, attempt - 1) - 1) * this.retryOptions.retryDelayInMs, this.retryOptions.maxRetryDelayInMs);
+				break;
+			case StorageRetryPolicyType.FIXED:
+				delayTimeInMs = this.retryOptions.retryDelayInMs;
+				break;
+		}
+		else delayTimeInMs = Math.random() * 1e3;
+		logger.info(`RetryPolicy: Delay for ${delayTimeInMs}ms`);
+		return delay(delayTimeInMs, abortSignal, RETRY_ABORT_ERROR$1);
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/StorageRetryPolicyFactory.js
+/**
+* StorageRetryPolicyFactory is a factory class helping generating {@link StorageRetryPolicy} objects.
+*/
+var StorageRetryPolicyFactory = class {
+	retryOptions;
+	/**
+	* Creates an instance of StorageRetryPolicyFactory.
+	* @param retryOptions -
+	*/
+	constructor(retryOptions) {
+		this.retryOptions = retryOptions;
+	}
+	/**
+	* Creates a StorageRetryPolicy object.
+	*
+	* @param nextPolicy -
+	* @param options -
+	*/
+	create(nextPolicy, options) {
+		return new StorageRetryPolicy(nextPolicy, options, this.retryOptions);
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/policies/StorageBrowserPolicyV2.js
+/**
+* The programmatic identifier of the StorageBrowserPolicy.
+*/
+var storageBrowserPolicyName = "storageBrowserPolicy";
+/**
+* storageBrowserPolicy is a policy used to prevent browsers from caching requests
+* and to remove cookies and explicit content-length headers.
+*/
+function storageBrowserPolicy() {
+	return {
+		name: storageBrowserPolicyName,
+		async sendRequest(request, next) {
+			if (isNodeLike) return next(request);
+			if (request.method === "GET" || request.method === "HEAD") request.url = setURLParameter$1(request.url, URLConstants$1.Parameters.FORCE_BROWSER_NO_CACHE, (/* @__PURE__ */ new Date()).getTime().toString());
+			request.headers.delete(HeaderConstants.COOKIE);
+			request.headers.delete(HeaderConstants.CONTENT_LENGTH);
+			return next(request);
+		}
+	};
+}
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/policies/StorageCorrectContentLengthPolicy.js
+/**
+* The programmatic identifier of the storageCorrectContentLengthPolicy.
+*/
+var storageCorrectContentLengthPolicyName = "StorageCorrectContentLengthPolicy";
+/**
+* storageCorrectContentLengthPolicy to correctly set Content-Length header with request body length.
+*/
+function storageCorrectContentLengthPolicy() {
+	function correctContentLength(request) {
+		if (request.body && (typeof request.body === "string" || Buffer.isBuffer(request.body)) && request.body.length > 0) request.headers.set(HeaderConstants.CONTENT_LENGTH, Buffer.byteLength(request.body));
+	}
+	return {
+		name: storageCorrectContentLengthPolicyName,
+		async sendRequest(request, next) {
+			correctContentLength(request);
+			return next(request);
+		}
+	};
+}
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/policies/StorageRetryPolicyV2.js
+/**
+* Name of the {@link storageRetryPolicy}
+*/
+var storageRetryPolicyName = "storageRetryPolicy";
+var DEFAULT_RETRY_OPTIONS = {
+	maxRetryDelayInMs: 120 * 1e3,
+	maxTries: 4,
+	retryDelayInMs: 4 * 1e3,
+	retryPolicyType: StorageRetryPolicyType.EXPONENTIAL,
+	secondaryHost: "",
+	tryTimeoutInMs: void 0
+};
+var retriableErrors = [
+	"ETIMEDOUT",
+	"ESOCKETTIMEDOUT",
+	"ECONNREFUSED",
+	"ECONNRESET",
+	"ENOENT",
+	"ENOTFOUND",
+	"TIMEOUT",
+	"EPIPE",
+	"REQUEST_SEND_ERROR"
+];
+var RETRY_ABORT_ERROR = new AbortError("The operation was aborted.");
+/**
+* Retry policy with exponential retry and linear retry implemented.
+*/
+function storageRetryPolicy(options = {}) {
+	const retryPolicyType = options.retryPolicyType ?? DEFAULT_RETRY_OPTIONS.retryPolicyType;
+	const maxTries = options.maxTries ?? DEFAULT_RETRY_OPTIONS.maxTries;
+	const retryDelayInMs = options.retryDelayInMs ?? DEFAULT_RETRY_OPTIONS.retryDelayInMs;
+	const maxRetryDelayInMs = options.maxRetryDelayInMs ?? DEFAULT_RETRY_OPTIONS.maxRetryDelayInMs;
+	const secondaryHost = options.secondaryHost ?? DEFAULT_RETRY_OPTIONS.secondaryHost;
+	const tryTimeoutInMs = options.tryTimeoutInMs ?? DEFAULT_RETRY_OPTIONS.tryTimeoutInMs;
+	function shouldRetry({ isPrimaryRetry, attempt, response, error }) {
+		if (attempt >= maxTries) {
+			logger.info(`RetryPolicy: Attempt(s) ${attempt} >= maxTries ${maxTries}, no further try.`);
+			return false;
+		}
+		if (error) {
+			for (const retriableError of retriableErrors) if (error.name.toUpperCase().includes(retriableError) || error.message.toUpperCase().includes(retriableError) || error.code && error.code.toString().toUpperCase() === retriableError) {
+				logger.info(`RetryPolicy: Network error ${retriableError} found, will retry.`);
+				return true;
+			}
+			if (error?.code === "PARSE_ERROR" && error?.message.startsWith(`Error "Error: Unclosed root tag`)) {
+				logger.info("RetryPolicy: Incomplete XML response likely due to service timeout, will retry.");
+				return true;
+			}
+		}
+		if (response || error) {
+			const statusCode = response?.status ?? error?.statusCode ?? 0;
+			if (!isPrimaryRetry && statusCode === 404) {
+				logger.info(`RetryPolicy: Secondary access with 404, will retry.`);
+				return true;
+			}
+			if (statusCode === 503 || statusCode === 500) {
+				logger.info(`RetryPolicy: Will retry for status code ${statusCode}.`);
+				return true;
+			}
+		}
+		if (response) {
+			if (response?.status >= 400) {
+				const copySourceError = response.headers.get(HeaderConstants.X_MS_CopySourceErrorCode);
+				if (copySourceError !== void 0) switch (copySourceError) {
+					case "InternalError":
+					case "OperationTimedOut":
+					case "ServerBusy": return true;
+				}
+			}
+		}
+		return false;
+	}
+	function calculateDelay(isPrimaryRetry, attempt) {
+		let delayTimeInMs = 0;
+		if (isPrimaryRetry) switch (retryPolicyType) {
+			case StorageRetryPolicyType.EXPONENTIAL:
+				delayTimeInMs = Math.min((Math.pow(2, attempt - 1) - 1) * retryDelayInMs, maxRetryDelayInMs);
+				break;
+			case StorageRetryPolicyType.FIXED:
+				delayTimeInMs = retryDelayInMs;
+				break;
+		}
+		else delayTimeInMs = Math.random() * 1e3;
+		logger.info(`RetryPolicy: Delay for ${delayTimeInMs}ms`);
+		return delayTimeInMs;
+	}
+	return {
+		name: storageRetryPolicyName,
+		async sendRequest(request, next) {
+			if (tryTimeoutInMs) request.url = setURLParameter$1(request.url, URLConstants$1.Parameters.TIMEOUT, String(Math.floor(tryTimeoutInMs / 1e3)));
+			const primaryUrl = request.url;
+			const secondaryUrl = secondaryHost ? setURLHost(request.url, secondaryHost) : void 0;
+			let secondaryHas404 = false;
+			let attempt = 1;
+			let retryAgain = true;
+			let response;
+			let error;
+			while (retryAgain) {
+				const isPrimaryRetry = secondaryHas404 || !secondaryUrl || ![
+					"GET",
+					"HEAD",
+					"OPTIONS"
+				].includes(request.method) || attempt % 2 === 1;
+				request.url = isPrimaryRetry ? primaryUrl : secondaryUrl;
+				response = void 0;
+				error = void 0;
+				try {
+					logger.info(`RetryPolicy: =====> Try=${attempt} ${isPrimaryRetry ? "Primary" : "Secondary"}`);
+					response = await next(request);
+					secondaryHas404 = secondaryHas404 || !isPrimaryRetry && response.status === 404;
+				} catch (e) {
+					if (isRestError(e)) {
+						logger.error(`RetryPolicy: Caught error, message: ${e.message}, code: ${e.code}`);
+						error = e;
+					} else {
+						logger.error(`RetryPolicy: Caught error, message: ${getErrorMessage(e)}`);
+						throw e;
+					}
+				}
+				retryAgain = shouldRetry({
+					isPrimaryRetry,
+					attempt,
+					response,
+					error
+				});
+				if (retryAgain) await delay(calculateDelay(isPrimaryRetry, attempt), request.abortSignal, RETRY_ABORT_ERROR);
+				attempt++;
+			}
+			if (response) return response;
+			throw error ?? new RestError("RetryPolicy failed without known error.");
+		}
+	};
+}
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/policies/StorageSharedKeyCredentialPolicyV2.js
+/**
+* The programmatic identifier of the storageSharedKeyCredentialPolicy.
+*/
+var storageSharedKeyCredentialPolicyName = "storageSharedKeyCredentialPolicy";
+/**
+* storageSharedKeyCredentialPolicy handles signing requests using storage account keys.
+*/
+function storageSharedKeyCredentialPolicy(options) {
+	function signRequest(request) {
+		request.headers.set(HeaderConstants.X_MS_DATE, (/* @__PURE__ */ new Date()).toUTCString());
+		if (request.body && (typeof request.body === "string" || Buffer.isBuffer(request.body)) && request.body.length > 0) request.headers.set(HeaderConstants.CONTENT_LENGTH, Buffer.byteLength(request.body));
+		const stringToSign = [
+			request.method.toUpperCase(),
+			getHeaderValueToSign(request, HeaderConstants.CONTENT_LANGUAGE),
+			getHeaderValueToSign(request, HeaderConstants.CONTENT_ENCODING),
+			getHeaderValueToSign(request, HeaderConstants.CONTENT_LENGTH),
+			getHeaderValueToSign(request, HeaderConstants.CONTENT_MD5),
+			getHeaderValueToSign(request, HeaderConstants.CONTENT_TYPE),
+			getHeaderValueToSign(request, HeaderConstants.DATE),
+			getHeaderValueToSign(request, HeaderConstants.IF_MODIFIED_SINCE),
+			getHeaderValueToSign(request, HeaderConstants.IF_MATCH),
+			getHeaderValueToSign(request, HeaderConstants.IF_NONE_MATCH),
+			getHeaderValueToSign(request, HeaderConstants.IF_UNMODIFIED_SINCE),
+			getHeaderValueToSign(request, HeaderConstants.RANGE)
+		].join("\n") + "\n" + getCanonicalizedHeadersString(request) + getCanonicalizedResourceString(request);
+		const signature = createHmac("sha256", options.accountKey).update(stringToSign, "utf8").digest("base64");
+		request.headers.set(HeaderConstants.AUTHORIZATION, `SharedKey ${options.accountName}:${signature}`);
+	}
+	/**
+	* Retrieve header value according to shared key sign rules.
+	* @see https://learn.microsoft.com/rest/api/storageservices/authenticate-with-shared-key
+	*/
+	function getHeaderValueToSign(request, headerName) {
+		const value = request.headers.get(headerName);
+		if (!value) return "";
+		if (headerName === HeaderConstants.CONTENT_LENGTH && value === "0") return "";
+		return value;
+	}
+	/**
+	* To construct the CanonicalizedHeaders portion of the signature string, follow these steps:
+	* 1. Retrieve all headers for the resource that begin with x-ms-, including the x-ms-date header.
+	* 2. Convert each HTTP header name to lowercase.
+	* 3. Sort the headers lexicographically by header name, in ascending order.
+	*    Each header may appear only once in the string.
+	* 4. Replace any linear whitespace in the header value with a single space.
+	* 5. Trim any whitespace around the colon in the header.
+	* 6. Finally, append a new-line character to each canonicalized header in the resulting list.
+	*    Construct the CanonicalizedHeaders string by concatenating all headers in this list into a single string.
+	*
+	*/
+	function getCanonicalizedHeadersString(request) {
+		let headersArray = [];
+		for (const [name, value] of request.headers) if (name.toLowerCase().startsWith(HeaderConstants.PREFIX_FOR_STORAGE)) headersArray.push({
+			name,
+			value
+		});
+		headersArray.sort((a, b) => {
+			return compareHeader(a.name.toLowerCase(), b.name.toLowerCase());
+		});
+		headersArray = headersArray.filter((value, index, array) => {
+			if (index > 0 && value.name.toLowerCase() === array[index - 1].name.toLowerCase()) return false;
+			return true;
+		});
+		let canonicalizedHeadersStringToSign = "";
+		headersArray.forEach((header) => {
+			canonicalizedHeadersStringToSign += `${header.name.toLowerCase().trimRight()}:${header.value.trimLeft()}\n`;
+		});
+		return canonicalizedHeadersStringToSign;
+	}
+	function getCanonicalizedResourceString(request) {
+		const path = getURLPath(request.url) || "/";
+		let canonicalizedResourceString = "";
+		canonicalizedResourceString += `/${options.accountName}${path}`;
+		const queries = getURLQueries(request.url);
+		const lowercaseQueries = {};
+		if (queries) {
+			const queryKeys = [];
+			for (const key in queries) if (Object.prototype.hasOwnProperty.call(queries, key)) {
+				const lowercaseKey = key.toLowerCase();
+				lowercaseQueries[lowercaseKey] = queries[key];
+				queryKeys.push(lowercaseKey);
+			}
+			queryKeys.sort();
+			for (const key of queryKeys) canonicalizedResourceString += `\n${key}:${decodeURIComponent(lowercaseQueries[key])}`;
+		}
+		return canonicalizedResourceString;
+	}
+	return {
+		name: storageSharedKeyCredentialPolicyName,
+		async sendRequest(request, next) {
+			signRequest(request);
+			return next(request);
+		}
+	};
+}
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/policies/StorageRequestFailureDetailsParserPolicy.js
+/**
+* The programmatic identifier of the StorageRequestFailureDetailsParserPolicy.
+*/
+var storageRequestFailureDetailsParserPolicyName = "storageRequestFailureDetailsParserPolicy";
+/**
+* StorageRequestFailureDetailsParserPolicy
+*/
+function storageRequestFailureDetailsParserPolicy() {
+	return {
+		name: storageRequestFailureDetailsParserPolicyName,
+		async sendRequest(request, next) {
+			try {
+				return await next(request);
+			} catch (err) {
+				if (typeof err === "object" && err !== null && err.response && err.response.parsedBody) {
+					if (err.response.parsedBody.code === "InvalidHeaderValue" && err.response.parsedBody.HeaderName === "x-ms-version") err.message = "The provided service version is not enabled on this storage account. Please see https://learn.microsoft.com/rest/api/storageservices/versioning-for-the-azure-storage-services for additional information.\n";
+				}
+				throw err;
+			}
+		}
+	};
+}
+//#endregion
+//#region node_modules/@azure/storage-common/dist/esm/credentials/UserDelegationKeyCredential.js
+/**
+* ONLY AVAILABLE IN NODE.JS RUNTIME.
+*
+* UserDelegationKeyCredential is only used for generation of user delegation SAS.
+* @see https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas
+*/
+var UserDelegationKeyCredential = class {
+	/**
+	* Azure Storage account name; readonly.
+	*/
+	accountName;
+	/**
+	* Azure Storage user delegation key; readonly.
+	*/
+	userDelegationKey;
+	/**
+	* Key value in Buffer type.
+	*/
+	key;
+	/**
+	* Creates an instance of UserDelegationKeyCredential.
+	* @param accountName -
+	* @param userDelegationKey -
+	*/
+	constructor(accountName, userDelegationKey) {
+		this.accountName = accountName;
+		this.userDelegationKey = userDelegationKey;
+		this.key = Buffer.from(userDelegationKey.value, "base64");
+	}
+	/**
+	* Generates a hash signature for an HTTP request or for a SAS.
+	*
+	* @param stringToSign -
+	*/
+	computeHMACSHA256(stringToSign) {
+		return createHmac("sha256", this.key).update(stringToSign, "utf8").digest("base64");
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/utils/constants.js
+var SDK_VERSION = "12.31.0";
+var SERVICE_VERSION = "2026-02-06";
+var BLOCK_BLOB_MAX_UPLOAD_BLOB_BYTES = 256 * 1024 * 1024;
+var BLOCK_BLOB_MAX_STAGE_BLOCK_BYTES = 4e3 * 1024 * 1024;
+var BLOCK_BLOB_MAX_BLOCKS = 5e4;
+var DEFAULT_BLOCK_BUFFER_SIZE_BYTES = 8 * 1024 * 1024;
+var DEFAULT_BLOB_DOWNLOAD_BLOCK_BYTES = 4 * 1024 * 1024;
+var REQUEST_TIMEOUT = 100 * 1e3;
+var URLConstants = { Parameters: {
+	FORCE_BROWSER_NO_CACHE: "_",
+	SIGNATURE: "sig",
+	SNAPSHOT: "snapshot",
+	VERSIONID: "versionid",
+	TIMEOUT: "timeout"
+} };
+var EncryptionAlgorithmAES25 = "AES256";
+var DevelopmentConnectionString = `DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;`;
+var StorageBlobLoggingAllowedHeaderNames = [
+	"Access-Control-Allow-Origin",
+	"Cache-Control",
+	"Content-Length",
+	"Content-Type",
+	"Date",
+	"Request-Id",
+	"traceparent",
+	"Transfer-Encoding",
+	"User-Agent",
+	"x-ms-client-request-id",
+	"x-ms-date",
+	"x-ms-error-code",
+	"x-ms-request-id",
+	"x-ms-return-client-request-id",
+	"x-ms-version",
+	"Accept-Ranges",
+	"Content-Disposition",
+	"Content-Encoding",
+	"Content-Language",
+	"Content-MD5",
+	"Content-Range",
+	"ETag",
+	"Last-Modified",
+	"Server",
+	"Vary",
+	"x-ms-content-crc64",
+	"x-ms-copy-action",
+	"x-ms-copy-completion-time",
+	"x-ms-copy-id",
+	"x-ms-copy-progress",
+	"x-ms-copy-status",
+	"x-ms-has-immutability-policy",
+	"x-ms-has-legal-hold",
+	"x-ms-lease-state",
+	"x-ms-lease-status",
+	"x-ms-range",
+	"x-ms-request-server-encrypted",
+	"x-ms-server-encrypted",
+	"x-ms-snapshot",
+	"x-ms-source-range",
+	"If-Match",
+	"If-Modified-Since",
+	"If-None-Match",
+	"If-Unmodified-Since",
+	"x-ms-access-tier",
+	"x-ms-access-tier-change-time",
+	"x-ms-access-tier-inferred",
+	"x-ms-account-kind",
+	"x-ms-archive-status",
+	"x-ms-blob-append-offset",
+	"x-ms-blob-cache-control",
+	"x-ms-blob-committed-block-count",
+	"x-ms-blob-condition-appendpos",
+	"x-ms-blob-condition-maxsize",
+	"x-ms-blob-content-disposition",
+	"x-ms-blob-content-encoding",
+	"x-ms-blob-content-language",
+	"x-ms-blob-content-length",
+	"x-ms-blob-content-md5",
+	"x-ms-blob-content-type",
+	"x-ms-blob-public-access",
+	"x-ms-blob-sequence-number",
+	"x-ms-blob-type",
+	"x-ms-copy-destination-snapshot",
+	"x-ms-creation-time",
+	"x-ms-default-encryption-scope",
+	"x-ms-delete-snapshots",
+	"x-ms-delete-type-permanent",
+	"x-ms-deny-encryption-scope-override",
+	"x-ms-encryption-algorithm",
+	"x-ms-if-sequence-number-eq",
+	"x-ms-if-sequence-number-le",
+	"x-ms-if-sequence-number-lt",
+	"x-ms-incremental-copy",
+	"x-ms-lease-action",
+	"x-ms-lease-break-period",
+	"x-ms-lease-duration",
+	"x-ms-lease-id",
+	"x-ms-lease-time",
+	"x-ms-page-write",
+	"x-ms-proposed-lease-id",
+	"x-ms-range-get-content-md5",
+	"x-ms-rehydrate-priority",
+	"x-ms-sequence-number-action",
+	"x-ms-sku-name",
+	"x-ms-source-content-md5",
+	"x-ms-source-if-match",
+	"x-ms-source-if-modified-since",
+	"x-ms-source-if-none-match",
+	"x-ms-source-if-unmodified-since",
+	"x-ms-tag-count",
+	"x-ms-encryption-key-sha256",
+	"x-ms-copy-source-error-code",
+	"x-ms-copy-source-status-code",
+	"x-ms-if-tags",
+	"x-ms-source-if-tags"
+];
+var StorageBlobLoggingAllowedQueryParameters = [
+	"comp",
+	"maxresults",
+	"rscc",
+	"rscd",
+	"rsce",
+	"rscl",
+	"rsct",
+	"se",
+	"si",
+	"sip",
+	"sp",
+	"spr",
+	"sr",
+	"srt",
+	"ss",
+	"st",
+	"sv",
+	"include",
+	"marker",
+	"prefix",
+	"copyid",
+	"restype",
+	"blockid",
+	"blocklisttype",
+	"delimiter",
+	"prevsnapshot",
+	"ske",
+	"skoid",
+	"sks",
+	"skt",
+	"sktid",
+	"skv",
+	"snapshot"
+];
+var PathStylePorts = [
+	"10000",
+	"10001",
+	"10002",
+	"10003",
+	"10004",
+	"10100",
+	"10101",
+	"10102",
+	"10103",
+	"10104",
+	"11000",
+	"11001",
+	"11002",
+	"11003",
+	"11004",
+	"11100",
+	"11101",
+	"11102",
+	"11103",
+	"11104"
+];
 //#endregion
 //#region node_modules/@azure/storage-blob/dist/esm/Pipeline.js
 /**
@@ -22011,7 +20545,7 @@ function getCoreClientOptions(pipeline) {
 	const { httpClient: v1Client, ...restOptions } = pipeline.options;
 	let httpClient = pipeline._coreHttpClient;
 	if (!httpClient) {
-		httpClient = v1Client ? convertHttpClient(v1Client) : getCachedDefaultHttpClient$1();
+		httpClient = v1Client ? convertHttpClient(v1Client) : getCachedDefaultHttpClient();
 		pipeline._coreHttpClient = httpClient;
 	}
 	let corePipeline = pipeline._corePipeline;
@@ -22023,7 +20557,7 @@ function getCoreClientOptions(pipeline) {
 			loggingOptions: {
 				additionalAllowedHeaderNames: StorageBlobLoggingAllowedHeaderNames,
 				additionalAllowedQueryParameters: StorageBlobLoggingAllowedQueryParameters,
-				logger: logger.info
+				logger: logger$1.info
 			},
 			userAgentOptions: { userAgentPrefix },
 			serializationOptions: {
@@ -22119,492 +20653,6 @@ function isCoreHttpPolicyFactory(factory) {
 	return knownPolicies.some((knownPolicyName) => {
 		return policyName.startsWith(knownPolicyName);
 	});
-}
-//#endregion
-//#region node_modules/@azure/core-lro/dist/esm/legacy/poller.js
-/**
-* When a poller is manually stopped through the `stopPolling` method,
-* the poller will be rejected with an instance of the PollerStoppedError.
-*/
-var PollerStoppedError = class PollerStoppedError extends Error {
-	constructor(message) {
-		super(message);
-		this.name = "PollerStoppedError";
-		Object.setPrototypeOf(this, PollerStoppedError.prototype);
-	}
-};
-/**
-* When the operation is cancelled, the poller will be rejected with an instance
-* of the PollerCancelledError.
-*/
-var PollerCancelledError = class PollerCancelledError extends Error {
-	constructor(message) {
-		super(message);
-		this.name = "PollerCancelledError";
-		Object.setPrototypeOf(this, PollerCancelledError.prototype);
-	}
-};
-/**
-* A class that represents the definition of a program that polls through consecutive requests
-* until it reaches a state of completion.
-*
-* A poller can be executed manually, by polling request by request by calling to the `poll()` method repeatedly, until its operation is completed.
-* It also provides a way to wait until the operation completes, by calling `pollUntilDone()` and waiting until the operation finishes.
-* Pollers can also request the cancellation of the ongoing process to whom is providing the underlying long running operation.
-*
-* ```ts
-* const poller = new MyPoller();
-*
-* // Polling just once:
-* await poller.poll();
-*
-* // We can try to cancel the request here, by calling:
-* //
-* //     await poller.cancelOperation();
-* //
-*
-* // Getting the final result:
-* const result = await poller.pollUntilDone();
-* ```
-*
-* The Poller is defined by two types, a type representing the state of the poller, which
-* must include a basic set of properties from `PollOperationState<TResult>`,
-* and a return type defined by `TResult`, which can be anything.
-*
-* The Poller class implements the `PollerLike` interface, which allows poller implementations to avoid having
-* to export the Poller's class directly, and instead only export the already instantiated poller with the PollerLike type.
-*
-* ```ts
-* class Client {
-*   public async makePoller: PollerLike<MyOperationState, MyResult> {
-*     const poller = new MyPoller({});
-*     // It might be preferred to return the poller after the first request is made,
-*     // so that some information can be obtained right away.
-*     await poller.poll();
-*     return poller;
-*   }
-* }
-*
-* const poller: PollerLike<MyOperationState, MyResult> = myClient.makePoller();
-* ```
-*
-* A poller can be created through its constructor, then it can be polled until it's completed.
-* At any point in time, the state of the poller can be obtained without delay through the getOperationState method.
-* At any point in time, the intermediate forms of the result type can be requested without delay.
-* Once the underlying operation is marked as completed, the poller will stop and the final value will be returned.
-*
-* ```ts
-* const poller = myClient.makePoller();
-* const state: MyOperationState = poller.getOperationState();
-*
-* // The intermediate result can be obtained at any time.
-* const result: MyResult | undefined = poller.getResult();
-*
-* // The final result can only be obtained after the poller finishes.
-* const result: MyResult = await poller.pollUntilDone();
-* ```
-*
-*/
-var Poller = class {
-	/**
-	* A poller needs to be initialized by passing in at least the basic properties of the `PollOperation<TState, TResult>`.
-	*
-	* When writing an implementation of a Poller, this implementation needs to deal with the initialization
-	* of any custom state beyond the basic definition of the poller. The basic poller assumes that the poller's
-	* operation has already been defined, at least its basic properties. The code below shows how to approach
-	* the definition of the constructor of a new custom poller.
-	*
-	* ```ts
-	* export class MyPoller extends Poller<MyOperationState, string> {
-	*   constructor({
-	*     // Anything you might need outside of the basics
-	*   }) {
-	*     let state: MyOperationState = {
-	*       privateProperty: private,
-	*       publicProperty: public,
-	*     };
-	*
-	*     const operation = {
-	*       state,
-	*       update,
-	*       cancel,
-	*       toString
-	*     }
-	*
-	*     // Sending the operation to the parent's constructor.
-	*     super(operation);
-	*
-	*     // You can assign more local properties here.
-	*   }
-	* }
-	* ```
-	*
-	* Inside of this constructor, a new promise is created. This will be used to
-	* tell the user when the poller finishes (see `pollUntilDone()`). The promise's
-	* resolve and reject methods are also used internally to control when to resolve
-	* or reject anyone waiting for the poller to finish.
-	*
-	* The constructor of a custom implementation of a poller is where any serialized version of
-	* a previous poller's operation should be deserialized into the operation sent to the
-	* base constructor. For example:
-	*
-	* ```ts
-	* export class MyPoller extends Poller<MyOperationState, string> {
-	*   constructor(
-	*     baseOperation: string | undefined
-	*   ) {
-	*     let state: MyOperationState = {};
-	*     if (baseOperation) {
-	*       state = {
-	*         ...JSON.parse(baseOperation).state,
-	*         ...state
-	*       };
-	*     }
-	*     const operation = {
-	*       state,
-	*       // ...
-	*     }
-	*     super(operation);
-	*   }
-	* }
-	* ```
-	*
-	* @param operation - Must contain the basic properties of `PollOperation<State, TResult>`.
-	*/
-	constructor(operation) {
-		/** controls whether to throw an error if the operation failed or was canceled. */
-		this.resolveOnUnsuccessful = false;
-		this.stopped = true;
-		this.pollProgressCallbacks = [];
-		this.operation = operation;
-		this.promise = new Promise((resolve, reject) => {
-			this.resolve = resolve;
-			this.reject = reject;
-		});
-		this.promise.catch(() => {});
-	}
-	/**
-	* Starts a loop that will break only if the poller is done
-	* or if the poller is stopped.
-	*/
-	async startPolling(pollOptions = {}) {
-		if (this.stopped) this.stopped = false;
-		while (!this.isStopped() && !this.isDone()) {
-			await this.poll(pollOptions);
-			await this.delay();
-		}
-	}
-	/**
-	* pollOnce does one polling, by calling to the update method of the underlying
-	* poll operation to make any relevant change effective.
-	*
-	* It only optionally receives an object with an abortSignal property, from \@azure/abort-controller's AbortSignalLike.
-	*
-	* @param options - Optional properties passed to the operation's update method.
-	*/
-	async pollOnce(options = {}) {
-		if (!this.isDone()) this.operation = await this.operation.update({
-			abortSignal: options.abortSignal,
-			fireProgress: this.fireProgress.bind(this)
-		});
-		this.processUpdatedState();
-	}
-	/**
-	* fireProgress calls the functions passed in via onProgress the method of the poller.
-	*
-	* It loops over all of the callbacks received from onProgress, and executes them, sending them
-	* the current operation state.
-	*
-	* @param state - The current operation state.
-	*/
-	fireProgress(state) {
-		for (const callback of this.pollProgressCallbacks) callback(state);
-	}
-	/**
-	* Invokes the underlying operation's cancel method.
-	*/
-	async cancelOnce(options = {}) {
-		this.operation = await this.operation.cancel(options);
-	}
-	/**
-	* Returns a promise that will resolve once a single polling request finishes.
-	* It does this by calling the update method of the Poller's operation.
-	*
-	* It only optionally receives an object with an abortSignal property, from \@azure/abort-controller's AbortSignalLike.
-	*
-	* @param options - Optional properties passed to the operation's update method.
-	*/
-	poll(options = {}) {
-		if (!this.pollOncePromise) {
-			this.pollOncePromise = this.pollOnce(options);
-			const clearPollOncePromise = () => {
-				this.pollOncePromise = void 0;
-			};
-			this.pollOncePromise.then(clearPollOncePromise, clearPollOncePromise).catch(this.reject);
-		}
-		return this.pollOncePromise;
-	}
-	processUpdatedState() {
-		if (this.operation.state.error) {
-			this.stopped = true;
-			if (!this.resolveOnUnsuccessful) {
-				this.reject(this.operation.state.error);
-				throw this.operation.state.error;
-			}
-		}
-		if (this.operation.state.isCancelled) {
-			this.stopped = true;
-			if (!this.resolveOnUnsuccessful) {
-				const error = new PollerCancelledError("Operation was canceled");
-				this.reject(error);
-				throw error;
-			}
-		}
-		if (this.isDone() && this.resolve) this.resolve(this.getResult());
-	}
-	/**
-	* Returns a promise that will resolve once the underlying operation is completed.
-	*/
-	async pollUntilDone(pollOptions = {}) {
-		if (this.stopped) this.startPolling(pollOptions).catch(this.reject);
-		this.processUpdatedState();
-		return this.promise;
-	}
-	/**
-	* Invokes the provided callback after each polling is completed,
-	* sending the current state of the poller's operation.
-	*
-	* It returns a method that can be used to stop receiving updates on the given callback function.
-	*/
-	onProgress(callback) {
-		this.pollProgressCallbacks.push(callback);
-		return () => {
-			this.pollProgressCallbacks = this.pollProgressCallbacks.filter((c) => c !== callback);
-		};
-	}
-	/**
-	* Returns true if the poller has finished polling.
-	*/
-	isDone() {
-		const state = this.operation.state;
-		return Boolean(state.isCompleted || state.isCancelled || state.error);
-	}
-	/**
-	* Stops the poller from continuing to poll.
-	*/
-	stopPolling() {
-		if (!this.stopped) {
-			this.stopped = true;
-			if (this.reject) this.reject(new PollerStoppedError("This poller is already stopped"));
-		}
-	}
-	/**
-	* Returns true if the poller is stopped.
-	*/
-	isStopped() {
-		return this.stopped;
-	}
-	/**
-	* Attempts to cancel the underlying operation.
-	*
-	* It only optionally receives an object with an abortSignal property, from \@azure/abort-controller's AbortSignalLike.
-	*
-	* If it's called again before it finishes, it will throw an error.
-	*
-	* @param options - Optional properties passed to the operation's update method.
-	*/
-	cancelOperation(options = {}) {
-		if (!this.cancelPromise) this.cancelPromise = this.cancelOnce(options);
-		else if (options.abortSignal) throw new Error("A cancel request is currently pending");
-		return this.cancelPromise;
-	}
-	/**
-	* Returns the state of the operation.
-	*
-	* Even though TState will be the same type inside any of the methods of any extension of the Poller class,
-	* implementations of the pollers can customize what's shared with the public by writing their own
-	* version of the `getOperationState` method, and by defining two types, one representing the internal state of the poller
-	* and a public type representing a safe to share subset of the properties of the internal state.
-	* Their definition of getOperationState can then return their public type.
-	*
-	* Example:
-	*
-	* ```ts
-	* // Let's say we have our poller's operation state defined as:
-	* interface MyOperationState extends PollOperationState<ResultType> {
-	*   privateProperty?: string;
-	*   publicProperty?: string;
-	* }
-	*
-	* // To allow us to have a true separation of public and private state, we have to define another interface:
-	* interface PublicState extends PollOperationState<ResultType> {
-	*   publicProperty?: string;
-	* }
-	*
-	* // Then, we define our Poller as follows:
-	* export class MyPoller extends Poller<MyOperationState, ResultType> {
-	*   // ... More content is needed here ...
-	*
-	*   public getOperationState(): PublicState {
-	*     const state: PublicState = this.operation.state;
-	*     return {
-	*       // Properties from PollOperationState<TResult>
-	*       isStarted: state.isStarted,
-	*       isCompleted: state.isCompleted,
-	*       isCancelled: state.isCancelled,
-	*       error: state.error,
-	*       result: state.result,
-	*
-	*       // The only other property needed by PublicState.
-	*       publicProperty: state.publicProperty
-	*     }
-	*   }
-	* }
-	* ```
-	*
-	* You can see this in the tests of this repository, go to the file:
-	* `../test/utils/testPoller.ts`
-	* and look for the getOperationState implementation.
-	*/
-	getOperationState() {
-		return this.operation.state;
-	}
-	/**
-	* Returns the result value of the operation,
-	* regardless of the state of the poller.
-	* It can return undefined or an incomplete form of the final TResult value
-	* depending on the implementation.
-	*/
-	getResult() {
-		return this.operation.state.result;
-	}
-	/**
-	* Returns a serialized version of the poller's operation
-	* by invoking the operation's toString method.
-	*/
-	toString() {
-		return this.operation.toString();
-	}
-};
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/pollers/BlobStartCopyFromUrlPoller.js
-/**
-* This is the poller returned by {@link BlobClient.beginCopyFromURL}.
-* This can not be instantiated directly outside of this package.
-*
-* @hidden
-*/
-var BlobBeginCopyFromUrlPoller = class extends Poller {
-	intervalInMs;
-	constructor(options) {
-		const { blobClient, copySource, intervalInMs = 15e3, onProgress, resumeFrom, startCopyFromURLOptions } = options;
-		let state;
-		if (resumeFrom) state = JSON.parse(resumeFrom).state;
-		const operation = makeBlobBeginCopyFromURLPollOperation({
-			...state,
-			blobClient,
-			copySource,
-			startCopyFromURLOptions
-		});
-		super(operation);
-		if (typeof onProgress === "function") this.onProgress(onProgress);
-		this.intervalInMs = intervalInMs;
-	}
-	delay() {
-		return delay$1(this.intervalInMs);
-	}
-};
-/**
-* Note: Intentionally using function expression over arrow function expression
-* so that the function can be invoked with a different context.
-* This affects what `this` refers to.
-* @hidden
-*/
-var cancel = async function cancel(options = {}) {
-	const state = this.state;
-	const { copyId } = state;
-	if (state.isCompleted) return makeBlobBeginCopyFromURLPollOperation(state);
-	if (!copyId) {
-		state.isCancelled = true;
-		return makeBlobBeginCopyFromURLPollOperation(state);
-	}
-	await state.blobClient.abortCopyFromURL(copyId, { abortSignal: options.abortSignal });
-	state.isCancelled = true;
-	return makeBlobBeginCopyFromURLPollOperation(state);
-};
-/**
-* Note: Intentionally using function expression over arrow function expression
-* so that the function can be invoked with a different context.
-* This affects what `this` refers to.
-* @hidden
-*/
-var update = async function update(options = {}) {
-	const state = this.state;
-	const { blobClient, copySource, startCopyFromURLOptions } = state;
-	if (!state.isStarted) {
-		state.isStarted = true;
-		const result = await blobClient.startCopyFromURL(copySource, startCopyFromURLOptions);
-		state.copyId = result.copyId;
-		if (result.copyStatus === "success") {
-			state.result = result;
-			state.isCompleted = true;
-		}
-	} else if (!state.isCompleted) try {
-		const result = await state.blobClient.getProperties({ abortSignal: options.abortSignal });
-		const { copyStatus, copyProgress } = result;
-		const prevCopyProgress = state.copyProgress;
-		if (copyProgress) state.copyProgress = copyProgress;
-		if (copyStatus === "pending" && copyProgress !== prevCopyProgress && typeof options.fireProgress === "function") options.fireProgress(state);
-		else if (copyStatus === "success") {
-			state.result = result;
-			state.isCompleted = true;
-		} else if (copyStatus === "failed") {
-			state.error = /* @__PURE__ */ new Error(`Blob copy failed with reason: "${result.copyStatusDescription || "unknown"}"`);
-			state.isCompleted = true;
-		}
-	} catch (err) {
-		state.error = err;
-		state.isCompleted = true;
-	}
-	return makeBlobBeginCopyFromURLPollOperation(state);
-};
-/**
-* Note: Intentionally using function expression over arrow function expression
-* so that the function can be invoked with a different context.
-* This affects what `this` refers to.
-* @hidden
-*/
-var toString = function toString() {
-	return JSON.stringify({ state: this.state }, (key, value) => {
-		if (key === "blobClient") return;
-		return value;
-	});
-};
-/**
-* Creates a poll operation given the provided state.
-* @hidden
-*/
-function makeBlobBeginCopyFromURLPollOperation(state) {
-	return {
-		state: { ...state },
-		cancel,
-		toString,
-		update
-	};
-}
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/Range.js
-/**
-* Generate a range string. For example:
-*
-* "bytes=255-" or "bytes=0-511"
-*
-* @param iRange -
-*/
-function rangeToString(iRange) {
-	if (iRange.offset < 0) throw new RangeError(`Range.offset cannot be smaller than 0.`);
-	if (iRange.count && iRange.count <= 0) throw new RangeError(`Range.count must be larger than 0. Leave it undefined if you want a range from offset to the end.`);
-	return iRange.count ? `bytes=${iRange.offset}-${iRange.offset + iRange.count - 1}` : `bytes=${iRange.offset}-`;
 }
 //#endregion
 //#region node_modules/@azure/storage-blob/dist/esm/generated/src/models/mappers.js
@@ -34478,119 +32526,6 @@ var StorageClient = class {
 	}
 };
 //#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/utils/Batch.js
-/**
-* States for Batch.
-*/
-var BatchStates;
-(function(BatchStates) {
-	BatchStates[BatchStates["Good"] = 0] = "Good";
-	BatchStates[BatchStates["Error"] = 1] = "Error";
-})(BatchStates || (BatchStates = {}));
-/**
-* Batch provides basic parallel execution with concurrency limits.
-* Will stop execute left operations when one of the executed operation throws an error.
-* But Batch cannot cancel ongoing operations, you need to cancel them by yourself.
-*/
-var Batch = class {
-	/**
-	* Concurrency. Must be lager than 0.
-	*/
-	concurrency;
-	/**
-	* Number of active operations under execution.
-	*/
-	actives = 0;
-	/**
-	* Number of completed operations under execution.
-	*/
-	completed = 0;
-	/**
-	* Offset of next operation to be executed.
-	*/
-	offset = 0;
-	/**
-	* Operation array to be executed.
-	*/
-	operations = [];
-	/**
-	* States of Batch. When an error happens, state will turn into error.
-	* Batch will stop execute left operations.
-	*/
-	state = BatchStates.Good;
-	/**
-	* A private emitter used to pass events inside this class.
-	*/
-	emitter;
-	/**
-	* Creates an instance of Batch.
-	* @param concurrency -
-	*/
-	constructor(concurrency = 5) {
-		if (concurrency < 1) throw new RangeError("concurrency must be larger than 0");
-		this.concurrency = concurrency;
-		this.emitter = new EventEmitter();
-	}
-	/**
-	* Add a operation into queue.
-	*
-	* @param operation -
-	*/
-	addOperation(operation) {
-		this.operations.push(async () => {
-			try {
-				this.actives++;
-				await operation();
-				this.actives--;
-				this.completed++;
-				this.parallelExecute();
-			} catch (error) {
-				this.emitter.emit("error", error);
-			}
-		});
-	}
-	/**
-	* Start execute operations in the queue.
-	*
-	*/
-	async do() {
-		if (this.operations.length === 0) return Promise.resolve();
-		this.parallelExecute();
-		return new Promise((resolve, reject) => {
-			this.emitter.on("finish", resolve);
-			this.emitter.on("error", (error) => {
-				this.state = BatchStates.Error;
-				reject(error);
-			});
-		});
-	}
-	/**
-	* Get next operation to be executed. Return null when reaching ends.
-	*
-	*/
-	nextOperation() {
-		if (this.offset < this.operations.length) return this.operations[this.offset++];
-		return null;
-	}
-	/**
-	* Start execute operations. One one the most important difference between
-	* this method with do() is that do() wraps as an sync method.
-	*
-	*/
-	parallelExecute() {
-		if (this.state === BatchStates.Error) return;
-		if (this.completed >= this.operations.length) {
-			this.emitter.emit("finish");
-			return;
-		}
-		while (this.actives < this.concurrency) {
-			const operation = this.nextOperation();
-			if (operation) operation();
-			else return;
-		}
-	}
-};
-//#endregion
 //#region node_modules/@azure/storage-blob/dist/esm/utils/tracing.js
 /**
 * Creates a span using the global tracer.
@@ -34601,74 +32536,6 @@ var tracingClient = createTracingClient({
 	packageVersion: SDK_VERSION,
 	namespace: "Microsoft.Storage"
 });
-//#endregion
-//#region node_modules/@azure/storage-blob/dist/esm/utils/utils.js
-/**
-* Reads a readable stream into buffer. Fill the buffer from offset to end.
-*
-* @param stream - A Node.js Readable stream
-* @param buffer - Buffer to be filled, length must greater than or equal to offset
-* @param offset - From which position in the buffer to be filled, inclusive
-* @param end - To which position in the buffer to be filled, exclusive
-* @param encoding - Encoding of the Readable stream
-*/
-async function streamToBuffer(stream, buffer, offset, end, encoding) {
-	let pos = 0;
-	const count = end - offset;
-	return new Promise((resolve, reject) => {
-		const timeout = setTimeout(() => reject(/* @__PURE__ */ new Error(`The operation cannot be completed in timeout.`)), REQUEST_TIMEOUT);
-		stream.on("readable", () => {
-			if (pos >= count) {
-				clearTimeout(timeout);
-				resolve();
-				return;
-			}
-			let chunk = stream.read();
-			if (!chunk) return;
-			if (typeof chunk === "string") chunk = Buffer.from(chunk, encoding);
-			const chunkLength = pos + chunk.length > count ? count - pos : chunk.length;
-			buffer.fill(chunk.slice(0, chunkLength), offset + pos, offset + pos + chunkLength);
-			pos += chunkLength;
-		});
-		stream.on("end", () => {
-			clearTimeout(timeout);
-			if (pos < count) reject(/* @__PURE__ */ new Error(`Stream drains before getting enough data needed. Data read: ${pos}, data need: ${count}`));
-			resolve();
-		});
-		stream.on("error", (msg) => {
-			clearTimeout(timeout);
-			reject(msg);
-		});
-	});
-}
-/**
-* ONLY AVAILABLE IN NODE.JS RUNTIME.
-*
-* Writes the content of a readstream to a local file. Returns a Promise which is completed after the file handle is closed.
-*
-* @param rs - The read stream.
-* @param file - Destination file path.
-*/
-async function readStreamToLocalFile(rs, file) {
-	return new Promise((resolve, reject) => {
-		const ws = fs.createWriteStream(file);
-		rs.on("error", (err) => {
-			reject(err);
-		});
-		ws.on("error", (err) => {
-			reject(err);
-		});
-		ws.on("close", resolve);
-		rs.pipe(ws);
-	});
-}
-/**
-* ONLY AVAILABLE IN NODE.JS RUNTIME.
-*
-* Promisified version of fs.stat().
-*/
-var fsStat = util.promisify(fs.stat);
-var fsCreateReadStream = fs.createReadStream;
 //#endregion
 //#region node_modules/@azure/storage-blob/dist/esm/sas/BlobSASPermissions.js
 /**
@@ -35950,6 +33817,2210 @@ var BlobLeaseClient = class {
 		});
 	}
 };
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/utils/RetriableReadableStream.js
+/**
+* ONLY AVAILABLE IN NODE.JS RUNTIME.
+*
+* A Node.js ReadableStream will internally retry when internal ReadableStream unexpected ends.
+*/
+var RetriableReadableStream = class extends Readable {
+	start;
+	offset;
+	end;
+	getter;
+	source;
+	retries = 0;
+	maxRetryRequests;
+	onProgress;
+	options;
+	/**
+	* Creates an instance of RetriableReadableStream.
+	*
+	* @param source - The current ReadableStream returned from getter
+	* @param getter - A method calling downloading request returning
+	*                                      a new ReadableStream from specified offset
+	* @param offset - Offset position in original data source to read
+	* @param count - How much data in original data source to read
+	* @param options -
+	*/
+	constructor(source, getter, offset, count, options = {}) {
+		super({ highWaterMark: options.highWaterMark });
+		this.getter = getter;
+		this.source = source;
+		this.start = offset;
+		this.offset = offset;
+		this.end = offset + count - 1;
+		this.maxRetryRequests = options.maxRetryRequests && options.maxRetryRequests >= 0 ? options.maxRetryRequests : 0;
+		this.onProgress = options.onProgress;
+		this.options = options;
+		this.setSourceEventHandlers();
+	}
+	_read() {
+		this.source.resume();
+	}
+	setSourceEventHandlers() {
+		this.source.on("data", this.sourceDataHandler);
+		this.source.on("end", this.sourceErrorOrEndHandler);
+		this.source.on("error", this.sourceErrorOrEndHandler);
+		this.source.on("aborted", this.sourceAbortedHandler);
+	}
+	removeSourceEventHandlers() {
+		this.source.removeListener("data", this.sourceDataHandler);
+		this.source.removeListener("end", this.sourceErrorOrEndHandler);
+		this.source.removeListener("error", this.sourceErrorOrEndHandler);
+		this.source.removeListener("aborted", this.sourceAbortedHandler);
+	}
+	sourceDataHandler = (data) => {
+		if (this.options.doInjectErrorOnce) {
+			this.options.doInjectErrorOnce = void 0;
+			this.source.pause();
+			this.sourceErrorOrEndHandler();
+			this.source.destroy();
+			return;
+		}
+		this.offset += data.length;
+		if (this.onProgress) this.onProgress({ loadedBytes: this.offset - this.start });
+		if (!this.push(data)) this.source.pause();
+	};
+	sourceAbortedHandler = () => {
+		const abortError = new AbortError("The operation was aborted.");
+		this.destroy(abortError);
+	};
+	sourceErrorOrEndHandler = (err) => {
+		if (err && err.name === "AbortError") {
+			this.destroy(err);
+			return;
+		}
+		this.removeSourceEventHandlers();
+		if (this.offset - 1 === this.end) this.push(null);
+		else if (this.offset <= this.end) if (this.retries < this.maxRetryRequests) {
+			this.retries += 1;
+			this.getter(this.offset).then((newSource) => {
+				this.source = newSource;
+				this.setSourceEventHandlers();
+			}).catch((error) => {
+				this.destroy(error);
+			});
+		} else this.destroy(/* @__PURE__ */ new Error(`Data corruption failure: received less data than required and reached maxRetires limitation. Received data offset: ${this.offset - 1}, data needed offset: ${this.end}, retries: ${this.retries}, max retries: ${this.maxRetryRequests}`));
+		else this.destroy(/* @__PURE__ */ new Error(`Data corruption failure: Received more data than original request, data needed offset is ${this.end}, received offset: ${this.offset - 1}`));
+	};
+	_destroy(error, callback) {
+		this.removeSourceEventHandlers();
+		this.source.destroy();
+		callback(error === null ? void 0 : error);
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/BlobDownloadResponse.js
+/**
+* ONLY AVAILABLE IN NODE.JS RUNTIME.
+*
+* BlobDownloadResponse implements BlobDownloadResponseParsed interface, and in Node.js runtime it will
+* automatically retry when internal read stream unexpected ends. (This kind of unexpected ends cannot
+* trigger retries defined in pipeline retry policy.)
+*
+* The {@link readableStreamBody} stream will retry underlayer, you can just use it as a normal Node.js
+* Readable stream.
+*/
+var BlobDownloadResponse = class {
+	/**
+	* Indicates that the service supports
+	* requests for partial file content.
+	*
+	* @readonly
+	*/
+	get acceptRanges() {
+		return this.originalResponse.acceptRanges;
+	}
+	/**
+	* Returns if it was previously specified
+	* for the file.
+	*
+	* @readonly
+	*/
+	get cacheControl() {
+		return this.originalResponse.cacheControl;
+	}
+	/**
+	* Returns the value that was specified
+	* for the 'x-ms-content-disposition' header and specifies how to process the
+	* response.
+	*
+	* @readonly
+	*/
+	get contentDisposition() {
+		return this.originalResponse.contentDisposition;
+	}
+	/**
+	* Returns the value that was specified
+	* for the Content-Encoding request header.
+	*
+	* @readonly
+	*/
+	get contentEncoding() {
+		return this.originalResponse.contentEncoding;
+	}
+	/**
+	* Returns the value that was specified
+	* for the Content-Language request header.
+	*
+	* @readonly
+	*/
+	get contentLanguage() {
+		return this.originalResponse.contentLanguage;
+	}
+	/**
+	* The current sequence number for a
+	* page blob. This header is not returned for block blobs or append blobs.
+	*
+	* @readonly
+	*/
+	get blobSequenceNumber() {
+		return this.originalResponse.blobSequenceNumber;
+	}
+	/**
+	* The blob's type. Possible values include:
+	* 'BlockBlob', 'PageBlob', 'AppendBlob'.
+	*
+	* @readonly
+	*/
+	get blobType() {
+		return this.originalResponse.blobType;
+	}
+	/**
+	* The number of bytes present in the
+	* response body.
+	*
+	* @readonly
+	*/
+	get contentLength() {
+		return this.originalResponse.contentLength;
+	}
+	/**
+	* If the file has an MD5 hash and the
+	* request is to read the full file, this response header is returned so that
+	* the client can check for message content integrity. If the request is to
+	* read a specified range and the 'x-ms-range-get-content-md5' is set to
+	* true, then the request returns an MD5 hash for the range, as long as the
+	* range size is less than or equal to 4 MB. If neither of these sets of
+	* conditions is true, then no value is returned for the 'Content-MD5'
+	* header.
+	*
+	* @readonly
+	*/
+	get contentMD5() {
+		return this.originalResponse.contentMD5;
+	}
+	/**
+	* Indicates the range of bytes returned if
+	* the client requested a subset of the file by setting the Range request
+	* header.
+	*
+	* @readonly
+	*/
+	get contentRange() {
+		return this.originalResponse.contentRange;
+	}
+	/**
+	* The content type specified for the file.
+	* The default content type is 'application/octet-stream'
+	*
+	* @readonly
+	*/
+	get contentType() {
+		return this.originalResponse.contentType;
+	}
+	/**
+	* Conclusion time of the last attempted
+	* Copy File operation where this file was the destination file. This value
+	* can specify the time of a completed, aborted, or failed copy attempt.
+	*
+	* @readonly
+	*/
+	get copyCompletedOn() {
+		return this.originalResponse.copyCompletedOn;
+	}
+	/**
+	* String identifier for the last attempted Copy
+	* File operation where this file was the destination file.
+	*
+	* @readonly
+	*/
+	get copyId() {
+		return this.originalResponse.copyId;
+	}
+	/**
+	* Contains the number of bytes copied and
+	* the total bytes in the source in the last attempted Copy File operation
+	* where this file was the destination file. Can show between 0 and
+	* Content-Length bytes copied.
+	*
+	* @readonly
+	*/
+	get copyProgress() {
+		return this.originalResponse.copyProgress;
+	}
+	/**
+	* URL up to 2KB in length that specifies the
+	* source file used in the last attempted Copy File operation where this file
+	* was the destination file.
+	*
+	* @readonly
+	*/
+	get copySource() {
+		return this.originalResponse.copySource;
+	}
+	/**
+	* State of the copy operation
+	* identified by 'x-ms-copy-id'. Possible values include: 'pending',
+	* 'success', 'aborted', 'failed'
+	*
+	* @readonly
+	*/
+	get copyStatus() {
+		return this.originalResponse.copyStatus;
+	}
+	/**
+	* Only appears when
+	* x-ms-copy-status is failed or pending. Describes cause of fatal or
+	* non-fatal copy operation failure.
+	*
+	* @readonly
+	*/
+	get copyStatusDescription() {
+		return this.originalResponse.copyStatusDescription;
+	}
+	/**
+	* When a blob is leased,
+	* specifies whether the lease is of infinite or fixed duration. Possible
+	* values include: 'infinite', 'fixed'.
+	*
+	* @readonly
+	*/
+	get leaseDuration() {
+		return this.originalResponse.leaseDuration;
+	}
+	/**
+	* Lease state of the blob. Possible
+	* values include: 'available', 'leased', 'expired', 'breaking', 'broken'.
+	*
+	* @readonly
+	*/
+	get leaseState() {
+		return this.originalResponse.leaseState;
+	}
+	/**
+	* The current lease status of the
+	* blob. Possible values include: 'locked', 'unlocked'.
+	*
+	* @readonly
+	*/
+	get leaseStatus() {
+		return this.originalResponse.leaseStatus;
+	}
+	/**
+	* A UTC date/time value generated by the service that
+	* indicates the time at which the response was initiated.
+	*
+	* @readonly
+	*/
+	get date() {
+		return this.originalResponse.date;
+	}
+	/**
+	* The number of committed blocks
+	* present in the blob. This header is returned only for append blobs.
+	*
+	* @readonly
+	*/
+	get blobCommittedBlockCount() {
+		return this.originalResponse.blobCommittedBlockCount;
+	}
+	/**
+	* The ETag contains a value that you can use to
+	* perform operations conditionally, in quotes.
+	*
+	* @readonly
+	*/
+	get etag() {
+		return this.originalResponse.etag;
+	}
+	/**
+	* The number of tags associated with the blob
+	*
+	* @readonly
+	*/
+	get tagCount() {
+		return this.originalResponse.tagCount;
+	}
+	/**
+	* The error code.
+	*
+	* @readonly
+	*/
+	get errorCode() {
+		return this.originalResponse.errorCode;
+	}
+	/**
+	* The value of this header is set to
+	* true if the file data and application metadata are completely encrypted
+	* using the specified algorithm. Otherwise, the value is set to false (when
+	* the file is unencrypted, or if only parts of the file/application metadata
+	* are encrypted).
+	*
+	* @readonly
+	*/
+	get isServerEncrypted() {
+		return this.originalResponse.isServerEncrypted;
+	}
+	/**
+	* If the blob has a MD5 hash, and if
+	* request contains range header (Range or x-ms-range), this response header
+	* is returned with the value of the whole blob's MD5 value. This value may
+	* or may not be equal to the value returned in Content-MD5 header, with the
+	* latter calculated from the requested range.
+	*
+	* @readonly
+	*/
+	get blobContentMD5() {
+		return this.originalResponse.blobContentMD5;
+	}
+	/**
+	* Returns the date and time the file was last
+	* modified. Any operation that modifies the file or its properties updates
+	* the last modified time.
+	*
+	* @readonly
+	*/
+	get lastModified() {
+		return this.originalResponse.lastModified;
+	}
+	/**
+	* Returns the UTC date and time generated by the service that indicates the time at which the blob was
+	* last read or written to.
+	*
+	* @readonly
+	*/
+	get lastAccessed() {
+		return this.originalResponse.lastAccessed;
+	}
+	/**
+	* Returns the date and time the blob was created.
+	*
+	* @readonly
+	*/
+	get createdOn() {
+		return this.originalResponse.createdOn;
+	}
+	/**
+	* A name-value pair
+	* to associate with a file storage object.
+	*
+	* @readonly
+	*/
+	get metadata() {
+		return this.originalResponse.metadata;
+	}
+	/**
+	* This header uniquely identifies the request
+	* that was made and can be used for troubleshooting the request.
+	*
+	* @readonly
+	*/
+	get requestId() {
+		return this.originalResponse.requestId;
+	}
+	/**
+	* If a client request id header is sent in the request, this header will be present in the
+	* response with the same value.
+	*
+	* @readonly
+	*/
+	get clientRequestId() {
+		return this.originalResponse.clientRequestId;
+	}
+	/**
+	* Indicates the version of the Blob service used
+	* to execute the request.
+	*
+	* @readonly
+	*/
+	get version() {
+		return this.originalResponse.version;
+	}
+	/**
+	* Indicates the versionId of the downloaded blob version.
+	*
+	* @readonly
+	*/
+	get versionId() {
+		return this.originalResponse.versionId;
+	}
+	/**
+	* Indicates whether version of this blob is a current version.
+	*
+	* @readonly
+	*/
+	get isCurrentVersion() {
+		return this.originalResponse.isCurrentVersion;
+	}
+	/**
+	* The SHA-256 hash of the encryption key used to encrypt the blob. This value is only returned
+	* when the blob was encrypted with a customer-provided key.
+	*
+	* @readonly
+	*/
+	get encryptionKeySha256() {
+		return this.originalResponse.encryptionKeySha256;
+	}
+	/**
+	* If the request is to read a specified range and the x-ms-range-get-content-crc64 is set to
+	* true, then the request returns a crc64 for the range, as long as the range size is less than
+	* or equal to 4 MB. If both x-ms-range-get-content-crc64 & x-ms-range-get-content-md5 is
+	* specified in the same request, it will fail with 400(Bad Request)
+	*/
+	get contentCrc64() {
+		return this.originalResponse.contentCrc64;
+	}
+	/**
+	* Object Replication Policy Id of the destination blob.
+	*
+	* @readonly
+	*/
+	get objectReplicationDestinationPolicyId() {
+		return this.originalResponse.objectReplicationDestinationPolicyId;
+	}
+	/**
+	* Parsed Object Replication Policy Id, Rule Id(s) and status of the source blob.
+	*
+	* @readonly
+	*/
+	get objectReplicationSourceProperties() {
+		return this.originalResponse.objectReplicationSourceProperties;
+	}
+	/**
+	* If this blob has been sealed.
+	*
+	* @readonly
+	*/
+	get isSealed() {
+		return this.originalResponse.isSealed;
+	}
+	/**
+	* UTC date/time value generated by the service that indicates the time at which the blob immutability policy will expire.
+	*
+	* @readonly
+	*/
+	get immutabilityPolicyExpiresOn() {
+		return this.originalResponse.immutabilityPolicyExpiresOn;
+	}
+	/**
+	* Indicates immutability policy mode.
+	*
+	* @readonly
+	*/
+	get immutabilityPolicyMode() {
+		return this.originalResponse.immutabilityPolicyMode;
+	}
+	/**
+	* Indicates if a legal hold is present on the blob.
+	*
+	* @readonly
+	*/
+	get legalHold() {
+		return this.originalResponse.legalHold;
+	}
+	/**
+	* The response body as a browser Blob.
+	* Always undefined in node.js.
+	*
+	* @readonly
+	*/
+	get contentAsBlob() {
+		return this.originalResponse.blobBody;
+	}
+	/**
+	* The response body as a node.js Readable stream.
+	* Always undefined in the browser.
+	*
+	* It will automatically retry when internal read stream unexpected ends.
+	*
+	* @readonly
+	*/
+	get readableStreamBody() {
+		return isNodeLike ? this.blobDownloadStream : void 0;
+	}
+	/**
+	* The HTTP response.
+	*/
+	get _response() {
+		return this.originalResponse._response;
+	}
+	originalResponse;
+	blobDownloadStream;
+	/**
+	* Creates an instance of BlobDownloadResponse.
+	*
+	* @param originalResponse -
+	* @param getter -
+	* @param offset -
+	* @param count -
+	* @param options -
+	*/
+	constructor(originalResponse, getter, offset, count, options = {}) {
+		this.originalResponse = originalResponse;
+		this.blobDownloadStream = new RetriableReadableStream(this.originalResponse.readableStreamBody, getter, offset, count, options);
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/internal-avro/AvroConstants.js
+var AVRO_INIT_BYTES = new Uint8Array([
+	79,
+	98,
+	106,
+	1
+]);
+var AVRO_CODEC_KEY = "avro.codec";
+var AVRO_SCHEMA_KEY = "avro.schema";
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/internal-avro/AvroParser.js
+var AvroParser = class AvroParser {
+	/**
+	* Reads a fixed number of bytes from the stream.
+	*
+	* @param stream -
+	* @param length -
+	* @param options -
+	*/
+	static async readFixedBytes(stream, length, options = {}) {
+		const bytes = await stream.read(length, { abortSignal: options.abortSignal });
+		if (bytes.length !== length) throw new Error("Hit stream end.");
+		return bytes;
+	}
+	/**
+	* Reads a single byte from the stream.
+	*
+	* @param stream -
+	* @param options -
+	*/
+	static async readByte(stream, options = {}) {
+		return (await AvroParser.readFixedBytes(stream, 1, options))[0];
+	}
+	static async readZigZagLong(stream, options = {}) {
+		let zigZagEncoded = 0;
+		let significanceInBit = 0;
+		let byte, haveMoreByte, significanceInFloat;
+		do {
+			byte = await AvroParser.readByte(stream, options);
+			haveMoreByte = byte & 128;
+			zigZagEncoded |= (byte & 127) << significanceInBit;
+			significanceInBit += 7;
+		} while (haveMoreByte && significanceInBit < 28);
+		if (haveMoreByte) {
+			zigZagEncoded = zigZagEncoded;
+			significanceInFloat = 268435456;
+			do {
+				byte = await AvroParser.readByte(stream, options);
+				zigZagEncoded += (byte & 127) * significanceInFloat;
+				significanceInFloat *= 128;
+			} while (byte & 128);
+			const res = (zigZagEncoded % 2 ? -(zigZagEncoded + 1) : zigZagEncoded) / 2;
+			if (res < Number.MIN_SAFE_INTEGER || res > Number.MAX_SAFE_INTEGER) throw new Error("Integer overflow.");
+			return res;
+		}
+		return zigZagEncoded >> 1 ^ -(zigZagEncoded & 1);
+	}
+	static async readLong(stream, options = {}) {
+		return AvroParser.readZigZagLong(stream, options);
+	}
+	static async readInt(stream, options = {}) {
+		return AvroParser.readZigZagLong(stream, options);
+	}
+	static async readNull() {
+		return null;
+	}
+	static async readBoolean(stream, options = {}) {
+		const b = await AvroParser.readByte(stream, options);
+		if (b === 1) return true;
+		else if (b === 0) return false;
+		else throw new Error("Byte was not a boolean.");
+	}
+	static async readFloat(stream, options = {}) {
+		const u8arr = await AvroParser.readFixedBytes(stream, 4, options);
+		return new DataView(u8arr.buffer, u8arr.byteOffset, u8arr.byteLength).getFloat32(0, true);
+	}
+	static async readDouble(stream, options = {}) {
+		const u8arr = await AvroParser.readFixedBytes(stream, 8, options);
+		return new DataView(u8arr.buffer, u8arr.byteOffset, u8arr.byteLength).getFloat64(0, true);
+	}
+	static async readBytes(stream, options = {}) {
+		const size = await AvroParser.readLong(stream, options);
+		if (size < 0) throw new Error("Bytes size was negative.");
+		return stream.read(size, { abortSignal: options.abortSignal });
+	}
+	static async readString(stream, options = {}) {
+		const u8arr = await AvroParser.readBytes(stream, options);
+		return new TextDecoder().decode(u8arr);
+	}
+	static async readMapPair(stream, readItemMethod, options = {}) {
+		return {
+			key: await AvroParser.readString(stream, options),
+			value: await readItemMethod(stream, options)
+		};
+	}
+	static async readMap(stream, readItemMethod, options = {}) {
+		const readPairMethod = (s, opts = {}) => {
+			return AvroParser.readMapPair(s, readItemMethod, opts);
+		};
+		const pairs = await AvroParser.readArray(stream, readPairMethod, options);
+		const dict = {};
+		for (const pair of pairs) dict[pair.key] = pair.value;
+		return dict;
+	}
+	static async readArray(stream, readItemMethod, options = {}) {
+		const items = [];
+		for (let count = await AvroParser.readLong(stream, options); count !== 0; count = await AvroParser.readLong(stream, options)) {
+			if (count < 0) {
+				await AvroParser.readLong(stream, options);
+				count = -count;
+			}
+			while (count--) {
+				const item = await readItemMethod(stream, options);
+				items.push(item);
+			}
+		}
+		return items;
+	}
+};
+var AvroComplex;
+(function(AvroComplex) {
+	AvroComplex["RECORD"] = "record";
+	AvroComplex["ENUM"] = "enum";
+	AvroComplex["ARRAY"] = "array";
+	AvroComplex["MAP"] = "map";
+	AvroComplex["UNION"] = "union";
+	AvroComplex["FIXED"] = "fixed";
+})(AvroComplex || (AvroComplex = {}));
+var AvroPrimitive;
+(function(AvroPrimitive) {
+	AvroPrimitive["NULL"] = "null";
+	AvroPrimitive["BOOLEAN"] = "boolean";
+	AvroPrimitive["INT"] = "int";
+	AvroPrimitive["LONG"] = "long";
+	AvroPrimitive["FLOAT"] = "float";
+	AvroPrimitive["DOUBLE"] = "double";
+	AvroPrimitive["BYTES"] = "bytes";
+	AvroPrimitive["STRING"] = "string";
+})(AvroPrimitive || (AvroPrimitive = {}));
+var AvroType = class AvroType {
+	/**
+	* Determines the AvroType from the Avro Schema.
+	*/
+	static fromSchema(schema) {
+		if (typeof schema === "string") return AvroType.fromStringSchema(schema);
+		else if (Array.isArray(schema)) return AvroType.fromArraySchema(schema);
+		else return AvroType.fromObjectSchema(schema);
+	}
+	static fromStringSchema(schema) {
+		switch (schema) {
+			case AvroPrimitive.NULL:
+			case AvroPrimitive.BOOLEAN:
+			case AvroPrimitive.INT:
+			case AvroPrimitive.LONG:
+			case AvroPrimitive.FLOAT:
+			case AvroPrimitive.DOUBLE:
+			case AvroPrimitive.BYTES:
+			case AvroPrimitive.STRING: return new AvroPrimitiveType(schema);
+			default: throw new Error(`Unexpected Avro type ${schema}`);
+		}
+	}
+	static fromArraySchema(schema) {
+		return new AvroUnionType(schema.map(AvroType.fromSchema));
+	}
+	static fromObjectSchema(schema) {
+		const type = schema.type;
+		try {
+			return AvroType.fromStringSchema(type);
+		} catch {}
+		switch (type) {
+			case AvroComplex.RECORD:
+				if (schema.aliases) throw new Error(`aliases currently is not supported, schema: ${schema}`);
+				if (!schema.name) throw new Error(`Required attribute 'name' doesn't exist on schema: ${schema}`);
+				const fields = {};
+				if (!schema.fields) throw new Error(`Required attribute 'fields' doesn't exist on schema: ${schema}`);
+				for (const field of schema.fields) fields[field.name] = AvroType.fromSchema(field.type);
+				return new AvroRecordType(fields, schema.name);
+			case AvroComplex.ENUM:
+				if (schema.aliases) throw new Error(`aliases currently is not supported, schema: ${schema}`);
+				if (!schema.symbols) throw new Error(`Required attribute 'symbols' doesn't exist on schema: ${schema}`);
+				return new AvroEnumType(schema.symbols);
+			case AvroComplex.MAP:
+				if (!schema.values) throw new Error(`Required attribute 'values' doesn't exist on schema: ${schema}`);
+				return new AvroMapType(AvroType.fromSchema(schema.values));
+			case AvroComplex.ARRAY:
+			case AvroComplex.FIXED:
+			default: throw new Error(`Unexpected Avro type ${type} in ${schema}`);
+		}
+	}
+};
+var AvroPrimitiveType = class extends AvroType {
+	_primitive;
+	constructor(primitive) {
+		super();
+		this._primitive = primitive;
+	}
+	read(stream, options = {}) {
+		switch (this._primitive) {
+			case AvroPrimitive.NULL: return AvroParser.readNull();
+			case AvroPrimitive.BOOLEAN: return AvroParser.readBoolean(stream, options);
+			case AvroPrimitive.INT: return AvroParser.readInt(stream, options);
+			case AvroPrimitive.LONG: return AvroParser.readLong(stream, options);
+			case AvroPrimitive.FLOAT: return AvroParser.readFloat(stream, options);
+			case AvroPrimitive.DOUBLE: return AvroParser.readDouble(stream, options);
+			case AvroPrimitive.BYTES: return AvroParser.readBytes(stream, options);
+			case AvroPrimitive.STRING: return AvroParser.readString(stream, options);
+			default: throw new Error("Unknown Avro Primitive");
+		}
+	}
+};
+var AvroEnumType = class extends AvroType {
+	_symbols;
+	constructor(symbols) {
+		super();
+		this._symbols = symbols;
+	}
+	async read(stream, options = {}) {
+		const value = await AvroParser.readInt(stream, options);
+		return this._symbols[value];
+	}
+};
+var AvroUnionType = class extends AvroType {
+	_types;
+	constructor(types) {
+		super();
+		this._types = types;
+	}
+	async read(stream, options = {}) {
+		const typeIndex = await AvroParser.readInt(stream, options);
+		return this._types[typeIndex].read(stream, options);
+	}
+};
+var AvroMapType = class extends AvroType {
+	_itemType;
+	constructor(itemType) {
+		super();
+		this._itemType = itemType;
+	}
+	read(stream, options = {}) {
+		const readItemMethod = (s, opts) => {
+			return this._itemType.read(s, opts);
+		};
+		return AvroParser.readMap(stream, readItemMethod, options);
+	}
+};
+var AvroRecordType = class extends AvroType {
+	_name;
+	_fields;
+	constructor(fields, name) {
+		super();
+		this._fields = fields;
+		this._name = name;
+	}
+	async read(stream, options = {}) {
+		const record = {};
+		record["$schema"] = this._name;
+		for (const key in this._fields) if (Object.prototype.hasOwnProperty.call(this._fields, key)) record[key] = await this._fields[key].read(stream, options);
+		return record;
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/internal-avro/utils/utils.common.js
+function arraysEqual(a, b) {
+	if (a === b) return true;
+	if (a == null || b == null) return false;
+	if (a.length !== b.length) return false;
+	for (let i = 0; i < a.length; ++i) if (a[i] !== b[i]) return false;
+	return true;
+}
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/internal-avro/AvroReader.js
+var AvroReader = class {
+	_dataStream;
+	_headerStream;
+	_syncMarker;
+	_metadata;
+	_itemType;
+	_itemsRemainingInBlock;
+	_initialBlockOffset;
+	_blockOffset;
+	get blockOffset() {
+		return this._blockOffset;
+	}
+	_objectIndex;
+	get objectIndex() {
+		return this._objectIndex;
+	}
+	_initialized;
+	constructor(dataStream, headerStream, currentBlockOffset, indexWithinCurrentBlock) {
+		this._dataStream = dataStream;
+		this._headerStream = headerStream || dataStream;
+		this._initialized = false;
+		this._blockOffset = currentBlockOffset || 0;
+		this._objectIndex = indexWithinCurrentBlock || 0;
+		this._initialBlockOffset = currentBlockOffset || 0;
+	}
+	async initialize(options = {}) {
+		if (!arraysEqual(await AvroParser.readFixedBytes(this._headerStream, AVRO_INIT_BYTES.length, { abortSignal: options.abortSignal }), AVRO_INIT_BYTES)) throw new Error("Stream is not an Avro file.");
+		this._metadata = await AvroParser.readMap(this._headerStream, AvroParser.readString, { abortSignal: options.abortSignal });
+		const codec = this._metadata[AVRO_CODEC_KEY];
+		if (!(codec === void 0 || codec === null || codec === "null")) throw new Error("Codecs are not supported");
+		this._syncMarker = await AvroParser.readFixedBytes(this._headerStream, 16, { abortSignal: options.abortSignal });
+		const schema = JSON.parse(this._metadata[AVRO_SCHEMA_KEY]);
+		this._itemType = AvroType.fromSchema(schema);
+		if (this._blockOffset === 0) this._blockOffset = this._initialBlockOffset + this._dataStream.position;
+		this._itemsRemainingInBlock = await AvroParser.readLong(this._dataStream, { abortSignal: options.abortSignal });
+		await AvroParser.readLong(this._dataStream, { abortSignal: options.abortSignal });
+		this._initialized = true;
+		if (this._objectIndex && this._objectIndex > 0) for (let i = 0; i < this._objectIndex; i++) {
+			await this._itemType.read(this._dataStream, { abortSignal: options.abortSignal });
+			this._itemsRemainingInBlock--;
+		}
+	}
+	hasNext() {
+		return !this._initialized || this._itemsRemainingInBlock > 0;
+	}
+	async *parseObjects(options = {}) {
+		if (!this._initialized) await this.initialize(options);
+		while (this.hasNext()) {
+			const result = await this._itemType.read(this._dataStream, { abortSignal: options.abortSignal });
+			this._itemsRemainingInBlock--;
+			this._objectIndex++;
+			if (this._itemsRemainingInBlock === 0) {
+				const marker = await AvroParser.readFixedBytes(this._dataStream, 16, { abortSignal: options.abortSignal });
+				this._blockOffset = this._initialBlockOffset + this._dataStream.position;
+				this._objectIndex = 0;
+				if (!arraysEqual(this._syncMarker, marker)) throw new Error("Stream is not a valid Avro file.");
+				try {
+					this._itemsRemainingInBlock = await AvroParser.readLong(this._dataStream, { abortSignal: options.abortSignal });
+				} catch {
+					this._itemsRemainingInBlock = 0;
+				}
+				if (this._itemsRemainingInBlock > 0) await AvroParser.readLong(this._dataStream, { abortSignal: options.abortSignal });
+			}
+			yield result;
+		}
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/internal-avro/AvroReadable.js
+var AvroReadable = class {};
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/internal-avro/AvroReadableFromStream.js
+var ABORT_ERROR = new AbortError("Reading from the avro stream was aborted.");
+var AvroReadableFromStream = class extends AvroReadable {
+	_position;
+	_readable;
+	toUint8Array(data) {
+		if (typeof data === "string") return Buffer$1.from(data);
+		return data;
+	}
+	constructor(readable) {
+		super();
+		this._readable = readable;
+		this._position = 0;
+	}
+	get position() {
+		return this._position;
+	}
+	async read(size, options = {}) {
+		if (options.abortSignal?.aborted) throw ABORT_ERROR;
+		if (size < 0) throw new Error(`size parameter should be positive: ${size}`);
+		if (size === 0) return /* @__PURE__ */ new Uint8Array();
+		if (!this._readable.readable) throw new Error("Stream no longer readable.");
+		const chunk = this._readable.read(size);
+		if (chunk) {
+			this._position += chunk.length;
+			return this.toUint8Array(chunk);
+		} else return new Promise((resolve, reject) => {
+			const cleanUp = () => {
+				this._readable.removeListener("readable", readableCallback);
+				this._readable.removeListener("error", rejectCallback);
+				this._readable.removeListener("end", rejectCallback);
+				this._readable.removeListener("close", rejectCallback);
+				if (options.abortSignal) options.abortSignal.removeEventListener("abort", abortHandler);
+			};
+			const readableCallback = () => {
+				const callbackChunk = this._readable.read(size);
+				if (callbackChunk) {
+					this._position += callbackChunk.length;
+					cleanUp();
+					resolve(this.toUint8Array(callbackChunk));
+				}
+			};
+			const rejectCallback = () => {
+				cleanUp();
+				reject();
+			};
+			const abortHandler = () => {
+				cleanUp();
+				reject(ABORT_ERROR);
+			};
+			this._readable.on("readable", readableCallback);
+			this._readable.once("error", rejectCallback);
+			this._readable.once("end", rejectCallback);
+			this._readable.once("close", rejectCallback);
+			if (options.abortSignal) options.abortSignal.addEventListener("abort", abortHandler);
+		});
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/utils/BlobQuickQueryStream.js
+/**
+* ONLY AVAILABLE IN NODE.JS RUNTIME.
+*
+* A Node.js BlobQuickQueryStream will internally parse avro data stream for blob query.
+*/
+var BlobQuickQueryStream = class extends Readable {
+	source;
+	avroReader;
+	avroIter;
+	avroPaused = true;
+	onProgress;
+	onError;
+	/**
+	* Creates an instance of BlobQuickQueryStream.
+	*
+	* @param source - The current ReadableStream returned from getter
+	* @param options -
+	*/
+	constructor(source, options = {}) {
+		super();
+		this.source = source;
+		this.onProgress = options.onProgress;
+		this.onError = options.onError;
+		this.avroReader = new AvroReader(new AvroReadableFromStream(this.source));
+		this.avroIter = this.avroReader.parseObjects({ abortSignal: options.abortSignal });
+	}
+	_read() {
+		if (this.avroPaused) this.readInternal().catch((err) => {
+			this.emit("error", err);
+		});
+	}
+	async readInternal() {
+		this.avroPaused = false;
+		let avroNext;
+		do {
+			avroNext = await this.avroIter.next();
+			if (avroNext.done) break;
+			const obj = avroNext.value;
+			const schema = obj.$schema;
+			if (typeof schema !== "string") throw Error("Missing schema in avro record.");
+			switch (schema) {
+				case "com.microsoft.azure.storage.queryBlobContents.resultData":
+					{
+						const data = obj.data;
+						if (data instanceof Uint8Array === false) throw Error("Invalid data in avro result record.");
+						if (!this.push(Buffer.from(data))) this.avroPaused = true;
+					}
+					break;
+				case "com.microsoft.azure.storage.queryBlobContents.progress":
+					{
+						const bytesScanned = obj.bytesScanned;
+						if (typeof bytesScanned !== "number") throw Error("Invalid bytesScanned in avro progress record.");
+						if (this.onProgress) this.onProgress({ loadedBytes: bytesScanned });
+					}
+					break;
+				case "com.microsoft.azure.storage.queryBlobContents.end":
+					if (this.onProgress) {
+						const totalBytes = obj.totalBytes;
+						if (typeof totalBytes !== "number") throw Error("Invalid totalBytes in avro end record.");
+						this.onProgress({ loadedBytes: totalBytes });
+					}
+					this.push(null);
+					break;
+				case "com.microsoft.azure.storage.queryBlobContents.error":
+					if (this.onError) {
+						const fatal = obj.fatal;
+						if (typeof fatal !== "boolean") throw Error("Invalid fatal in avro error record.");
+						const name = obj.name;
+						if (typeof name !== "string") throw Error("Invalid name in avro error record.");
+						const description = obj.description;
+						if (typeof description !== "string") throw Error("Invalid description in avro error record.");
+						const position = obj.position;
+						if (typeof position !== "number") throw Error("Invalid position in avro error record.");
+						this.onError({
+							position,
+							name,
+							isFatal: fatal,
+							description
+						});
+					}
+					break;
+				default: throw Error(`Unknown schema ${schema} in avro progress record.`);
+			}
+		} while (!avroNext.done && !this.avroPaused);
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/BlobQueryResponse.js
+/**
+* ONLY AVAILABLE IN NODE.JS RUNTIME.
+*
+* BlobQueryResponse implements BlobDownloadResponseModel interface, and in Node.js runtime it will
+* parse avro data returned by blob query.
+*/
+var BlobQueryResponse = class {
+	/**
+	* Indicates that the service supports
+	* requests for partial file content.
+	*
+	* @readonly
+	*/
+	get acceptRanges() {
+		return this.originalResponse.acceptRanges;
+	}
+	/**
+	* Returns if it was previously specified
+	* for the file.
+	*
+	* @readonly
+	*/
+	get cacheControl() {
+		return this.originalResponse.cacheControl;
+	}
+	/**
+	* Returns the value that was specified
+	* for the 'x-ms-content-disposition' header and specifies how to process the
+	* response.
+	*
+	* @readonly
+	*/
+	get contentDisposition() {
+		return this.originalResponse.contentDisposition;
+	}
+	/**
+	* Returns the value that was specified
+	* for the Content-Encoding request header.
+	*
+	* @readonly
+	*/
+	get contentEncoding() {
+		return this.originalResponse.contentEncoding;
+	}
+	/**
+	* Returns the value that was specified
+	* for the Content-Language request header.
+	*
+	* @readonly
+	*/
+	get contentLanguage() {
+		return this.originalResponse.contentLanguage;
+	}
+	/**
+	* The current sequence number for a
+	* page blob. This header is not returned for block blobs or append blobs.
+	*
+	* @readonly
+	*/
+	get blobSequenceNumber() {
+		return this.originalResponse.blobSequenceNumber;
+	}
+	/**
+	* The blob's type. Possible values include:
+	* 'BlockBlob', 'PageBlob', 'AppendBlob'.
+	*
+	* @readonly
+	*/
+	get blobType() {
+		return this.originalResponse.blobType;
+	}
+	/**
+	* The number of bytes present in the
+	* response body.
+	*
+	* @readonly
+	*/
+	get contentLength() {
+		return this.originalResponse.contentLength;
+	}
+	/**
+	* If the file has an MD5 hash and the
+	* request is to read the full file, this response header is returned so that
+	* the client can check for message content integrity. If the request is to
+	* read a specified range and the 'x-ms-range-get-content-md5' is set to
+	* true, then the request returns an MD5 hash for the range, as long as the
+	* range size is less than or equal to 4 MB. If neither of these sets of
+	* conditions is true, then no value is returned for the 'Content-MD5'
+	* header.
+	*
+	* @readonly
+	*/
+	get contentMD5() {
+		return this.originalResponse.contentMD5;
+	}
+	/**
+	* Indicates the range of bytes returned if
+	* the client requested a subset of the file by setting the Range request
+	* header.
+	*
+	* @readonly
+	*/
+	get contentRange() {
+		return this.originalResponse.contentRange;
+	}
+	/**
+	* The content type specified for the file.
+	* The default content type is 'application/octet-stream'
+	*
+	* @readonly
+	*/
+	get contentType() {
+		return this.originalResponse.contentType;
+	}
+	/**
+	* Conclusion time of the last attempted
+	* Copy File operation where this file was the destination file. This value
+	* can specify the time of a completed, aborted, or failed copy attempt.
+	*
+	* @readonly
+	*/
+	get copyCompletedOn() {}
+	/**
+	* String identifier for the last attempted Copy
+	* File operation where this file was the destination file.
+	*
+	* @readonly
+	*/
+	get copyId() {
+		return this.originalResponse.copyId;
+	}
+	/**
+	* Contains the number of bytes copied and
+	* the total bytes in the source in the last attempted Copy File operation
+	* where this file was the destination file. Can show between 0 and
+	* Content-Length bytes copied.
+	*
+	* @readonly
+	*/
+	get copyProgress() {
+		return this.originalResponse.copyProgress;
+	}
+	/**
+	* URL up to 2KB in length that specifies the
+	* source file used in the last attempted Copy File operation where this file
+	* was the destination file.
+	*
+	* @readonly
+	*/
+	get copySource() {
+		return this.originalResponse.copySource;
+	}
+	/**
+	* State of the copy operation
+	* identified by 'x-ms-copy-id'. Possible values include: 'pending',
+	* 'success', 'aborted', 'failed'
+	*
+	* @readonly
+	*/
+	get copyStatus() {
+		return this.originalResponse.copyStatus;
+	}
+	/**
+	* Only appears when
+	* x-ms-copy-status is failed or pending. Describes cause of fatal or
+	* non-fatal copy operation failure.
+	*
+	* @readonly
+	*/
+	get copyStatusDescription() {
+		return this.originalResponse.copyStatusDescription;
+	}
+	/**
+	* When a blob is leased,
+	* specifies whether the lease is of infinite or fixed duration. Possible
+	* values include: 'infinite', 'fixed'.
+	*
+	* @readonly
+	*/
+	get leaseDuration() {
+		return this.originalResponse.leaseDuration;
+	}
+	/**
+	* Lease state of the blob. Possible
+	* values include: 'available', 'leased', 'expired', 'breaking', 'broken'.
+	*
+	* @readonly
+	*/
+	get leaseState() {
+		return this.originalResponse.leaseState;
+	}
+	/**
+	* The current lease status of the
+	* blob. Possible values include: 'locked', 'unlocked'.
+	*
+	* @readonly
+	*/
+	get leaseStatus() {
+		return this.originalResponse.leaseStatus;
+	}
+	/**
+	* A UTC date/time value generated by the service that
+	* indicates the time at which the response was initiated.
+	*
+	* @readonly
+	*/
+	get date() {
+		return this.originalResponse.date;
+	}
+	/**
+	* The number of committed blocks
+	* present in the blob. This header is returned only for append blobs.
+	*
+	* @readonly
+	*/
+	get blobCommittedBlockCount() {
+		return this.originalResponse.blobCommittedBlockCount;
+	}
+	/**
+	* The ETag contains a value that you can use to
+	* perform operations conditionally, in quotes.
+	*
+	* @readonly
+	*/
+	get etag() {
+		return this.originalResponse.etag;
+	}
+	/**
+	* The error code.
+	*
+	* @readonly
+	*/
+	get errorCode() {
+		return this.originalResponse.errorCode;
+	}
+	/**
+	* The value of this header is set to
+	* true if the file data and application metadata are completely encrypted
+	* using the specified algorithm. Otherwise, the value is set to false (when
+	* the file is unencrypted, or if only parts of the file/application metadata
+	* are encrypted).
+	*
+	* @readonly
+	*/
+	get isServerEncrypted() {
+		return this.originalResponse.isServerEncrypted;
+	}
+	/**
+	* If the blob has a MD5 hash, and if
+	* request contains range header (Range or x-ms-range), this response header
+	* is returned with the value of the whole blob's MD5 value. This value may
+	* or may not be equal to the value returned in Content-MD5 header, with the
+	* latter calculated from the requested range.
+	*
+	* @readonly
+	*/
+	get blobContentMD5() {
+		return this.originalResponse.blobContentMD5;
+	}
+	/**
+	* Returns the date and time the file was last
+	* modified. Any operation that modifies the file or its properties updates
+	* the last modified time.
+	*
+	* @readonly
+	*/
+	get lastModified() {
+		return this.originalResponse.lastModified;
+	}
+	/**
+	* A name-value pair
+	* to associate with a file storage object.
+	*
+	* @readonly
+	*/
+	get metadata() {
+		return this.originalResponse.metadata;
+	}
+	/**
+	* This header uniquely identifies the request
+	* that was made and can be used for troubleshooting the request.
+	*
+	* @readonly
+	*/
+	get requestId() {
+		return this.originalResponse.requestId;
+	}
+	/**
+	* If a client request id header is sent in the request, this header will be present in the
+	* response with the same value.
+	*
+	* @readonly
+	*/
+	get clientRequestId() {
+		return this.originalResponse.clientRequestId;
+	}
+	/**
+	* Indicates the version of the File service used
+	* to execute the request.
+	*
+	* @readonly
+	*/
+	get version() {
+		return this.originalResponse.version;
+	}
+	/**
+	* The SHA-256 hash of the encryption key used to encrypt the blob. This value is only returned
+	* when the blob was encrypted with a customer-provided key.
+	*
+	* @readonly
+	*/
+	get encryptionKeySha256() {
+		return this.originalResponse.encryptionKeySha256;
+	}
+	/**
+	* If the request is to read a specified range and the x-ms-range-get-content-crc64 is set to
+	* true, then the request returns a crc64 for the range, as long as the range size is less than
+	* or equal to 4 MB. If both x-ms-range-get-content-crc64 & x-ms-range-get-content-md5 is
+	* specified in the same request, it will fail with 400(Bad Request)
+	*/
+	get contentCrc64() {
+		return this.originalResponse.contentCrc64;
+	}
+	/**
+	* The response body as a browser Blob.
+	* Always undefined in node.js.
+	*
+	* @readonly
+	*/
+	get blobBody() {}
+	/**
+	* The response body as a node.js Readable stream.
+	* Always undefined in the browser.
+	*
+	* It will parse avor data returned by blob query.
+	*
+	* @readonly
+	*/
+	get readableStreamBody() {
+		return isNodeLike ? this.blobDownloadStream : void 0;
+	}
+	/**
+	* The HTTP response.
+	*/
+	get _response() {
+		return this.originalResponse._response;
+	}
+	originalResponse;
+	blobDownloadStream;
+	/**
+	* Creates an instance of BlobQueryResponse.
+	*
+	* @param originalResponse -
+	* @param options -
+	*/
+	constructor(originalResponse, options = {}) {
+		this.originalResponse = originalResponse;
+		this.blobDownloadStream = new BlobQuickQueryStream(this.originalResponse.readableStreamBody, options);
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/models.js
+/**
+* Represents the access tier on a blob.
+* For detailed information about block blob level tiering see {@link https://learn.microsoft.com/azure/storage/blobs/storage-blob-storage-tiers|Hot, cool and archive storage tiers.}
+*/
+var BlockBlobTier;
+(function(BlockBlobTier) {
+	/**
+	* Optimized for storing data that is accessed frequently.
+	*/
+	BlockBlobTier["Hot"] = "Hot";
+	/**
+	* Optimized for storing data that is infrequently accessed and stored for at least 30 days.
+	*/
+	BlockBlobTier["Cool"] = "Cool";
+	/**
+	* Optimized for storing data that is rarely accessed.
+	*/
+	BlockBlobTier["Cold"] = "Cold";
+	/**
+	* Optimized for storing data that is rarely accessed and stored for at least 180 days
+	* with flexible latency requirements (on the order of hours).
+	*/
+	BlockBlobTier["Archive"] = "Archive";
+})(BlockBlobTier || (BlockBlobTier = {}));
+/**
+* Specifies the page blob tier to set the blob to. This is only applicable to page blobs on premium storage accounts.
+* Please see {@link https://learn.microsoft.com/azure/storage/storage-premium-storage#scalability-and-performance-targets|here}
+* for detailed information on the corresponding IOPS and throughput per PageBlobTier.
+*/
+var PremiumPageBlobTier;
+(function(PremiumPageBlobTier) {
+	/**
+	* P4 Tier.
+	*/
+	PremiumPageBlobTier["P4"] = "P4";
+	/**
+	* P6 Tier.
+	*/
+	PremiumPageBlobTier["P6"] = "P6";
+	/**
+	* P10 Tier.
+	*/
+	PremiumPageBlobTier["P10"] = "P10";
+	/**
+	* P15 Tier.
+	*/
+	PremiumPageBlobTier["P15"] = "P15";
+	/**
+	* P20 Tier.
+	*/
+	PremiumPageBlobTier["P20"] = "P20";
+	/**
+	* P30 Tier.
+	*/
+	PremiumPageBlobTier["P30"] = "P30";
+	/**
+	* P40 Tier.
+	*/
+	PremiumPageBlobTier["P40"] = "P40";
+	/**
+	* P50 Tier.
+	*/
+	PremiumPageBlobTier["P50"] = "P50";
+	/**
+	* P60 Tier.
+	*/
+	PremiumPageBlobTier["P60"] = "P60";
+	/**
+	* P70 Tier.
+	*/
+	PremiumPageBlobTier["P70"] = "P70";
+	/**
+	* P80 Tier.
+	*/
+	PremiumPageBlobTier["P80"] = "P80";
+})(PremiumPageBlobTier || (PremiumPageBlobTier = {}));
+function toAccessTier(tier) {
+	if (tier === void 0) return;
+	return tier;
+}
+function ensureCpkIfSpecified(cpk, isHttps) {
+	if (cpk && !isHttps) throw new RangeError("Customer-provided encryption key must be used over HTTPS.");
+	if (cpk && !cpk.encryptionAlgorithm) cpk.encryptionAlgorithm = EncryptionAlgorithmAES25;
+}
+/**
+* Defines the known cloud audiences for Storage.
+*/
+var StorageBlobAudience;
+(function(StorageBlobAudience) {
+	/**
+	* The OAuth scope to use to retrieve an AAD token for Azure Storage.
+	*/
+	StorageBlobAudience["StorageOAuthScopes"] = "https://storage.azure.com/.default";
+	/**
+	* The OAuth scope to use to retrieve an AAD token for Azure Disk.
+	*/
+	StorageBlobAudience["DiskComputeOAuthScopes"] = "https://disk.compute.azure.com/.default";
+})(StorageBlobAudience || (StorageBlobAudience = {}));
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/PageBlobRangeResponse.js
+/**
+* Function that converts PageRange and ClearRange to a common Range object.
+* PageRange and ClearRange have start and end while Range offset and count
+* this function normalizes to Range.
+* @param response - Model PageBlob Range response
+*/
+function rangeResponseFromModel(response) {
+	const pageRange = (response._response.parsedBody.pageRange || []).map((x) => ({
+		offset: x.start,
+		count: x.end - x.start
+	}));
+	const clearRange = (response._response.parsedBody.clearRange || []).map((x) => ({
+		offset: x.start,
+		count: x.end - x.start
+	}));
+	return {
+		...response,
+		pageRange,
+		clearRange,
+		_response: {
+			...response._response,
+			parsedBody: {
+				pageRange,
+				clearRange
+			}
+		}
+	};
+}
+//#endregion
+//#region node_modules/@azure/core-lro/dist/esm/legacy/poller.js
+/**
+* When a poller is manually stopped through the `stopPolling` method,
+* the poller will be rejected with an instance of the PollerStoppedError.
+*/
+var PollerStoppedError = class PollerStoppedError extends Error {
+	constructor(message) {
+		super(message);
+		this.name = "PollerStoppedError";
+		Object.setPrototypeOf(this, PollerStoppedError.prototype);
+	}
+};
+/**
+* When the operation is cancelled, the poller will be rejected with an instance
+* of the PollerCancelledError.
+*/
+var PollerCancelledError = class PollerCancelledError extends Error {
+	constructor(message) {
+		super(message);
+		this.name = "PollerCancelledError";
+		Object.setPrototypeOf(this, PollerCancelledError.prototype);
+	}
+};
+/**
+* A class that represents the definition of a program that polls through consecutive requests
+* until it reaches a state of completion.
+*
+* A poller can be executed manually, by polling request by request by calling to the `poll()` method repeatedly, until its operation is completed.
+* It also provides a way to wait until the operation completes, by calling `pollUntilDone()` and waiting until the operation finishes.
+* Pollers can also request the cancellation of the ongoing process to whom is providing the underlying long running operation.
+*
+* ```ts
+* const poller = new MyPoller();
+*
+* // Polling just once:
+* await poller.poll();
+*
+* // We can try to cancel the request here, by calling:
+* //
+* //     await poller.cancelOperation();
+* //
+*
+* // Getting the final result:
+* const result = await poller.pollUntilDone();
+* ```
+*
+* The Poller is defined by two types, a type representing the state of the poller, which
+* must include a basic set of properties from `PollOperationState<TResult>`,
+* and a return type defined by `TResult`, which can be anything.
+*
+* The Poller class implements the `PollerLike` interface, which allows poller implementations to avoid having
+* to export the Poller's class directly, and instead only export the already instantiated poller with the PollerLike type.
+*
+* ```ts
+* class Client {
+*   public async makePoller: PollerLike<MyOperationState, MyResult> {
+*     const poller = new MyPoller({});
+*     // It might be preferred to return the poller after the first request is made,
+*     // so that some information can be obtained right away.
+*     await poller.poll();
+*     return poller;
+*   }
+* }
+*
+* const poller: PollerLike<MyOperationState, MyResult> = myClient.makePoller();
+* ```
+*
+* A poller can be created through its constructor, then it can be polled until it's completed.
+* At any point in time, the state of the poller can be obtained without delay through the getOperationState method.
+* At any point in time, the intermediate forms of the result type can be requested without delay.
+* Once the underlying operation is marked as completed, the poller will stop and the final value will be returned.
+*
+* ```ts
+* const poller = myClient.makePoller();
+* const state: MyOperationState = poller.getOperationState();
+*
+* // The intermediate result can be obtained at any time.
+* const result: MyResult | undefined = poller.getResult();
+*
+* // The final result can only be obtained after the poller finishes.
+* const result: MyResult = await poller.pollUntilDone();
+* ```
+*
+*/
+var Poller = class {
+	/**
+	* A poller needs to be initialized by passing in at least the basic properties of the `PollOperation<TState, TResult>`.
+	*
+	* When writing an implementation of a Poller, this implementation needs to deal with the initialization
+	* of any custom state beyond the basic definition of the poller. The basic poller assumes that the poller's
+	* operation has already been defined, at least its basic properties. The code below shows how to approach
+	* the definition of the constructor of a new custom poller.
+	*
+	* ```ts
+	* export class MyPoller extends Poller<MyOperationState, string> {
+	*   constructor({
+	*     // Anything you might need outside of the basics
+	*   }) {
+	*     let state: MyOperationState = {
+	*       privateProperty: private,
+	*       publicProperty: public,
+	*     };
+	*
+	*     const operation = {
+	*       state,
+	*       update,
+	*       cancel,
+	*       toString
+	*     }
+	*
+	*     // Sending the operation to the parent's constructor.
+	*     super(operation);
+	*
+	*     // You can assign more local properties here.
+	*   }
+	* }
+	* ```
+	*
+	* Inside of this constructor, a new promise is created. This will be used to
+	* tell the user when the poller finishes (see `pollUntilDone()`). The promise's
+	* resolve and reject methods are also used internally to control when to resolve
+	* or reject anyone waiting for the poller to finish.
+	*
+	* The constructor of a custom implementation of a poller is where any serialized version of
+	* a previous poller's operation should be deserialized into the operation sent to the
+	* base constructor. For example:
+	*
+	* ```ts
+	* export class MyPoller extends Poller<MyOperationState, string> {
+	*   constructor(
+	*     baseOperation: string | undefined
+	*   ) {
+	*     let state: MyOperationState = {};
+	*     if (baseOperation) {
+	*       state = {
+	*         ...JSON.parse(baseOperation).state,
+	*         ...state
+	*       };
+	*     }
+	*     const operation = {
+	*       state,
+	*       // ...
+	*     }
+	*     super(operation);
+	*   }
+	* }
+	* ```
+	*
+	* @param operation - Must contain the basic properties of `PollOperation<State, TResult>`.
+	*/
+	constructor(operation) {
+		/** controls whether to throw an error if the operation failed or was canceled. */
+		this.resolveOnUnsuccessful = false;
+		this.stopped = true;
+		this.pollProgressCallbacks = [];
+		this.operation = operation;
+		this.promise = new Promise((resolve, reject) => {
+			this.resolve = resolve;
+			this.reject = reject;
+		});
+		this.promise.catch(() => {});
+	}
+	/**
+	* Starts a loop that will break only if the poller is done
+	* or if the poller is stopped.
+	*/
+	async startPolling(pollOptions = {}) {
+		if (this.stopped) this.stopped = false;
+		while (!this.isStopped() && !this.isDone()) {
+			await this.poll(pollOptions);
+			await this.delay();
+		}
+	}
+	/**
+	* pollOnce does one polling, by calling to the update method of the underlying
+	* poll operation to make any relevant change effective.
+	*
+	* It only optionally receives an object with an abortSignal property, from \@azure/abort-controller's AbortSignalLike.
+	*
+	* @param options - Optional properties passed to the operation's update method.
+	*/
+	async pollOnce(options = {}) {
+		if (!this.isDone()) this.operation = await this.operation.update({
+			abortSignal: options.abortSignal,
+			fireProgress: this.fireProgress.bind(this)
+		});
+		this.processUpdatedState();
+	}
+	/**
+	* fireProgress calls the functions passed in via onProgress the method of the poller.
+	*
+	* It loops over all of the callbacks received from onProgress, and executes them, sending them
+	* the current operation state.
+	*
+	* @param state - The current operation state.
+	*/
+	fireProgress(state) {
+		for (const callback of this.pollProgressCallbacks) callback(state);
+	}
+	/**
+	* Invokes the underlying operation's cancel method.
+	*/
+	async cancelOnce(options = {}) {
+		this.operation = await this.operation.cancel(options);
+	}
+	/**
+	* Returns a promise that will resolve once a single polling request finishes.
+	* It does this by calling the update method of the Poller's operation.
+	*
+	* It only optionally receives an object with an abortSignal property, from \@azure/abort-controller's AbortSignalLike.
+	*
+	* @param options - Optional properties passed to the operation's update method.
+	*/
+	poll(options = {}) {
+		if (!this.pollOncePromise) {
+			this.pollOncePromise = this.pollOnce(options);
+			const clearPollOncePromise = () => {
+				this.pollOncePromise = void 0;
+			};
+			this.pollOncePromise.then(clearPollOncePromise, clearPollOncePromise).catch(this.reject);
+		}
+		return this.pollOncePromise;
+	}
+	processUpdatedState() {
+		if (this.operation.state.error) {
+			this.stopped = true;
+			if (!this.resolveOnUnsuccessful) {
+				this.reject(this.operation.state.error);
+				throw this.operation.state.error;
+			}
+		}
+		if (this.operation.state.isCancelled) {
+			this.stopped = true;
+			if (!this.resolveOnUnsuccessful) {
+				const error = new PollerCancelledError("Operation was canceled");
+				this.reject(error);
+				throw error;
+			}
+		}
+		if (this.isDone() && this.resolve) this.resolve(this.getResult());
+	}
+	/**
+	* Returns a promise that will resolve once the underlying operation is completed.
+	*/
+	async pollUntilDone(pollOptions = {}) {
+		if (this.stopped) this.startPolling(pollOptions).catch(this.reject);
+		this.processUpdatedState();
+		return this.promise;
+	}
+	/**
+	* Invokes the provided callback after each polling is completed,
+	* sending the current state of the poller's operation.
+	*
+	* It returns a method that can be used to stop receiving updates on the given callback function.
+	*/
+	onProgress(callback) {
+		this.pollProgressCallbacks.push(callback);
+		return () => {
+			this.pollProgressCallbacks = this.pollProgressCallbacks.filter((c) => c !== callback);
+		};
+	}
+	/**
+	* Returns true if the poller has finished polling.
+	*/
+	isDone() {
+		const state = this.operation.state;
+		return Boolean(state.isCompleted || state.isCancelled || state.error);
+	}
+	/**
+	* Stops the poller from continuing to poll.
+	*/
+	stopPolling() {
+		if (!this.stopped) {
+			this.stopped = true;
+			if (this.reject) this.reject(new PollerStoppedError("This poller is already stopped"));
+		}
+	}
+	/**
+	* Returns true if the poller is stopped.
+	*/
+	isStopped() {
+		return this.stopped;
+	}
+	/**
+	* Attempts to cancel the underlying operation.
+	*
+	* It only optionally receives an object with an abortSignal property, from \@azure/abort-controller's AbortSignalLike.
+	*
+	* If it's called again before it finishes, it will throw an error.
+	*
+	* @param options - Optional properties passed to the operation's update method.
+	*/
+	cancelOperation(options = {}) {
+		if (!this.cancelPromise) this.cancelPromise = this.cancelOnce(options);
+		else if (options.abortSignal) throw new Error("A cancel request is currently pending");
+		return this.cancelPromise;
+	}
+	/**
+	* Returns the state of the operation.
+	*
+	* Even though TState will be the same type inside any of the methods of any extension of the Poller class,
+	* implementations of the pollers can customize what's shared with the public by writing their own
+	* version of the `getOperationState` method, and by defining two types, one representing the internal state of the poller
+	* and a public type representing a safe to share subset of the properties of the internal state.
+	* Their definition of getOperationState can then return their public type.
+	*
+	* Example:
+	*
+	* ```ts
+	* // Let's say we have our poller's operation state defined as:
+	* interface MyOperationState extends PollOperationState<ResultType> {
+	*   privateProperty?: string;
+	*   publicProperty?: string;
+	* }
+	*
+	* // To allow us to have a true separation of public and private state, we have to define another interface:
+	* interface PublicState extends PollOperationState<ResultType> {
+	*   publicProperty?: string;
+	* }
+	*
+	* // Then, we define our Poller as follows:
+	* export class MyPoller extends Poller<MyOperationState, ResultType> {
+	*   // ... More content is needed here ...
+	*
+	*   public getOperationState(): PublicState {
+	*     const state: PublicState = this.operation.state;
+	*     return {
+	*       // Properties from PollOperationState<TResult>
+	*       isStarted: state.isStarted,
+	*       isCompleted: state.isCompleted,
+	*       isCancelled: state.isCancelled,
+	*       error: state.error,
+	*       result: state.result,
+	*
+	*       // The only other property needed by PublicState.
+	*       publicProperty: state.publicProperty
+	*     }
+	*   }
+	* }
+	* ```
+	*
+	* You can see this in the tests of this repository, go to the file:
+	* `../test/utils/testPoller.ts`
+	* and look for the getOperationState implementation.
+	*/
+	getOperationState() {
+		return this.operation.state;
+	}
+	/**
+	* Returns the result value of the operation,
+	* regardless of the state of the poller.
+	* It can return undefined or an incomplete form of the final TResult value
+	* depending on the implementation.
+	*/
+	getResult() {
+		return this.operation.state.result;
+	}
+	/**
+	* Returns a serialized version of the poller's operation
+	* by invoking the operation's toString method.
+	*/
+	toString() {
+		return this.operation.toString();
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/pollers/BlobStartCopyFromUrlPoller.js
+/**
+* This is the poller returned by {@link BlobClient.beginCopyFromURL}.
+* This can not be instantiated directly outside of this package.
+*
+* @hidden
+*/
+var BlobBeginCopyFromUrlPoller = class extends Poller {
+	intervalInMs;
+	constructor(options) {
+		const { blobClient, copySource, intervalInMs = 15e3, onProgress, resumeFrom, startCopyFromURLOptions } = options;
+		let state;
+		if (resumeFrom) state = JSON.parse(resumeFrom).state;
+		const operation = makeBlobBeginCopyFromURLPollOperation({
+			...state,
+			blobClient,
+			copySource,
+			startCopyFromURLOptions
+		});
+		super(operation);
+		if (typeof onProgress === "function") this.onProgress(onProgress);
+		this.intervalInMs = intervalInMs;
+	}
+	delay() {
+		return delay$1(this.intervalInMs);
+	}
+};
+/**
+* Note: Intentionally using function expression over arrow function expression
+* so that the function can be invoked with a different context.
+* This affects what `this` refers to.
+* @hidden
+*/
+var cancel = async function cancel(options = {}) {
+	const state = this.state;
+	const { copyId } = state;
+	if (state.isCompleted) return makeBlobBeginCopyFromURLPollOperation(state);
+	if (!copyId) {
+		state.isCancelled = true;
+		return makeBlobBeginCopyFromURLPollOperation(state);
+	}
+	await state.blobClient.abortCopyFromURL(copyId, { abortSignal: options.abortSignal });
+	state.isCancelled = true;
+	return makeBlobBeginCopyFromURLPollOperation(state);
+};
+/**
+* Note: Intentionally using function expression over arrow function expression
+* so that the function can be invoked with a different context.
+* This affects what `this` refers to.
+* @hidden
+*/
+var update = async function update(options = {}) {
+	const state = this.state;
+	const { blobClient, copySource, startCopyFromURLOptions } = state;
+	if (!state.isStarted) {
+		state.isStarted = true;
+		const result = await blobClient.startCopyFromURL(copySource, startCopyFromURLOptions);
+		state.copyId = result.copyId;
+		if (result.copyStatus === "success") {
+			state.result = result;
+			state.isCompleted = true;
+		}
+	} else if (!state.isCompleted) try {
+		const result = await state.blobClient.getProperties({ abortSignal: options.abortSignal });
+		const { copyStatus, copyProgress } = result;
+		const prevCopyProgress = state.copyProgress;
+		if (copyProgress) state.copyProgress = copyProgress;
+		if (copyStatus === "pending" && copyProgress !== prevCopyProgress && typeof options.fireProgress === "function") options.fireProgress(state);
+		else if (copyStatus === "success") {
+			state.result = result;
+			state.isCompleted = true;
+		} else if (copyStatus === "failed") {
+			state.error = /* @__PURE__ */ new Error(`Blob copy failed with reason: "${result.copyStatusDescription || "unknown"}"`);
+			state.isCompleted = true;
+		}
+	} catch (err) {
+		state.error = err;
+		state.isCompleted = true;
+	}
+	return makeBlobBeginCopyFromURLPollOperation(state);
+};
+/**
+* Note: Intentionally using function expression over arrow function expression
+* so that the function can be invoked with a different context.
+* This affects what `this` refers to.
+* @hidden
+*/
+var toString = function toString() {
+	return JSON.stringify({ state: this.state }, (key, value) => {
+		if (key === "blobClient") return;
+		return value;
+	});
+};
+/**
+* Creates a poll operation given the provided state.
+* @hidden
+*/
+function makeBlobBeginCopyFromURLPollOperation(state) {
+	return {
+		state: { ...state },
+		cancel,
+		toString,
+		update
+	};
+}
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/Range.js
+/**
+* Generate a range string. For example:
+*
+* "bytes=255-" or "bytes=0-511"
+*
+* @param iRange -
+*/
+function rangeToString(iRange) {
+	if (iRange.offset < 0) throw new RangeError(`Range.offset cannot be smaller than 0.`);
+	if (iRange.count && iRange.count <= 0) throw new RangeError(`Range.count must be larger than 0. Leave it undefined if you want a range from offset to the end.`);
+	return iRange.count ? `bytes=${iRange.offset}-${iRange.offset + iRange.count - 1}` : `bytes=${iRange.offset}-`;
+}
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/utils/Batch.js
+/**
+* States for Batch.
+*/
+var BatchStates;
+(function(BatchStates) {
+	BatchStates[BatchStates["Good"] = 0] = "Good";
+	BatchStates[BatchStates["Error"] = 1] = "Error";
+})(BatchStates || (BatchStates = {}));
+/**
+* Batch provides basic parallel execution with concurrency limits.
+* Will stop execute left operations when one of the executed operation throws an error.
+* But Batch cannot cancel ongoing operations, you need to cancel them by yourself.
+*/
+var Batch = class {
+	/**
+	* Concurrency. Must be lager than 0.
+	*/
+	concurrency;
+	/**
+	* Number of active operations under execution.
+	*/
+	actives = 0;
+	/**
+	* Number of completed operations under execution.
+	*/
+	completed = 0;
+	/**
+	* Offset of next operation to be executed.
+	*/
+	offset = 0;
+	/**
+	* Operation array to be executed.
+	*/
+	operations = [];
+	/**
+	* States of Batch. When an error happens, state will turn into error.
+	* Batch will stop execute left operations.
+	*/
+	state = BatchStates.Good;
+	/**
+	* A private emitter used to pass events inside this class.
+	*/
+	emitter;
+	/**
+	* Creates an instance of Batch.
+	* @param concurrency -
+	*/
+	constructor(concurrency = 5) {
+		if (concurrency < 1) throw new RangeError("concurrency must be larger than 0");
+		this.concurrency = concurrency;
+		this.emitter = new EventEmitter();
+	}
+	/**
+	* Add a operation into queue.
+	*
+	* @param operation -
+	*/
+	addOperation(operation) {
+		this.operations.push(async () => {
+			try {
+				this.actives++;
+				await operation();
+				this.actives--;
+				this.completed++;
+				this.parallelExecute();
+			} catch (error) {
+				this.emitter.emit("error", error);
+			}
+		});
+	}
+	/**
+	* Start execute operations in the queue.
+	*
+	*/
+	async do() {
+		if (this.operations.length === 0) return Promise.resolve();
+		this.parallelExecute();
+		return new Promise((resolve, reject) => {
+			this.emitter.on("finish", resolve);
+			this.emitter.on("error", (error) => {
+				this.state = BatchStates.Error;
+				reject(error);
+			});
+		});
+	}
+	/**
+	* Get next operation to be executed. Return null when reaching ends.
+	*
+	*/
+	nextOperation() {
+		if (this.offset < this.operations.length) return this.operations[this.offset++];
+		return null;
+	}
+	/**
+	* Start execute operations. One one the most important difference between
+	* this method with do() is that do() wraps as an sync method.
+	*
+	*/
+	parallelExecute() {
+		if (this.state === BatchStates.Error) return;
+		if (this.completed >= this.operations.length) {
+			this.emitter.emit("finish");
+			return;
+		}
+		while (this.actives < this.concurrency) {
+			const operation = this.nextOperation();
+			if (operation) operation();
+			else return;
+		}
+	}
+};
+//#endregion
+//#region node_modules/@azure/storage-blob/dist/esm/utils/utils.js
+/**
+* Reads a readable stream into buffer. Fill the buffer from offset to end.
+*
+* @param stream - A Node.js Readable stream
+* @param buffer - Buffer to be filled, length must greater than or equal to offset
+* @param offset - From which position in the buffer to be filled, inclusive
+* @param end - To which position in the buffer to be filled, exclusive
+* @param encoding - Encoding of the Readable stream
+*/
+async function streamToBuffer(stream, buffer, offset, end, encoding) {
+	let pos = 0;
+	const count = end - offset;
+	return new Promise((resolve, reject) => {
+		const timeout = setTimeout(() => reject(/* @__PURE__ */ new Error(`The operation cannot be completed in timeout.`)), REQUEST_TIMEOUT);
+		stream.on("readable", () => {
+			if (pos >= count) {
+				clearTimeout(timeout);
+				resolve();
+				return;
+			}
+			let chunk = stream.read();
+			if (!chunk) return;
+			if (typeof chunk === "string") chunk = Buffer.from(chunk, encoding);
+			const chunkLength = pos + chunk.length > count ? count - pos : chunk.length;
+			buffer.fill(chunk.slice(0, chunkLength), offset + pos, offset + pos + chunkLength);
+			pos += chunkLength;
+		});
+		stream.on("end", () => {
+			clearTimeout(timeout);
+			if (pos < count) reject(/* @__PURE__ */ new Error(`Stream drains before getting enough data needed. Data read: ${pos}, data need: ${count}`));
+			resolve();
+		});
+		stream.on("error", (msg) => {
+			clearTimeout(timeout);
+			reject(msg);
+		});
+	});
+}
+/**
+* ONLY AVAILABLE IN NODE.JS RUNTIME.
+*
+* Writes the content of a readstream to a local file. Returns a Promise which is completed after the file handle is closed.
+*
+* @param rs - The read stream.
+* @param file - Destination file path.
+*/
+async function readStreamToLocalFile(rs, file) {
+	return new Promise((resolve, reject) => {
+		const ws = fs.createWriteStream(file);
+		rs.on("error", (err) => {
+			reject(err);
+		});
+		ws.on("error", (err) => {
+			reject(err);
+		});
+		ws.on("close", resolve);
+		rs.pipe(ws);
+	});
+}
+/**
+* ONLY AVAILABLE IN NODE.JS RUNTIME.
+*
+* Promisified version of fs.stat().
+*/
+var fsStat = util.promisify(fs.stat);
+var fsCreateReadStream = fs.createReadStream;
 //#endregion
 //#region node_modules/@azure/storage-blob/dist/esm/Clients.js
 /**
@@ -47490,9 +47561,12 @@ var require__objectToString = /* @__PURE__ */ __commonJSMin(((exports, module) =
 //#endregion
 //#region node_modules/lodash/_baseGetTag.js
 var require__baseGetTag = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var Symbol = require__Symbol(), getRawTag = require__getRawTag(), objectToString = require__objectToString();
+	var Symbol = require__Symbol();
+	var getRawTag = require__getRawTag();
+	var objectToString = require__objectToString();
 	/** `Object#toString` result references. */
-	var nullTag = "[object Null]", undefinedTag = "[object Undefined]";
+	var nullTag = "[object Null]";
+	var undefinedTag = "[object Undefined]";
 	/** Built-in value references. */
 	var symToStringTag = Symbol ? Symbol.toStringTag : void 0;
 	/**
@@ -47545,9 +47619,13 @@ var require_isObject = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/isFunction.js
 var require_isFunction = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var baseGetTag = require__baseGetTag(), isObject = require_isObject();
+	var baseGetTag = require__baseGetTag();
+	var isObject = require_isObject();
 	/** `Object#toString` result references. */
-	var asyncTag = "[object AsyncFunction]", funcTag = "[object Function]", genTag = "[object GeneratorFunction]", proxyTag = "[object Proxy]";
+	var asyncTag = "[object AsyncFunction]";
+	var funcTag = "[object Function]";
+	var genTag = "[object GeneratorFunction]";
+	var proxyTag = "[object Proxy]";
 	/**
 	* Checks if `value` is classified as a `Function` object.
 	*
@@ -47626,7 +47704,10 @@ var require__toSource = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/_baseIsNative.js
 var require__baseIsNative = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var isFunction = require_isFunction(), isMasked = require__isMasked(), isObject = require_isObject(), toSource = require__toSource();
+	var isFunction = require_isFunction();
+	var isMasked = require__isMasked();
+	var isObject = require_isObject();
+	var toSource = require__toSource();
 	/**
 	* Used to match `RegExp`
 	* [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
@@ -47635,7 +47716,8 @@ var require__baseIsNative = /* @__PURE__ */ __commonJSMin(((exports, module) => 
 	/** Used to detect host constructors (Safari). */
 	var reIsHostCtor = /^\[object .+?Constructor\]$/;
 	/** Used for built-in method references. */
-	var funcProto = Function.prototype, objectProto = Object.prototype;
+	var funcProto = Function.prototype;
+	var objectProto = Object.prototype;
 	/** Used to resolve the decompiled source of functions. */
 	var funcToString = funcProto.toString;
 	/** Used to check objects for own properties. */
@@ -47675,7 +47757,8 @@ var require__getValue = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/_getNative.js
 var require__getNative = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var baseIsNative = require__baseIsNative(), getValue = require__getValue();
+	var baseIsNative = require__baseIsNative();
+	var getValue = require__getValue();
 	/**
 	* Gets the native function at `key` of `object`.
 	*
@@ -47705,7 +47788,9 @@ var require__defineProperty = /* @__PURE__ */ __commonJSMin(((exports, module) =
 //#endregion
 //#region node_modules/lodash/_baseSetToString.js
 var require__baseSetToString = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var constant = require_constant(), defineProperty = require__defineProperty(), identity = require_identity$1();
+	var constant = require_constant();
+	var defineProperty = require__defineProperty();
+	var identity = require_identity$1();
 	module.exports = !defineProperty ? identity : function(func, string) {
 		return defineProperty(func, "toString", {
 			"configurable": true,
@@ -47719,7 +47804,8 @@ var require__baseSetToString = /* @__PURE__ */ __commonJSMin(((exports, module) 
 //#region node_modules/lodash/_shortOut.js
 var require__shortOut = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	/** Used to detect hot functions by number of calls within a span of milliseconds. */
-	var HOT_COUNT = 800, HOT_SPAN = 16;
+	var HOT_COUNT = 800;
+	var HOT_SPAN = 16;
 	var nativeNow = Date.now;
 	/**
 	* Creates a function that'll short out and invoke `identity` instead
@@ -47752,7 +47838,9 @@ var require__setToString = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/_baseRest.js
 var require__baseRest = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var identity = require_identity$1(), overRest = require__overRest(), setToString = require__setToString();
+	var identity = require_identity$1();
+	var overRest = require__overRest();
+	var setToString = require__setToString();
 	/**
 	* The base implementation of `_.rest` which doesn't validate or coerce arguments.
 	*
@@ -47845,7 +47933,8 @@ var require_isLength = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/isArrayLike.js
 var require_isArrayLike = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var isFunction = require_isFunction(), isLength = require_isLength();
+	var isFunction = require_isFunction();
+	var isLength = require_isLength();
 	/**
 	* Checks if `value` is array-like. A value is considered array-like if it's
 	* not a function and has a `value.length` that's an integer greater than or
@@ -47901,7 +47990,10 @@ var require__isIndex = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/_isIterateeCall.js
 var require__isIterateeCall = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var eq = require_eq(), isArrayLike = require_isArrayLike(), isIndex = require__isIndex(), isObject = require_isObject();
+	var eq = require_eq();
+	var isArrayLike = require_isArrayLike();
+	var isIndex = require__isIndex();
+	var isObject = require_isObject();
 	/**
 	* Checks if the given arguments are from an iteratee call.
 	*
@@ -47974,7 +48066,8 @@ var require_isObjectLike = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/_baseIsArguments.js
 var require__baseIsArguments = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var baseGetTag = require__baseGetTag(), isObjectLike = require_isObjectLike();
+	var baseGetTag = require__baseGetTag();
+	var isObjectLike = require_isObjectLike();
 	/** `Object#toString` result references. */
 	var argsTag = "[object Arguments]";
 	/**
@@ -47992,7 +48085,8 @@ var require__baseIsArguments = /* @__PURE__ */ __commonJSMin(((exports, module) 
 //#endregion
 //#region node_modules/lodash/isArguments.js
 var require_isArguments = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var baseIsArguments = require__baseIsArguments(), isObjectLike = require_isObjectLike();
+	var baseIsArguments = require__baseIsArguments();
+	var isObjectLike = require_isObjectLike();
 	/** Used for built-in method references. */
 	var objectProto = Object.prototype;
 	/** Used to check objects for own properties. */
@@ -48034,7 +48128,8 @@ var require_stubFalse = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/isBuffer.js
 var require_isBuffer = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var root = require__root(), stubFalse = require_stubFalse();
+	var root = require__root();
+	var stubFalse = require_stubFalse();
 	/** Detect free variable `exports`. */
 	var freeExports = typeof exports == "object" && exports && !exports.nodeType && exports;
 	/** Detect free variable `module`. */
@@ -48046,10 +48141,34 @@ var require_isBuffer = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/_baseIsTypedArray.js
 var require__baseIsTypedArray = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var baseGetTag = require__baseGetTag(), isLength = require_isLength(), isObjectLike = require_isObjectLike();
+	var baseGetTag = require__baseGetTag();
+	var isLength = require_isLength();
+	var isObjectLike = require_isObjectLike();
 	/** `Object#toString` result references. */
-	var argsTag = "[object Arguments]", arrayTag = "[object Array]", boolTag = "[object Boolean]", dateTag = "[object Date]", errorTag = "[object Error]", funcTag = "[object Function]", mapTag = "[object Map]", numberTag = "[object Number]", objectTag = "[object Object]", regexpTag = "[object RegExp]", setTag = "[object Set]", stringTag = "[object String]", weakMapTag = "[object WeakMap]";
-	var arrayBufferTag = "[object ArrayBuffer]", dataViewTag = "[object DataView]", float32Tag = "[object Float32Array]", float64Tag = "[object Float64Array]", int8Tag = "[object Int8Array]", int16Tag = "[object Int16Array]", int32Tag = "[object Int32Array]", uint8Tag = "[object Uint8Array]", uint8ClampedTag = "[object Uint8ClampedArray]", uint16Tag = "[object Uint16Array]", uint32Tag = "[object Uint32Array]";
+	var argsTag = "[object Arguments]";
+	var arrayTag = "[object Array]";
+	var boolTag = "[object Boolean]";
+	var dateTag = "[object Date]";
+	var errorTag = "[object Error]";
+	var funcTag = "[object Function]";
+	var mapTag = "[object Map]";
+	var numberTag = "[object Number]";
+	var objectTag = "[object Object]";
+	var regexpTag = "[object RegExp]";
+	var setTag = "[object Set]";
+	var stringTag = "[object String]";
+	var weakMapTag = "[object WeakMap]";
+	var arrayBufferTag = "[object ArrayBuffer]";
+	var dataViewTag = "[object DataView]";
+	var float32Tag = "[object Float32Array]";
+	var float64Tag = "[object Float64Array]";
+	var int8Tag = "[object Int8Array]";
+	var int16Tag = "[object Int16Array]";
+	var int32Tag = "[object Int32Array]";
+	var uint8Tag = "[object Uint8Array]";
+	var uint8ClampedTag = "[object Uint8ClampedArray]";
+	var uint16Tag = "[object Uint16Array]";
+	var uint32Tag = "[object Uint32Array]";
 	/** Used to identify `toStringTag` values of typed arrays. */
 	var typedArrayTags = {};
 	typedArrayTags[float32Tag] = typedArrayTags[float64Tag] = typedArrayTags[int8Tag] = typedArrayTags[int16Tag] = typedArrayTags[int32Tag] = typedArrayTags[uint8Tag] = typedArrayTags[uint8ClampedTag] = typedArrayTags[uint16Tag] = typedArrayTags[uint32Tag] = true;
@@ -48104,14 +48223,21 @@ var require__nodeUtil = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/isTypedArray.js
 var require_isTypedArray = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var baseIsTypedArray = require__baseIsTypedArray(), baseUnary = require__baseUnary(), nodeUtil = require__nodeUtil();
+	var baseIsTypedArray = require__baseIsTypedArray();
+	var baseUnary = require__baseUnary();
+	var nodeUtil = require__nodeUtil();
 	var nodeIsTypedArray = nodeUtil && nodeUtil.isTypedArray;
 	module.exports = nodeIsTypedArray ? baseUnary(nodeIsTypedArray) : baseIsTypedArray;
 }));
 //#endregion
 //#region node_modules/lodash/_arrayLikeKeys.js
 var require__arrayLikeKeys = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var baseTimes = require__baseTimes(), isArguments = require_isArguments(), isArray = require_isArray(), isBuffer = require_isBuffer(), isIndex = require__isIndex(), isTypedArray = require_isTypedArray();
+	var baseTimes = require__baseTimes();
+	var isArguments = require_isArguments();
+	var isArray = require_isArray();
+	var isBuffer = require_isBuffer();
+	var isIndex = require__isIndex();
+	var isTypedArray = require_isTypedArray();
 	/** Used to check objects for own properties. */
 	var hasOwnProperty = Object.prototype.hasOwnProperty;
 	/**
@@ -48169,7 +48295,9 @@ var require__nativeKeysIn = /* @__PURE__ */ __commonJSMin(((exports, module) => 
 //#endregion
 //#region node_modules/lodash/_baseKeysIn.js
 var require__baseKeysIn = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var isObject = require_isObject(), isPrototype = require__isPrototype(), nativeKeysIn = require__nativeKeysIn();
+	var isObject = require_isObject();
+	var isPrototype = require__isPrototype();
+	var nativeKeysIn = require__nativeKeysIn();
 	/** Used to check objects for own properties. */
 	var hasOwnProperty = Object.prototype.hasOwnProperty;
 	/**
@@ -48190,7 +48318,9 @@ var require__baseKeysIn = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/keysIn.js
 var require_keysIn = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var arrayLikeKeys = require__arrayLikeKeys(), baseKeysIn = require__baseKeysIn(), isArrayLike = require_isArrayLike();
+	var arrayLikeKeys = require__arrayLikeKeys();
+	var baseKeysIn = require__baseKeysIn();
+	var isArrayLike = require_isArrayLike();
 	/**
 	* Creates an array of the own and inherited enumerable property names of `object`.
 	*
@@ -48222,7 +48352,10 @@ var require_keysIn = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/defaults.js
 var require_defaults = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var baseRest = require__baseRest(), eq = require_eq(), isIterateeCall = require__isIterateeCall(), keysIn = require_keysIn();
+	var baseRest = require__baseRest();
+	var eq = require_eq();
+	var isIterateeCall = require__isIterateeCall();
+	var keysIn = require_keysIn();
 	/** Used for built-in method references. */
 	var objectProto = Object.prototype;
 	/** Used to check objects for own properties. */
@@ -53661,7 +53794,9 @@ var require__arrayPush = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/_isFlattenable.js
 var require__isFlattenable = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var Symbol = require__Symbol(), isArguments = require_isArguments(), isArray = require_isArray();
+	var Symbol = require__Symbol();
+	var isArguments = require_isArguments();
+	var isArray = require_isArray();
 	/** Built-in value references. */
 	var spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : void 0;
 	/**
@@ -53679,7 +53814,8 @@ var require__isFlattenable = /* @__PURE__ */ __commonJSMin(((exports, module) =>
 //#endregion
 //#region node_modules/lodash/_baseFlatten.js
 var require__baseFlatten = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var arrayPush = require__arrayPush(), isFlattenable = require__isFlattenable();
+	var arrayPush = require__arrayPush();
+	var isFlattenable = require__isFlattenable();
 	/**
 	* The base implementation of `_.flatten` with support for restricting flattening.
 	*
@@ -53845,7 +53981,11 @@ var require__hashSet = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/_Hash.js
 var require__Hash = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var hashClear = require__hashClear(), hashDelete = require__hashDelete(), hashGet = require__hashGet(), hashHas = require__hashHas(), hashSet = require__hashSet();
+	var hashClear = require__hashClear();
+	var hashDelete = require__hashDelete();
+	var hashGet = require__hashGet();
+	var hashHas = require__hashHas();
+	var hashSet = require__hashSet();
 	/**
 	* Creates a hash object.
 	*
@@ -53992,7 +54132,11 @@ var require__listCacheSet = /* @__PURE__ */ __commonJSMin(((exports, module) => 
 //#endregion
 //#region node_modules/lodash/_ListCache.js
 var require__ListCache = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var listCacheClear = require__listCacheClear(), listCacheDelete = require__listCacheDelete(), listCacheGet = require__listCacheGet(), listCacheHas = require__listCacheHas(), listCacheSet = require__listCacheSet();
+	var listCacheClear = require__listCacheClear();
+	var listCacheDelete = require__listCacheDelete();
+	var listCacheGet = require__listCacheGet();
+	var listCacheHas = require__listCacheHas();
+	var listCacheSet = require__listCacheSet();
 	/**
 	* Creates an list cache object.
 	*
@@ -54023,7 +54167,9 @@ var require__Map = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/_mapCacheClear.js
 var require__mapCacheClear = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var Hash = require__Hash(), ListCache = require__ListCache(), Map = require__Map();
+	var Hash = require__Hash();
+	var ListCache = require__ListCache();
+	var Map = require__Map();
 	/**
 	* Removes all key-value entries from the map.
 	*
@@ -54156,7 +54302,11 @@ var require__mapCacheSet = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/_MapCache.js
 var require__MapCache = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var mapCacheClear = require__mapCacheClear(), mapCacheDelete = require__mapCacheDelete(), mapCacheGet = require__mapCacheGet(), mapCacheHas = require__mapCacheHas(), mapCacheSet = require__mapCacheSet();
+	var mapCacheClear = require__mapCacheClear();
+	var mapCacheDelete = require__mapCacheDelete();
+	var mapCacheGet = require__mapCacheGet();
+	var mapCacheHas = require__mapCacheHas();
+	var mapCacheSet = require__mapCacheSet();
 	/**
 	* Creates a map cache object to store key-value pairs.
 	*
@@ -54220,7 +54370,9 @@ var require__setCacheHas = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/_SetCache.js
 var require__SetCache = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var MapCache = require__MapCache(), setCacheAdd = require__setCacheAdd(), setCacheHas = require__setCacheHas();
+	var MapCache = require__MapCache();
+	var setCacheAdd = require__setCacheAdd();
+	var setCacheHas = require__setCacheHas();
 	/**
 	*
 	* Creates an array cache object to store unique values.
@@ -54297,7 +54449,9 @@ var require__strictIndexOf = /* @__PURE__ */ __commonJSMin(((exports, module) =>
 //#endregion
 //#region node_modules/lodash/_baseIndexOf.js
 var require__baseIndexOf = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var baseFindIndex = require__baseFindIndex(), baseIsNaN = require__baseIsNaN(), strictIndexOf = require__strictIndexOf();
+	var baseFindIndex = require__baseFindIndex();
+	var baseIsNaN = require__baseIsNaN();
+	var strictIndexOf = require__strictIndexOf();
 	/**
 	* The base implementation of `_.indexOf` without `fromIndex` bounds checks.
 	*
@@ -54387,7 +54541,12 @@ var require__cacheHas = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/_baseDifference.js
 var require__baseDifference = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var SetCache = require__SetCache(), arrayIncludes = require__arrayIncludes(), arrayIncludesWith = require__arrayIncludesWith(), arrayMap = require__arrayMap(), baseUnary = require__baseUnary(), cacheHas = require__cacheHas();
+	var SetCache = require__SetCache();
+	var arrayIncludes = require__arrayIncludes();
+	var arrayIncludesWith = require__arrayIncludesWith();
+	var arrayMap = require__arrayMap();
+	var baseUnary = require__baseUnary();
+	var cacheHas = require__cacheHas();
 	/** Used as the size to enable large array optimizations. */
 	var LARGE_ARRAY_SIZE = 200;
 	/**
@@ -54429,7 +54588,8 @@ var require__baseDifference = /* @__PURE__ */ __commonJSMin(((exports, module) =
 //#endregion
 //#region node_modules/lodash/isArrayLikeObject.js
 var require_isArrayLikeObject = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var isArrayLike = require_isArrayLike(), isObjectLike = require_isObjectLike();
+	var isArrayLike = require_isArrayLike();
+	var isObjectLike = require_isObjectLike();
 	/**
 	* This method is like `_.isArrayLike` except that it also checks if `value`
 	* is an object.
@@ -54463,7 +54623,10 @@ var require_isArrayLikeObject = /* @__PURE__ */ __commonJSMin(((exports, module)
 //#endregion
 //#region node_modules/lodash/difference.js
 var require_difference = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var baseDifference = require__baseDifference(), baseFlatten = require__baseFlatten(), baseRest = require__baseRest(), isArrayLikeObject = require_isArrayLikeObject();
+	var baseDifference = require__baseDifference();
+	var baseFlatten = require__baseFlatten();
+	var baseRest = require__baseRest();
+	var isArrayLikeObject = require_isArrayLikeObject();
 	module.exports = baseRest(function(array, values) {
 		return isArrayLikeObject(array) ? baseDifference(array, baseFlatten(values, 1, isArrayLikeObject, true)) : [];
 	});
@@ -54513,7 +54676,9 @@ var require__setToArray = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/_createSet.js
 var require__createSet = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var Set = require__Set(), noop = require_noop(), setToArray = require__setToArray();
+	var Set = require__Set();
+	var noop = require_noop();
+	var setToArray = require__setToArray();
 	module.exports = !(Set && 1 / setToArray(new Set([, -0]))[1] == Infinity) ? noop : function(values) {
 		return new Set(values);
 	};
@@ -54521,7 +54686,12 @@ var require__createSet = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/_baseUniq.js
 var require__baseUniq = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var SetCache = require__SetCache(), arrayIncludes = require__arrayIncludes(), arrayIncludesWith = require__arrayIncludesWith(), cacheHas = require__cacheHas(), createSet = require__createSet(), setToArray = require__setToArray();
+	var SetCache = require__SetCache();
+	var arrayIncludes = require__arrayIncludes();
+	var arrayIncludesWith = require__arrayIncludesWith();
+	var cacheHas = require__cacheHas();
+	var createSet = require__createSet();
+	var setToArray = require__setToArray();
 	/** Used as the size to enable large array optimizations. */
 	var LARGE_ARRAY_SIZE = 200;
 	/**
@@ -54565,7 +54735,10 @@ var require__baseUniq = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#endregion
 //#region node_modules/lodash/union.js
 var require_union = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var baseFlatten = require__baseFlatten(), baseRest = require__baseRest(), baseUniq = require__baseUniq(), isArrayLikeObject = require_isArrayLikeObject();
+	var baseFlatten = require__baseFlatten();
+	var baseRest = require__baseRest();
+	var baseUniq = require__baseUniq();
+	var isArrayLikeObject = require_isArrayLikeObject();
 	module.exports = baseRest(function(arrays) {
 		return baseUniq(baseFlatten(arrays, 1, isArrayLikeObject, true));
 	});
@@ -54596,11 +54769,14 @@ var require__getPrototype = /* @__PURE__ */ __commonJSMin(((exports, module) => 
 //#endregion
 //#region node_modules/lodash/isPlainObject.js
 var require_isPlainObject = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var baseGetTag = require__baseGetTag(), getPrototype = require__getPrototype(), isObjectLike = require_isObjectLike();
+	var baseGetTag = require__baseGetTag();
+	var getPrototype = require__getPrototype();
+	var isObjectLike = require_isObjectLike();
 	/** `Object#toString` result references. */
 	var objectTag = "[object Object]";
 	/** Used for built-in method references. */
-	var funcProto = Function.prototype, objectProto = Object.prototype;
+	var funcProto = Function.prototype;
+	var objectProto = Object.prototype;
 	/** Used to resolve the decompiled source of functions. */
 	var funcToString = funcProto.toString;
 	/** Used to check objects for own properties. */
