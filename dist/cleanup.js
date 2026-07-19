@@ -1,4 +1,4 @@
-import { A as catchAll, At as warning, B as logInfo, J as runPromise, R as gen, Tt as getState, Z as sync, n as removeWorktree } from "./assets/git-BIKueTWS.js";
+import { A as catchAll, At as warning, B as logInfo, J as runPromise, R as gen, Tt as getState, Z as sync, n as removeWorktree } from "./assets/git-DIvoUPor.js";
 //#region src/cleanup.ts
 var cleanup = gen(function* () {
 	const worktreePath = yield* sync(() => getState("worktreePath"));
