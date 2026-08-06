@@ -1,5 +1,5 @@
-import { a as __toCommonJS, i as __require, n as __esmMin, o as __toESM, r as __exportAll, t as __commonJSMin } from "./assets/rolldown-runtime-CE-6LUnI.js";
-import { $ as sync, A as andThen, At as setSecret, B as gen, C as redacted, Ct as debug, D as Service, Dt as info, E as isConfigError, F as catchTag, Ft as HttpCodes, G as mapError, H as logInfo, I as catchTags, It as require_undici, J as promise, K as option, L as fail, Lt as require_tunnel, M as catchAll, Mt as exec, N as catchAllCause, Nt as BearerCredentialHandler, O as acquireRelease, Ot as setFailed$1, P as catchIf, Pt as HttpClient, Q as succeed, R as flatMap, S as option$1, St as pipe, T as value$1, Tt as getInput, U as logWarning, V as logError, W as map$2, X as runPromise, Y as provide, Z as scoped, _ as Struct, _t as getOrElse, a as GitHubApiError, at as mergeAll$1, b as pattern, bt as map$3, c as MissingAttributesError, ct as withConfigProviderScoped, d as NixPathInfoError, dt as set$1, et as tapError, f as NotPullRequestContextError, ft as fromEnv$1, g as NonEmptyString, gt as fromNullable, h as Literal, ht as flatMap$1, i as AttributeParseError, it as merge$2, j as as, jt as warning, k as all, kt as setOutput, l as NixBuildError, lt as get$1, m as Config, mt as orElse$1, nt as try_, o as InvalidCommentStrategyError, ot as scopedDiscard, p as Array$, pt as fromMap$1, q as orElseSucceed, r as ArtifactError, rt as TaggedError, s as InvalidDirectoryError, st as pretty, t as GitService, tt as tryPromise, u as NixDixError, ut as make$1, v as decodeUnknown, vt as getOrUndefined, w as string, wt as error, x as boolean, xt as match, y as filter$2, yt as isNone, z as forEach } from "./assets/git-C8p4VvVT.js";
+import { a as __toCommonJS, i as __require, n as __esmMin, o as __toESM, r as __exportAll, t as __commonJSMin } from "./assets/rolldown-runtime-BMI-E3GI.js";
+import { $ as sync, A as andThen, At as setSecret, B as gen, C as redacted, Ct as debug, D as Service, Dt as info, E as isConfigError, F as catchTag, Ft as HttpCodes, G as mapError, H as logInfo, I as catchTags, It as require_undici, J as promise, K as option, L as fail, Lt as require_tunnel, M as catchAll, Mt as exec, N as catchAllCause, Nt as BearerCredentialHandler, O as acquireRelease, Ot as setFailed$1, P as catchIf, Pt as HttpClient, Q as succeed, R as flatMap, S as option$1, St as pipe, T as value$1, Tt as getInput, U as logWarning, V as logError, W as map$2, X as runPromise, Y as provide, Z as scoped, _ as Struct, _t as getOrElse, a as GitHubApiError, at as mergeAll$1, b as pattern, bt as map$3, c as MissingAttributesError, ct as withConfigProviderScoped, d as NixPathInfoError, dt as set$1, et as tapError, f as NotPullRequestContextError, ft as fromEnv$1, g as NonEmptyString, gt as fromNullable, h as Literal, ht as flatMap$1, i as AttributeParseError, it as merge$2, j as as, jt as warning, k as all, kt as setOutput, l as NixBuildError, lt as get$1, m as Config, mt as orElse$1, nt as try_, o as InvalidCommentStrategyError, ot as scopedDiscard, p as Array$, pt as fromMap$1, q as orElseSucceed, r as ArtifactError, rt as TaggedError, s as InvalidDirectoryError, st as pretty, t as GitService, tt as tryPromise, u as NixDixError, ut as make$1, v as decodeUnknown, vt as getOrUndefined, w as string, wt as error, x as boolean, xt as match, y as filter$2, yt as isNone, z as forEach } from "./assets/git-X81EY5xg.js";
 import { createRequire } from "node:module";
 import * as os$2 from "os";
 import os, { EOL } from "os";
@@ -715,7 +715,7 @@ var import_lib = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((export
 			req.on("socket", (sock) => {
 				socket = sock;
 			});
-			req.setTimeout(this._socketTimeout || 3 * 6e4, () => {
+			req.setTimeout(this._socketTimeout || 18e4, () => {
 				if (socket) socket.end();
 				handleResult(/* @__PURE__ */ new Error(`Request timeout: ${info.options.path}`));
 			});
@@ -3670,7 +3670,7 @@ function getOctokit(token, options, ...additionalPlugins) {
 //#endregion
 //#region node_modules/@actions/artifact/lib/internal/shared/config.js
 function getUploadChunkSize() {
-	return 8 * 1024 * 1024;
+	return 8388608;
 }
 function getRuntimeToken() {
 	const token = process.env["ACTIONS_RUNTIME_TOKEN"];
@@ -3798,7 +3798,6 @@ function base64decode(base64Str) {
 			case 3:
 				bytes[bytePos++] = (p & 3) << 6 | b;
 				groupPos = 0;
-				break;
 		}
 	}
 	if (groupPos == 1) throw Error(`invalid base64 string.`);
@@ -3828,7 +3827,6 @@ function base64encode$1(bytes) {
 				base64 += encTable[p | b >> 6];
 				base64 += encTable[b & 63];
 				groupPos = 0;
-				break;
 		}
 	}
 	if (groupPos) {
@@ -4001,7 +3999,7 @@ function varint64write(lo, hi, bytes) {
 	}
 	bytes.push(hi >>> 31 & 1);
 }
-var TWO_PWR_32_DBL$1 = 65536 * 65536;
+var TWO_PWR_32_DBL$1 = 4294967296;
 /**
 * Parse decimal string of 64 bit integer value as two JS numbers.
 *
@@ -4950,9 +4948,7 @@ var ReflectionTypeCheck = class {
 				case "message":
 					if (field.repeat) req.push(field.localName);
 					break;
-				case "map":
-					req.push(field.localName);
-					break;
+				case "map": req.push(field.localName);
 			}
 		}
 		this.data = {
@@ -5029,7 +5025,6 @@ var ReflectionTypeCheck = class {
 					case "enum": return this.scalars(Object.values(arg), ScalarType.INT32, depth);
 					case "message": return this.messages(Object.values(arg), field.V.T(), allowExcessProperties, depth);
 				}
-				break;
 		}
 		return true;
 	}
@@ -5173,9 +5168,7 @@ var ReflectionJsonReader = class {
 							val = this.enum(field.V.T(), jsonObjValue, field.name, options.ignoreUnknownFields);
 							if (val === false) continue;
 							break;
-						case "scalar":
-							val = this.scalar(jsonObjValue, field.V.T, field.V.L, field.name);
-							break;
+						case "scalar": val = this.scalar(jsonObjValue, field.V.T, field.V.L, field.name);
 					}
 					this.assert(val !== void 0, field.name + " map value", jsonObjValue);
 					let key = jsonObjKey;
@@ -5198,9 +5191,7 @@ var ReflectionJsonReader = class {
 							val = this.enum(field.T(), jsonItem, field.name, options.ignoreUnknownFields);
 							if (val === false) continue;
 							break;
-						case "scalar":
-							val = this.scalar(jsonItem, field.T, field.L, field.name);
-							break;
+						case "scalar": val = this.scalar(jsonItem, field.T, field.L, field.name);
 					}
 					this.assert(val !== void 0, field.name, jsonValue);
 					fieldArr.push(val);
@@ -5222,7 +5213,6 @@ var ReflectionJsonReader = class {
 				case "scalar":
 					if (jsonValue === null) continue;
 					target[localName] = this.scalar(jsonValue, field.T, field.L, field.name);
-					break;
 			}
 		}
 	}
@@ -5388,7 +5378,6 @@ var ReflectionJsonWriter = class {
 						assert(val !== void 0);
 						jsonObj[entryKey.toString()] = val;
 					}
-					break;
 			}
 			if (options.emitDefaultValues || Object.keys(jsonObj).length > 0) jsonValue = jsonObj;
 		} else if (field.repeat) {
@@ -5418,7 +5407,6 @@ var ReflectionJsonWriter = class {
 						assert(val !== void 0);
 						jsonArr.push(val);
 					}
-					break;
 			}
 			if (options.emitDefaultValues || jsonArr.length > 0 || options.emitDefaultValues) jsonValue = jsonArr;
 		} else switch (field.kind) {
@@ -5428,9 +5416,7 @@ var ReflectionJsonWriter = class {
 			case "enum":
 				jsonValue = this.enum(field.T(), value, field.name, field.opt, options.emitDefaultValues, options.enumAsInteger);
 				break;
-			case "message":
-				jsonValue = this.message(field.T(), value, field.name, options);
-				break;
+			case "message": jsonValue = this.message(field.T(), value, field.name, options);
 		}
 		return jsonValue;
 	}
@@ -5595,7 +5581,6 @@ var ReflectionBinaryReader = class {
 				case "map":
 					let [mapKey, mapVal] = this.mapEntry(field, reader, options);
 					target[localName][mapKey] = mapVal;
-					break;
 			}
 		}
 	}
@@ -5622,9 +5607,7 @@ var ReflectionBinaryReader = class {
 						case "enum":
 							val = reader.int32();
 							break;
-						case "message":
-							val = field.V.T().internalBinaryRead(reader, reader.uint32(), options);
-							break;
+						case "message": val = field.V.T().internalBinaryRead(reader, reader.uint32(), options);
 					}
 					break;
 				default: throw new Error(`Unknown field ${fieldNo} (wire type ${wireType}) in map entry for ${this.info.typeName}#${field.name}`);
@@ -5720,7 +5703,6 @@ var ReflectionBinaryWriter = class {
 				case "map":
 					assert(typeof value == "object" && value !== null);
 					for (const [key, val] of Object.entries(value)) this.mapEntry(writer, options, field, key, val);
-					break;
 			}
 		}
 		let u = options.writeUnknownFields;
@@ -5741,7 +5723,6 @@ var ReflectionBinaryWriter = class {
 			case ScalarType.BOOL:
 				assert(key == "true" || key == "false");
 				keyValue = key == "true";
-				break;
 		}
 		this.scalar(writer, field.K, 1, keyValue, true);
 		switch (field.V.kind) {
@@ -5751,9 +5732,7 @@ var ReflectionBinaryWriter = class {
 			case "enum":
 				this.scalar(writer, ScalarType.INT32, 2, value, true);
 				break;
-			case "message":
-				this.message(writer, options, field.V.T(), 2, value);
-				break;
+			case "message": this.message(writer, options, field.V.T(), 2, value);
 		}
 		writer.join();
 	}
@@ -5860,7 +5839,6 @@ var ReflectionBinaryWriter = class {
 			case ScalarType.SINT64:
 				d = i || PbLong.from(value).isZero();
 				m = "sint64";
-				break;
 		}
 		return [
 			t,
@@ -5962,18 +5940,15 @@ function reflectionMergePartial(info, target, source) {
 				else if (output[name] === void 0) output[name] = T.create(fieldValue);
 				else T.mergePartial(output[name], fieldValue);
 				break;
-			case "map":
-				switch (field.V.kind) {
-					case "scalar":
-					case "enum":
-						Object.assign(output[name], fieldValue);
-						break;
-					case "message":
-						let T = field.V.T();
-						for (let k of Object.keys(fieldValue)) output[name][k] = T.create(fieldValue[k]);
-						break;
-				}
-				break;
+			case "map": switch (field.V.kind) {
+				case "scalar":
+				case "enum":
+					Object.assign(output[name], fieldValue);
+					break;
+				case "message":
+					let T = field.V.T();
+					for (let k of Object.keys(fieldValue)) output[name][k] = T.create(fieldValue[k]);
+			}
 		}
 	}
 }
@@ -6004,7 +5979,6 @@ function reflectionEquals(info, a, b) {
 			case "message":
 				let T = field.T();
 				if (!(field.repeat ? repeatedMsgEq(T, val_a, val_b) : T.equals(val_a, val_b))) return false;
-				break;
 		}
 	}
 	return true;
@@ -9551,7 +9525,7 @@ function throttlingRetryStrategy() {
 //#endregion
 //#region node_modules/@typespec/ts-http-runtime/dist/esm/retryStrategies/exponentialRetryStrategy.js
 var DEFAULT_CLIENT_RETRY_INTERVAL = 1e3;
-var DEFAULT_CLIENT_MAX_RETRY_INTERVAL = 1e3 * 64;
+var DEFAULT_CLIENT_MAX_RETRY_INTERVAL = 64e3;
 /**
 * A retry strategy that retries with an exponentially increasing delay in these two cases:
 * - When there are errors in the underlying transport layer (e.g. DNS lookup failures).
@@ -12224,7 +12198,7 @@ function createPipelineRequest(options) {
 var DEFAULT_CYCLER_OPTIONS = {
 	forcedRefreshWindowInMs: 1e3,
 	retryIntervalInMs: 3e3,
-	refreshWindowInMs: 1e3 * 60 * 2
+	refreshWindowInMs: 12e4
 };
 /**
 * Converts an an unreliable access token getter (which may resolve with null)
@@ -21090,9 +21064,7 @@ var NativeCRC64 = (() => {
 					case 4:
 						offset >>>= 2;
 						break;
-					case 8:
-						offset >>>= 3;
-						break;
+					case 8: offset >>>= 3;
 				}
 				for (var i = 0; i < array.length; i++) view[offset + i] = array[i];
 			}
@@ -21198,7 +21170,7 @@ var StorageCRC64Calculator = class StorageCRC64Calculator {
 function signalStreamEnd(pushData) {
 	pushData(null);
 }
-var MAX_SEGMENT_CONTENT_LENGTH = 4 * 1024 * 1024;
+var MAX_SEGMENT_CONTENT_LENGTH = 4194304;
 var SMRegion$1;
 (function(SMRegion) {
 	SMRegion[SMRegion["StreamHeader"] = 0] = "StreamHeader";
@@ -22565,9 +22537,9 @@ var StorageRetryPolicyType;
 //#endregion
 //#region node_modules/@azure/storage-common/dist/esm/policies/StorageRetryPolicy.js
 var DEFAULT_RETRY_OPTIONS$1 = {
-	maxRetryDelayInMs: 120 * 1e3,
+	maxRetryDelayInMs: 12e4,
 	maxTries: 4,
-	retryDelayInMs: 4 * 1e3,
+	retryDelayInMs: 4e3,
 	retryPolicyType: StorageRetryPolicyType.EXPONENTIAL,
 	secondaryHost: "",
 	tryTimeoutInMs: void 0
@@ -22705,9 +22677,7 @@ var StorageRetryPolicy = class extends BaseRequestPolicy {
 			case StorageRetryPolicyType.EXPONENTIAL:
 				delayTimeInMs = Math.min((Math.pow(2, attempt - 1) - 1) * this.retryOptions.retryDelayInMs, this.retryOptions.maxRetryDelayInMs);
 				break;
-			case StorageRetryPolicyType.FIXED:
-				delayTimeInMs = this.retryOptions.retryDelayInMs;
-				break;
+			case StorageRetryPolicyType.FIXED: delayTimeInMs = this.retryOptions.retryDelayInMs;
 		}
 		else delayTimeInMs = Math.random() * 1e3;
 		logger.info(`RetryPolicy: Delay for ${delayTimeInMs}ms`);
@@ -22786,9 +22756,9 @@ function storageCorrectContentLengthPolicy() {
 */
 var storageRetryPolicyName = "storageRetryPolicy";
 var DEFAULT_RETRY_OPTIONS = {
-	maxRetryDelayInMs: 120 * 1e3,
+	maxRetryDelayInMs: 12e4,
 	maxTries: 4,
-	retryDelayInMs: 4 * 1e3,
+	retryDelayInMs: 4e3,
 	retryPolicyType: StorageRetryPolicyType.EXPONENTIAL,
 	secondaryHost: "",
 	tryTimeoutInMs: void 0
@@ -22859,9 +22829,7 @@ function storageRetryPolicy(options = {}) {
 			case StorageRetryPolicyType.EXPONENTIAL:
 				delayTimeInMs = Math.min((Math.pow(2, attempt - 1) - 1) * retryDelayInMs, maxRetryDelayInMs);
 				break;
-			case StorageRetryPolicyType.FIXED:
-				delayTimeInMs = retryDelayInMs;
-				break;
+			case StorageRetryPolicyType.FIXED: delayTimeInMs = retryDelayInMs;
 		}
 		else delayTimeInMs = Math.random() * 1e3;
 		logger.info(`RetryPolicy: Delay for ${delayTimeInMs}ms`);
@@ -23079,12 +23047,12 @@ var UserDelegationKeyCredential = class {
 //#region node_modules/@azure/storage-blob/dist/esm/utils/constants.js
 var SDK_VERSION = "12.33.0";
 var SERVICE_VERSION = "2026-06-06";
-var BLOCK_BLOB_MAX_UPLOAD_BLOB_BYTES = 256 * 1024 * 1024;
-var BLOCK_BLOB_MAX_STAGE_BLOCK_BYTES = 4e3 * 1024 * 1024;
+var BLOCK_BLOB_MAX_UPLOAD_BLOB_BYTES = 268435456;
+var BLOCK_BLOB_MAX_STAGE_BLOCK_BYTES = 4194304e3;
 var BLOCK_BLOB_MAX_BLOCKS = 5e4;
-var DEFAULT_BLOCK_BUFFER_SIZE_BYTES = 8 * 1024 * 1024;
-var DEFAULT_BLOB_DOWNLOAD_BLOCK_BYTES = 4 * 1024 * 1024;
-var REQUEST_TIMEOUT = 100 * 1e3;
+var DEFAULT_BLOCK_BUFFER_SIZE_BYTES = 8388608;
+var DEFAULT_BLOB_DOWNLOAD_BLOCK_BYTES = 4194304;
+var REQUEST_TIMEOUT = 1e5;
 var URLConstants = { Parameters: {
 	FORCE_BROWSER_NO_CACHE: "_",
 	SIGNATURE: "sig",
@@ -35267,7 +35235,7 @@ function base64encode(content) {
 */
 function generateBlockID(blockIDPrefix, blockIndex) {
 	const maxSourceStringLength = 48;
-	const maxAllowedBlockIDPrefixLength = maxSourceStringLength - 6;
+	const maxAllowedBlockIDPrefixLength = 42;
 	if (blockIDPrefix.length > maxAllowedBlockIDPrefixLength) blockIDPrefix = blockIDPrefix.slice(0, maxAllowedBlockIDPrefixLength);
 	return base64encode(blockIDPrefix + padStart(blockIndex.toString(), maxSourceStringLength - blockIDPrefix.length, "0"));
 }
@@ -36231,9 +36199,7 @@ var SASQueryParameters = class {
 			case "srq":
 				this.tryAppendQueryParameter(queries, param, this.requestQueryParameterKeys);
 				break;
-			case "sdd":
-				this.tryAppendQueryParameter(queries, param, this.directoryDepth !== void 0 ? this.directoryDepth.toString() : "");
-				break;
+			case "sdd": this.tryAppendQueryParameter(queries, param, this.directoryDepth !== void 0 ? this.directoryDepth.toString() : "");
 		}
 		return queries.join("&");
 	}
@@ -42172,7 +42138,7 @@ var require_minimatch = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		if (options.nobrace || !/\{(?:(?!\{).)*\}/.test(pattern)) return [pattern];
 		return expand(pattern);
 	};
-	var MAX_PATTERN_LENGTH = 1024 * 64;
+	var MAX_PATTERN_LENGTH = 65536;
 	var assertValidPattern = (pattern) => {
 		if (typeof pattern !== "string") throw new TypeError("invalid pattern");
 		if (pattern.length > MAX_PATTERN_LENGTH) throw new TypeError("pattern is too long");
@@ -42385,9 +42351,7 @@ var require_minimatch = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 							re += qmark;
 							hasMagic = true;
 							break;
-						default:
-							re += "\\" + stateChar;
-							break;
+						default: re += "\\" + stateChar;
 					}
 					this.debug("clearStateChar %j %j", stateChar, re);
 					stateChar = false;
@@ -42517,7 +42481,6 @@ var require_minimatch = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 						clearStateChar();
 						if (reSpecials[c] && !(c === "^" && inClass)) re += "\\";
 						re += c;
-						break;
 				}
 			}
 			if (inClass) {
@@ -42568,7 +42531,7 @@ var require_minimatch = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 					_glob: pattern,
 					_src: re
 				});
-			} catch (er) 			/* istanbul ignore next - should be impossible */ {
+			} catch (er) /* istanbul ignore next - should be impossible */ {
 				return /* @__PURE__ */ new RegExp("$.");
 			}
 		}
@@ -42603,7 +42566,7 @@ var require_minimatch = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			if (this.negate) re = "^(?!" + re + ").*$";
 			try {
 				this.regexp = new RegExp(re, flags);
-			} catch (ex) 			/* istanbul ignore next - should be impossible */ {
+			} catch (ex) /* istanbul ignore next - should be impossible */ {
 				this.regexp = false;
 			}
 			return this.regexp;
@@ -42664,9 +42627,7 @@ var require_readdir_glob = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 					case "UNKNOWN":
 						resolve([]);
 						break;
-					default:
-						reject(err);
-						break;
+					default: reject(err);
 				}
 				else resolve(files);
 			});
@@ -42680,9 +42641,7 @@ var require_readdir_glob = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 						if (followSymlinks) resolve(stat(file, false));
 						else resolve(null);
 						break;
-					default:
-						resolve(null);
-						break;
+					default: resolve(null);
 				}
 				else resolve(stats);
 			});
@@ -42997,6 +42956,7 @@ function initialParams(fn) {
 		return fn.call(this, args, callback);
 	};
 }
+/* istanbul ignore file */
 function fallback(fn) {
 	setTimeout(fn, 0);
 }
@@ -45911,6 +45871,7 @@ function memoize(fn, hasher = (v) => v) {
 	memoized.unmemoized = fn;
 	return memoized;
 }
+/* istanbul ignore file */
 /**
 * Run the `tasks` collection of functions in parallel, without waiting until
 * the previous function has completed. If any of the functions pass an error to
@@ -48358,7 +48319,7 @@ var require_legacy_streams = /* @__PURE__ */ __commonJSMin(((exports, module) =>
 			this.paused = false;
 			this.flags = "r";
 			this.mode = 438;
-			this.bufferSize = 64 * 1024;
+			this.bufferSize = 65536;
 			options = options || {};
 			var keys = Object.keys(options);
 			for (var index = 0, length = keys.length; index < length; index++) {
@@ -49173,7 +49134,7 @@ var require__stream_writable = /* @__PURE__ */ __commonJSMin(((exports, module) 
 		if (isDuplex) this.objectMode = this.objectMode || !!options.writableObjectMode;
 		var hwm = options.highWaterMark;
 		var writableHwm = options.writableHighWaterMark;
-		var defaultHwm = this.objectMode ? 16 : 16 * 1024;
+		var defaultHwm = this.objectMode ? 16 : 16384;
 		if (hwm || hwm === 0) this.highWaterMark = hwm;
 		else if (isDuplex && (writableHwm || writableHwm === 0)) this.highWaterMark = writableHwm;
 		else this.highWaterMark = defaultHwm;
@@ -49869,7 +49830,7 @@ var require__stream_readable = /* @__PURE__ */ __commonJSMin(((exports, module) 
 		if (isDuplex) this.objectMode = this.objectMode || !!options.readableObjectMode;
 		var hwm = options.highWaterMark;
 		var readableHwm = options.readableHighWaterMark;
-		var defaultHwm = this.objectMode ? 16 : 16 * 1024;
+		var defaultHwm = this.objectMode ? 16 : 16384;
 		if (hwm || hwm === 0) this.highWaterMark = hwm;
 		else if (isDuplex && (readableHwm || readableHwm === 0)) this.highWaterMark = readableHwm;
 		else this.highWaterMark = defaultHwm;
@@ -50131,9 +50092,7 @@ var require__stream_readable = /* @__PURE__ */ __commonJSMin(((exports, module) 
 			case 1:
 				state.pipes = [state.pipes, dest];
 				break;
-			default:
-				state.pipes.push(dest);
-				break;
+			default: state.pipes.push(dest);
 		}
 		state.pipesCount += 1;
 		debug("pipe count=%d opts=%j", state.pipesCount, pipeOpts);
@@ -52003,12 +51962,10 @@ var require_errors$2 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			case 2:
 				msg += `The ${args[0]} and ${args[1]} arguments`;
 				break;
-			default:
-				{
-					const last = args.pop();
-					msg += `The ${args.join(", ")}, and ${last} arguments`;
-				}
-				break;
+			default: {
+				const last = args.pop();
+				msg += `The ${args.join(", ")}, and ${last} arguments`;
+			}
 		}
 		return `${msg} must be specified`;
 	}, TypeError);
@@ -53997,7 +53954,7 @@ var require_state = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	var { MathFloor, NumberIsInteger } = require_primordials();
 	var { validateInteger } = require_validators();
 	var { ERR_INVALID_ARG_VALUE } = require_errors$2().codes;
-	var defaultHighWaterMarkBytes = 16 * 1024;
+	var defaultHighWaterMarkBytes = 16384;
 	var defaultHighWaterMarkObjectMode = 16;
 	function highWaterMarkFrom(options, isDuplex, duplexKey) {
 		return options.highWaterMark != null ? options.highWaterMark : isDuplex ? options[duplexKey] : null;
@@ -58235,7 +58192,7 @@ var require_brace_expansion = /* @__PURE__ */ __commonJSMin(((exports, module) =
 var require_assert_valid_pattern = /* @__PURE__ */ __commonJSMin(((exports) => {
 	Object.defineProperty(exports, "__esModule", { value: true });
 	exports.assertValidPattern = void 0;
-	var MAX_PATTERN_LENGTH = 1024 * 64;
+	var MAX_PATTERN_LENGTH = 65536;
 	var assertValidPattern = (pattern) => {
 		if (typeof pattern !== "string") throw new TypeError("invalid pattern");
 		if (pattern.length > MAX_PATTERN_LENGTH) throw new TypeError("pattern is too long");
@@ -61661,7 +61618,7 @@ var require_commonjs$1 = /* @__PURE__ */ __commonJSMin(((exports) => {
 	* @internal
 	*/
 	var ChildrenCache = class extends lru_cache_1.LRUCache {
-		constructor(maxSize = 16 * 1024) {
+		constructor(maxSize = 16384) {
 			super({
 				maxSize,
 				sizeCalculation: (a) => a.length + 1
@@ -61991,7 +61948,7 @@ var require_commonjs$1 = /* @__PURE__ */ __commonJSMin(((exports) => {
 			return this[`is${type}`]();
 		}
 		getType() {
-			return this.isUnknown() ? "Unknown" : this.isDirectory() ? "Directory" : this.isFile() ? "File" : this.isSymbolicLink() ? "SymbolicLink" : this.isFIFO() ? "FIFO" : this.isCharacterDevice() ? "CharacterDevice" : this.isBlockDevice() ? "BlockDevice" : 			/* c8 ignore start */ this.isSocket() ? "Socket" : "Unknown";
+			return this.isUnknown() ? "Unknown" : this.isDirectory() ? "Directory" : this.isFile() ? "File" : this.isSymbolicLink() ? "SymbolicLink" : this.isFIFO() ? "FIFO" : this.isCharacterDevice() ? "CharacterDevice" : this.isBlockDevice() ? "BlockDevice" : /* c8 ignore start */ this.isSocket() ? "Socket" : "Unknown";
 			/* c8 ignore stop */
 		}
 		/**
@@ -62619,7 +62576,7 @@ var require_commonjs$1 = /* @__PURE__ */ __commonJSMin(((exports) => {
 		*
 		* @internal
 		*/
-		constructor(cwd = process.cwd(), pathImpl, sep, { nocase, childrenCacheSize = 16 * 1024, fs = defaultFS } = {}) {
+		constructor(cwd = process.cwd(), pathImpl, sep, { nocase, childrenCacheSize = 16384, fs = defaultFS } = {}) {
 			this.#fs = fsFromOption(fs);
 			if (cwd instanceof URL || cwd.startsWith("file://")) cwd = (0, node_url_1$1.fileURLToPath)(cwd);
 			const cwdPath = pathImpl.resolve(cwd);
@@ -64504,7 +64461,7 @@ var require_core = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			format = "zip";
 		}
 		options = this.options = util.defaults(options, {
-			highWaterMark: 1024 * 1024,
+			highWaterMark: 1048576,
 			statConcurrency: 4
 		});
 		Transform.call(this, options);
@@ -68339,7 +68296,7 @@ var require_extract$1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	var b4a = require_b4a();
 	var headers = require_headers();
 	var EMPTY = b4a.alloc(0);
-	var MAX_HEADER_SIZE = 4 * 1024 * 1024;
+	var MAX_HEADER_SIZE = 4194304;
 	var BufferList = class {
 		constructor() {
 			this.buffered = 0;
@@ -68506,9 +68463,7 @@ var require_extract$1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 				case "pax-global-header":
 					this._paxGlobal = headers.decodePax(buf);
 					break;
-				case "pax-header":
-					this._pax = this._paxGlobal === null ? headers.decodePax(buf) : Object.assign({}, this._paxGlobal, headers.decodePax(buf));
-					break;
+				case "pax-header": this._pax = this._paxGlobal === null ? headers.decodePax(buf) : Object.assign({}, this._paxGlobal, headers.decodePax(buf));
 			}
 		}
 		_consumeLongHeader() {
@@ -70827,8 +70782,8 @@ var require_unzip_stream = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 				var extra = this._readExtraFields(extraDataBuffer);
 				if (extra && extra.parsed) {
 					if (extra.parsed.path && !isUtf8) entry.path = extra.parsed.path;
-					if (Number.isFinite(extra.parsed.uncompressedSize) && this.parsedEntity.uncompressedSize === FOUR_GIGS - 1) this.parsedEntity.uncompressedSize = extra.parsed.uncompressedSize;
-					if (Number.isFinite(extra.parsed.compressedSize) && this.parsedEntity.compressedSize === FOUR_GIGS - 1) this.parsedEntity.compressedSize = extra.parsed.compressedSize;
+					if (Number.isFinite(extra.parsed.uncompressedSize) && this.parsedEntity.uncompressedSize === 4294967295) this.parsedEntity.uncompressedSize = extra.parsed.uncompressedSize;
+					if (Number.isFinite(extra.parsed.compressedSize) && this.parsedEntity.compressedSize === 4294967295) this.parsedEntity.compressedSize = extra.parsed.compressedSize;
 				}
 				this.parsedEntity.extra = extra.parsed || {};
 				if (this.options.debug) {
@@ -71076,7 +71031,6 @@ var require_unzip_stream = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 							extra.symlink = this._decodeString(data.slice(start, end));
 						}
 					}
-					break;
 			}
 			if (this.options.debug) result.debug.push({
 				extraId: "0x" + vars.extraId.toString(16),
@@ -71248,7 +71202,7 @@ var require_mkdirp = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		var xfs = opts.fs || fs$4;
 		if (mode === void 0) mode = _0777;
 		if (!made) made = null;
-		var cb = f || function() {};
+		var cb = f || /* istanbul ignore next */ function() {};
 		p = path$1.resolve(p);
 		xfs.mkdir(p, mode, function(er) {
 			if (!er) {
@@ -71265,12 +71219,10 @@ var require_mkdirp = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 						else mkdirP(p, opts, cb, made);
 					});
 					break;
-				default:
-					xfs.stat(p, function(er2, stat) {
-						if (er2 || !stat.isDirectory()) cb(er, made);
-						else cb(null, made);
-					});
-					break;
+				default: xfs.stat(p, function(er2, stat) {
+					if (er2 || !stat.isDirectory()) cb(er, made);
+					else cb(null, made);
+				});
 			}
 		});
 	}
@@ -71294,12 +71246,11 @@ var require_mkdirp = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 					var stat;
 					try {
 						stat = xfs.statSync(p);
-					} catch (err1) 					/* istanbul ignore next */ {
+					} catch (err1) /* istanbul ignore next */ {
 						throw err0;
 					}
 					/* istanbul ignore if */
 					if (!stat.isDirectory()) throw err0;
-					break;
 			}
 		}
 		return made;
@@ -71448,7 +71399,7 @@ function streamExtract(url, directory, skipDecompress) {
 }
 function streamExtractExternal(url_1, directory_1) {
 	return __awaiter$4(this, arguments, void 0, function* (url, directory, opts = {}) {
-		const { timeout = 30 * 1e3, skipDecompress = false } = opts;
+		const { timeout = 3e4, skipDecompress = false } = opts;
 		const response = yield new HttpClient(getUserAgentString$1()).get(url);
 		if (response.message.statusCode !== 200) throw new Error(`Unexpected HTTP response from blob storage: ${response.message.statusCode} ${response.message.statusMessage}`);
 		const contentType = response.message.headers["content-type"] || "";
@@ -72349,7 +72300,7 @@ var import_light = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((expo
 				}
 			}
 			Group.prototype.defaults = {
-				timeout: 1e3 * 60 * 5,
+				timeout: 3e5,
 				connection: null,
 				Promise,
 				id: "group-key"
@@ -73301,17 +73252,19 @@ var AttributePath = NonEmptyString.pipe(filter$2((s) => !s.startsWith("#") && !s
 		"devShells.x86_64-linux.default"
 	]
 });
-var NixOutputConfigArray = Array$(Struct({
+var NixOutputConfig = Struct({
 	displayName: NonEmptyString.annotations({ description: "User-friendly name for this comparison" }),
 	attribute: AttributePath.annotations({ description: "Nix attribute path (e.g., packages.x86_64-linux.default)" })
-}).annotations({ identifier: "NixOutputConfig" })).annotations({ identifier: "NixOutputConfigArray" });
-var DiffResultArray = Array$(Struct({
+}).annotations({ identifier: "NixOutputConfig" });
+var NixOutputConfigArray = Array$(NixOutputConfig).annotations({ identifier: "NixOutputConfigArray" });
+var DiffResult = Struct({
 	displayName: NonEmptyString.annotations({ description: "User-friendly name from output config" }),
 	attributePath: NonEmptyString.annotations({ description: "Nix attribute path that was compared" }),
 	baseRef: NonEmptyString.annotations({ description: "Commit SHA of the base branch" }),
 	prRef: NonEmptyString.annotations({ description: "Commit SHA of the PR head" }),
 	diff: NonEmptyString.annotations({ description: "Diff output from dix tool" })
-}).annotations({ identifier: "DiffResult" })).annotations({ identifier: "DiffResultArray" });
+}).annotations({ identifier: "DiffResult" });
+var DiffResultArray = Array$(DiffResult).annotations({ identifier: "DiffResultArray" });
 //#endregion
 //#region src/services/diff-html.css?raw
 var diff_html_default = ":root {\n  color-scheme: light dark;\n  --bg: #ffffff;\n  --bg-elevated: #ffffff;\n  --bg-muted: #f6f8fa;\n  --bg-header: #f0f3f6;\n  --fg: #1f2328;\n  --fg-muted: #59636e;\n  --border: #d1d9e0;\n  --border-muted: #d1d9e0b3;\n  --accent: #0969da;\n  --added-fg: #1a7f37;\n  --added-bg: #dafbe1;\n  --added-border: #1a7f3733;\n  --removed-fg: #cf222e;\n  --removed-bg: #ffebe9;\n  --removed-border: #cf222e33;\n  --changed-fg: #9a6700;\n  --changed-bg: #fff8c5;\n  --changed-border: #9a670033;\n}\n@media (prefers-color-scheme: dark) {\n  :root {\n    --bg: #0d1117;\n    --bg-elevated: #151b23;\n    --bg-muted: #151b23;\n    --bg-header: #151b23;\n    --fg: #f0f6fc;\n    --fg-muted: #9198a1;\n    --border: #3d444d;\n    --border-muted: #3d444d80;\n    --accent: #4493f8;\n    --added-fg: #3fb950;\n    --added-bg: #1f6feb1a;\n    --added-border: #3fb95033;\n    --removed-fg: #f85149;\n    --removed-bg: #f851491a;\n    --removed-border: #f8514933;\n    --changed-fg: #d29922;\n    --changed-bg: #d299221a;\n    --changed-border: #d2992233;\n  }\n}\n* {\n  box-sizing: border-box;\n}\nhtml,\nbody {\n  margin: 0;\n  padding: 0;\n}\nbody {\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif;\n  background: var(--bg);\n  color: var(--fg);\n  line-height: 1.5;\n  padding: 2rem 1.5rem 4rem;\n  max-width: 1100px;\n  margin: 0 auto;\n  font-size: 14px;\n}\nh1 {\n  margin: 0 0 0.25rem;\n  font-size: 1.6rem;\n  font-weight: 600;\n  letter-spacing: -0.01em;\n}\n.page-header {\n  padding-bottom: 1rem;\n  margin-bottom: 1.5rem;\n  border-bottom: 1px solid var(--border);\n}\n.page-header p {\n  margin: 0;\n  color: var(--fg-muted);\n  font-size: 0.9rem;\n}\nh2 {\n  font-size: 1.1rem;\n  font-weight: 600;\n  margin: 0;\n}\ncode {\n  font-family: ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, monospace;\n  font-size: 0.82em;\n  background: var(--bg-muted);\n  padding: 0.1em 0.4em;\n  border-radius: 4px;\n  border: 1px solid var(--border-muted);\n}\na {\n  color: var(--accent);\n  text-decoration: none;\n}\na:hover {\n  text-decoration: underline;\n}\n.muted {\n  color: var(--fg-muted);\n}\n.arrow {\n  color: var(--fg-muted);\n  margin: 0 0.15em;\n}\n\n/* Summary */\n.summary {\n  margin-bottom: 2rem;\n}\n.summary h2 {\n  margin-bottom: 0.75rem;\n}\n.summary-table {\n  width: 100%;\n  border-collapse: collapse;\n  background: var(--bg-elevated);\n  border: 1px solid var(--border);\n  border-radius: 6px;\n  overflow: hidden;\n}\n.summary-table th,\n.summary-table td {\n  padding: 0.55rem 0.9rem;\n  text-align: left;\n  border-bottom: 1px solid var(--border-muted);\n  vertical-align: middle;\n}\n.summary-table thead th {\n  background: var(--bg-header);\n  font-weight: 600;\n  font-size: 0.85rem;\n  color: var(--fg-muted);\n}\n.summary-table tbody tr:last-child td {\n  border-bottom: 0;\n}\n.summary-table .num {\n  text-align: right;\n  font-variant-numeric: tabular-nums;\n}\n\n/* Diff cards */\n.diff-card {\n  border: 1px solid var(--border);\n  border-radius: 6px;\n  background: var(--bg-elevated);\n  margin-bottom: 1.5rem;\n  overflow: hidden;\n}\n.diff-card-header {\n  padding: 1rem 1.25rem;\n  background: var(--bg-header);\n  border-bottom: 1px solid var(--border);\n}\n.diff-card-header h2 {\n  margin-bottom: 0.5rem;\n}\n.diff-card-body {\n  padding: 1rem 1.25rem;\n}\n\n.diff-meta {\n  display: grid;\n  grid-template-columns: auto 1fr;\n  gap: 0.15rem 0.85rem;\n  margin: 0;\n  font-size: 0.85rem;\n}\n.diff-meta dt {\n  color: var(--fg-muted);\n  font-weight: 500;\n}\n.diff-meta dd {\n  margin: 0;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n/* Stats strip */\n.stats {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 0.5rem;\n  margin-bottom: 1rem;\n}\n.stat {\n  flex: 1 1 auto;\n  min-width: 140px;\n  padding: 0.55rem 0.85rem;\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  display: flex;\n  flex-direction: column;\n  gap: 0.15rem;\n}\n.stat-label {\n  color: var(--fg-muted);\n  font-size: 0.75rem;\n  text-transform: uppercase;\n  letter-spacing: 0.04em;\n}\n.stat-value {\n  font-size: 1rem;\n  font-weight: 600;\n}\n.stat-added {\n  color: var(--added-fg);\n}\n.stat-removed {\n  color: var(--removed-fg);\n}\n.stat-changed {\n  color: var(--changed-fg);\n}\n\n/* Store paths */\n.store-paths {\n  display: grid;\n  grid-template-columns: auto 1fr;\n  gap: 0.2rem 0.85rem;\n  margin: 0 0 1rem;\n  font-size: 0.85rem;\n}\n.store-paths dt {\n  color: var(--fg-muted);\n  font-weight: 500;\n}\n.store-paths dd {\n  margin: 0;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n/* Change sections */\n.change-group {\n  margin-bottom: 1rem;\n  border-radius: 6px;\n  overflow: hidden;\n  border: 1px solid var(--border-muted);\n}\n.change-group:last-of-type {\n  margin-bottom: 0;\n}\n.change-heading {\n  display: flex;\n  align-items: center;\n  gap: 0.6rem;\n  margin: 0;\n  padding: 0.5rem 0.85rem;\n  font-size: 0.9rem;\n  cursor: pointer;\n  list-style: none;\n  user-select: none;\n}\n.change-heading::-webkit-details-marker {\n  display: none;\n}\n.change-heading::before {\n  content: \"\";\n  width: 0;\n  height: 0;\n  border-left: 5px solid currentColor;\n  border-top: 4px solid transparent;\n  border-bottom: 4px solid transparent;\n  transition: transform 0.15s ease;\n  flex-shrink: 0;\n}\n.change-group[open] > .change-heading::before {\n  transform: rotate(90deg);\n}\n.change-badge {\n  display: inline-block;\n  padding: 0.1rem 0.55rem;\n  font-size: 0.72rem;\n  font-weight: 600;\n  letter-spacing: 0.05em;\n  border-radius: 999px;\n  border: 1px solid currentColor;\n}\n.change-count {\n  color: var(--fg-muted);\n  font-size: 0.85rem;\n  font-weight: 500;\n}\n.change-added > .change-heading {\n  background: var(--added-bg);\n  color: var(--added-fg);\n}\n.change-removed > .change-heading {\n  background: var(--removed-bg);\n  color: var(--removed-fg);\n}\n.change-changed > .change-heading {\n  background: var(--changed-bg);\n  color: var(--changed-fg);\n}\n.change-added[open] > .change-heading {\n  border-bottom: 1px solid var(--added-border);\n}\n.change-removed[open] > .change-heading {\n  border-bottom: 1px solid var(--removed-border);\n}\n.change-changed[open] > .change-heading {\n  border-bottom: 1px solid var(--changed-border);\n}\n\n.change-table {\n  width: 100%;\n  border-collapse: collapse;\n  background: var(--bg-elevated);\n}\n.change-table td {\n  padding: 0.3rem 0.85rem;\n  border-top: 1px solid var(--border-muted);\n  vertical-align: top;\n}\n.change-table tr:first-child td {\n  border-top: 0;\n}\n.change-table .pkg-name {\n  width: 35%;\n  white-space: nowrap;\n  overflow-wrap: anywhere;\n}\n.change-table .pkg-ver {\n  color: var(--fg-muted);\n  overflow-wrap: anywhere;\n}\n.change-table code {\n  background: transparent;\n  border: 0;\n  padding: 0;\n  font-size: 0.85em;\n}\n\n.no-changes {\n  margin: 0 0 1rem;\n  padding: 0.8rem 1rem;\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  color: var(--fg-muted);\n  text-align: center;\n}\n\n.raw-block {\n  margin-top: 1rem;\n}\n.raw-block summary {\n  cursor: pointer;\n  color: var(--fg-muted);\n  font-size: 0.85rem;\n  padding: 0.35rem 0;\n}\n.raw-block summary:hover {\n  color: var(--accent);\n}\n.raw-block pre {\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  padding: 0.85rem 1rem;\n  overflow-x: auto;\n  white-space: pre;\n  font-size: 0.8rem;\n  margin: 0.35rem 0 0;\n}\n.raw-block pre code {\n  background: transparent;\n  border: 0;\n  padding: 0;\n  font-size: 1em;\n}\n\nfooter {\n  margin-top: 2.5rem;\n  padding-top: 1rem;\n  border-top: 1px solid var(--border);\n  color: var(--fg-muted);\n  font-size: 0.8rem;\n  text-align: center;\n}\n\n@media (max-width: 600px) {\n  body {\n    padding: 1rem 0.75rem 3rem;\n  }\n  .stat {\n    min-width: 45%;\n  }\n  .summary-table {\n    font-size: 0.85rem;\n  }\n  .summary-table th,\n  .summary-table td {\n    padding: 0.45rem 0.6rem;\n  }\n}\n";
@@ -73619,13 +73572,14 @@ var ArtifactService = class extends Service()("ArtifactService", { succeed: {
 					message: `Failed to create download directory: ${e}`
 				})
 			});
-			return (yield* forEach((yield* tryPromise({
+			const diffArtifacts = (yield* tryPromise({
 				try: () => artifactClient.listArtifacts({ findBy }),
 				catch: (e) => new ArtifactError({
 					name: "list",
 					message: `Failed to list artifacts: ${e}`
 				})
-			})).artifacts.filter((a) => a.name.startsWith("diff-result-")), (art) => downloadAndParseArtifact(art, path$2.join(downloadPath, String(art.id)), findBy), { concurrency: "unbounded" })).flat();
+			})).artifacts.filter((a) => a.name.startsWith("diff-result-"));
+			return (yield* forEach(diffArtifacts, (art) => downloadAndParseArtifact(art, path$2.join(downloadPath, String(art.id)), findBy), { concurrency: "unbounded" })).flat();
 		});
 	}
 } }) {};
@@ -73648,8 +73602,6 @@ var hasDixChanges = (diff) => {
 //#region src/services/github.ts
 var NIX_DIFF_ACTION_MARKER_BASE = "<!-- nix-diff-action";
 var getNixDiffActionMarker = (displayName) => displayName ? `${NIX_DIFF_ACTION_MARKER_BASE}:${displayName} -->` : `${NIX_DIFF_ACTION_MARKER_BASE} -->`;
-var MAX_COMMENT_LENGTH = 6e4;
-var HEADER_FOOTER_OVERHEAD = 300;
 var PER_SECTION_OVERHEAD = 300;
 var truncateDiff = (diff, maxLength) => {
 	if (diff.length <= maxLength) return {
@@ -73663,7 +73615,7 @@ var truncateDiff = (diff, maxLength) => {
 };
 var sanitizeDisplayName = (text) => text.replace(/[\\`*_{}[\]()#+!|]/g, "");
 var calculateMaxDiffPerAttribute = (attributeCount) => {
-	const availableForDiffs = MAX_COMMENT_LENGTH - HEADER_FOOTER_OVERHEAD - PER_SECTION_OVERHEAD * attributeCount;
+	const availableForDiffs = 59700 - PER_SECTION_OVERHEAD * attributeCount;
 	return Math.max(1e3, Math.floor(availableForDiffs / attributeCount));
 };
 var formatAggregatedComment = (results, headSha, options) => {
@@ -73767,16 +73719,19 @@ var GitHubService = class extends Service()("GitHubService", { succeed: {
 		const commentBody = formatAggregatedComment(results, pr.head.sha, formatOptions);
 		const displayName = results.length === 1 ? results[0].displayName : void 0;
 		if (options.skipNoChange && !hasChanges) return yield* logInfo("No differences found. Skipping comment (skip-no-change is enabled).");
-		if (options.commentStrategy === "update") return yield* match(yield* findExistingNixDiffComment(octokit, context, pr.number, displayName), {
-			onNone: () => gen(function* () {
-				yield* createComment(octokit, context, pr.number, commentBody);
-				yield* logInfo("Posted new aggregated diff comment to PR");
-			}),
-			onSome: (e) => gen(function* () {
-				yield* updateComment(octokit, context, e.id, commentBody);
-				yield* logInfo("Updated existing diff comment");
-			})
-		});
+		if (options.commentStrategy === "update") {
+			const existing = yield* findExistingNixDiffComment(octokit, context, pr.number, displayName);
+			return yield* match(existing, {
+				onNone: () => gen(function* () {
+					yield* createComment(octokit, context, pr.number, commentBody);
+					yield* logInfo("Posted new aggregated diff comment to PR");
+				}),
+				onSome: (e) => gen(function* () {
+					yield* updateComment(octokit, context, e.id, commentBody);
+					yield* logInfo("Updated existing diff comment");
+				})
+			});
+		}
 		if (options.commentStrategy === "create") yield* minimizeOldComments(octokit, context, pr.number, pr.head.sha, displayName);
 		yield* createComment(octokit, context, pr.number, commentBody);
 		yield* logInfo("Posted new aggregated diff comment to PR");
@@ -74097,7 +74052,6 @@ var require_directives = /* @__PURE__ */ __commonJSMin(((exports) => {
 						version: "1.2"
 					};
 					this.tags = Object.assign({}, Directives.defaultTags);
-					break;
 			}
 			return res;
 		}
@@ -76275,9 +76229,7 @@ var require_int = /* @__PURE__ */ __commonJSMin(((exports) => {
 				case 8:
 					str = `0o${str}`;
 					break;
-				case 16:
-					str = `0x${str}`;
-					break;
+				case 16: str = `0x${str}`;
 			}
 			const n = BigInt(str);
 			return sign === "-" ? BigInt(-1) * n : n;
@@ -77806,9 +77758,7 @@ var require_resolve_flow_scalar = /* @__PURE__ */ __commonJSMin(((exports) => {
 				badChar = `block scalar indicator ${source[0]}`;
 				break;
 			case "@":
-			case "`":
-				badChar = `reserved character ${source[0]}`;
-				break;
+			case "`": badChar = `reserved character ${source[0]}`;
 		}
 		if (badChar) onError(0, "BAD_SCALAR_START", `Plain value cannot start with ${badChar}`);
 		return foldLines(source);

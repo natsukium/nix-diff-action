@@ -1,4 +1,4 @@
-import { i as __require, o as __toESM, t as __commonJSMin } from "./rolldown-runtime-CE-6LUnI.js";
+import { i as __require, o as __toESM, t as __commonJSMin } from "./rolldown-runtime-BMI-E3GI.js";
 import * as os$1 from "os";
 import os, { EOL } from "os";
 import * as crypto from "crypto";
@@ -1868,7 +1868,7 @@ var require_dispatcher_base = /* @__PURE__ */ __commonJSMin(((exports, module) =
 		get webSocketOptions() {
 			return {
 				maxFragments: this[kWebSocketOptions].maxFragments ?? 131072,
-				maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? 128 * 1024 * 1024
+				maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? 134217728
 			};
 		}
 		get destroyed() {
@@ -1920,7 +1920,7 @@ var require_dispatcher_base = /* @__PURE__ */ __commonJSMin(((exports, module) =
 			}
 			if (callback === void 0) return new Promise((resolve, reject) => {
 				this.destroy(err, (err, data) => {
-					return err ? reject(err) : resolve(data);
+					return err ? /* istanbul ignore next: should never error */ reject(err) : resolve(data);
 				});
 			});
 			if (typeof callback !== "function") throw new InvalidArgumentError("invalid callback");
@@ -2390,7 +2390,7 @@ var require_connect = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 				assert$24(!httpSocket, "httpSocket can only be sent on TLS update");
 				port = port || 80;
 				socket = net$1.connect({
-					highWaterMark: 64 * 1024,
+					highWaterMark: 65536,
 					...options,
 					localAddress,
 					port,
@@ -3869,10 +3869,7 @@ var require_util$6 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 				case "strict-origin-when-cross-origin":
 					if (request.origin && urlHasHttpsScheme(request.origin) && !urlHasHttpsScheme(requestCurrentURL(request))) serializedOrigin = null;
 					break;
-				case "same-origin":
-					if (!sameOrigin(request, requestCurrentURL(request))) serializedOrigin = null;
-					break;
-				default:
+				case "same-origin": if (!sameOrigin(request, requestCurrentURL(request))) serializedOrigin = null;
 			}
 			request.headersList.append("origin", serializedOrigin, true);
 		}
@@ -4154,9 +4151,7 @@ var require_util$6 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 					case "value":
 						result = value;
 						break;
-					case "key+value":
-						result = [key, value];
-						break;
+					case "key+value": result = [key, value];
 				}
 				return {
 					value: result,
@@ -6941,7 +6936,7 @@ var require_client = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 //#region node_modules/undici/lib/dispatcher/fixed-queue.js
 var require_fixed_queue = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	var kSize = 2048;
-	var kMask = kSize - 1;
+	var kMask = 2047;
 	var FixedCircularBuffer = class {
 		constructor() {
 			this.bottom = 0;
@@ -7726,7 +7721,7 @@ var require_retry_handler = /* @__PURE__ */ __commonJSMin(((exports, module) => 
 			this.retryOpts = {
 				retry: retryFn ?? RetryHandler[kRetryHandlerDefaultRetry],
 				retryAfter: retryAfter ?? true,
-				maxTimeout: maxTimeout ?? 30 * 1e3,
+				maxTimeout: maxTimeout ?? 3e4,
 				minTimeout: minTimeout ?? 500,
 				timeoutFactor: timeoutFactor ?? 2,
 				maxRetries: maxRetries ?? 5,
@@ -7970,7 +7965,7 @@ var require_readable = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	var kContentLength = Symbol("kContentLength");
 	var noop = () => {};
 	var BodyReadable = class extends Readable$2 {
-		constructor({ resume, abort, contentType = "", contentLength, highWaterMark = 64 * 1024 }) {
+		constructor({ resume, abort, contentType = "", contentLength, highWaterMark = 65536 }) {
 			super({
 				autoDestroy: true,
 				read: resume,
@@ -8049,7 +8044,7 @@ var require_readable = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			return this[kBody];
 		}
 		async dump(opts) {
-			let limit = Number.isFinite(opts?.limit) ? opts.limit : 128 * 1024;
+			let limit = Number.isFinite(opts?.limit) ? opts.limit : 131072;
 			const signal = opts?.signal;
 			if (signal != null && (typeof signal !== "object" || !("aborted" in signal))) throw new InvalidArgumentError("signal must be an AbortSignal");
 			signal?.throwIfAborted();
@@ -8188,7 +8183,7 @@ var require_util$5 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	var assert$13 = __require("node:assert");
 	var { ResponseStatusCodeError } = require_errors();
 	var { chunksDecode } = require_readable();
-	var CHUNK_LIMIT = 128 * 1024;
+	var CHUNK_LIMIT = 131072;
 	async function getResolveErrorBodyCallback({ callback, body, contentType, statusCode, statusMessage, headers }) {
 		assert$13(body);
 		let chunks = [];
@@ -9684,7 +9679,7 @@ var require_dump = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	var { InvalidArgumentError, RequestAbortedError } = require_errors();
 	var DecoratorHandler = require_decorator_handler();
 	var DumpHandler = class extends DecoratorHandler {
-		#maxSize = 1024 * 1024;
+		#maxSize = 1048576;
 		#abort = null;
 		#dumped = false;
 		#aborted = false;
@@ -9734,7 +9729,7 @@ var require_dump = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			this.#handler.onComplete(trailers);
 		}
 	};
-	function createDumpInterceptor({ maxSize: defaultMaxSize } = { maxSize: 1024 * 1024 }) {
+	function createDumpInterceptor({ maxSize: defaultMaxSize } = { maxSize: 1048576 }) {
 		return (dispatch) => {
 			return function Intercept(opts, handler) {
 				const { dumpMaxSize = defaultMaxSize } = opts;
@@ -9905,9 +9900,7 @@ var require_dns = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 					this.#handler.onError(err);
 					return;
 				case "ENOTFOUND": this.#state.deleteRecord(this.#origin);
-				default:
-					this.#handler.onError(err);
-					break;
+				default: this.#handler.onError(err);
 			}
 		}
 	};
@@ -15296,7 +15289,6 @@ var require_eventsource_stream = /* @__PURE__ */ __commonJSMin(((exports, module
 				default:
 					if (this.buffer[0] === BOM[0] && this.buffer[1] === BOM[1] && this.buffer[2] === BOM[2]) this.buffer = this.buffer.subarray(3);
 					this.checkBOM = false;
-					break;
 			}
 			while (this.pos < this.buffer.length) {
 				if (this.eventEndCheck) {
@@ -15362,9 +15354,7 @@ var require_eventsource_stream = /* @__PURE__ */ __commonJSMin(((exports, module
 				case "id":
 					if (isValidLastEventId(value)) event[field] = value;
 					break;
-				case "event":
-					if (value.length > 0) event[field] = value;
-					break;
+				case "event": if (value.length > 0) event[field] = value;
 			}
 		}
 		/**
@@ -16159,7 +16149,7 @@ var HttpClient = class {
 		req.on("socket", (sock) => {
 			socket = sock;
 		});
-		req.setTimeout(this._socketTimeout || 3 * 6e4, () => {
+		req.setTimeout(this._socketTimeout || 18e4, () => {
 			if (socket) socket.end();
 			handleResult(/* @__PURE__ */ new Error(`Request timeout: ${info.options.path}`));
 		});
@@ -21846,12 +21836,10 @@ var unify = (candidates) => {
 						out.push(ast);
 					}
 					break;
-				case "object":
-					if (!literals.includes(ast.literal)) {
-						literals.push(ast.literal);
-						out.push(ast);
-					}
-					break;
+				case "object": if (!literals.includes(ast.literal)) {
+					literals.push(ast.literal);
+					out.push(ast);
+				}
 			}
 			break;
 		}
@@ -23454,7 +23442,6 @@ var makeChunk = (backing) => {
 			chunk.depth = backing.chunk.depth + 1;
 			chunk.left = _empty$5;
 			chunk.right = _empty$5;
-			break;
 	}
 	return chunk;
 };
@@ -26085,7 +26072,6 @@ var patch$7 = /*#__PURE__*/ dual(2, (self, context) => {
 				updatedContext.set(head.key, head.update(updatedContext.get(head.key)));
 				wasServiceUpdated = true;
 				patches = tail;
-				break;
 		}
 	}
 	if (!wasServiceUpdated) return makeContext(updatedContext);
@@ -26264,7 +26250,6 @@ var patch$5 = /*#__PURE__*/ dual(3, (self, oldValue, differ) => {
 			case "Update":
 				readonlyArray[head.index] = differ.patch(head.patch, readonlyArray[head.index]);
 				patches = tail;
-				break;
 		}
 	}
 	return readonlyArray;
@@ -26494,7 +26479,6 @@ var step$1 = (requests) => {
 				case "Single":
 					current = left;
 					sequential = cons(right, sequential);
-					break;
 			}
 			break;
 		}
@@ -26503,7 +26487,6 @@ var step$1 = (requests) => {
 			if (isNil(stack)) return [parallel, sequential];
 			current = stack.head;
 			stack = stack.tail;
-			break;
 	}
 	throw new Error("BUG: BlockedRequests.step - please report an issue at https://github.com/Effect-TS/effect/issues");
 };
@@ -26806,7 +26789,6 @@ var find = /*#__PURE__*/ dual(2, (self, pf) => {
 					case OP_PARALLEL$1:
 						stack.push(item.right);
 						stack.push(item.left);
-						break;
 				}
 				break;
 			case "Some": return option;
@@ -26859,13 +26841,11 @@ var evaluateCause = (self) => {
 				default:
 					_sequential = prepend$1(_sequential, cause.right);
 					cause = cause.left;
-					break;
 			}
 			break;
 		case OP_PARALLEL$1:
 			stack.push(cause.right);
 			cause = cause.left;
-			break;
 	}
 	throw new Error(getBugErrorMessage("Cause.evaluateCauseLoop"));
 };
@@ -26908,9 +26888,7 @@ var reduce = /*#__PURE__*/ dual(3, (self, zero, pf) => {
 				causes.push(cause.right);
 				cause = cause.left;
 				break;
-			default:
-				cause = void 0;
-				break;
+			default: cause = void 0;
 		}
 		if (cause === void 0 && causes.length > 0) cause = causes.pop();
 	}
@@ -26944,7 +26922,6 @@ var reduceWithContext$1 = /*#__PURE__*/ dual(3, (self, context, reducer) => {
 				input.push(cause.right);
 				input.push(cause.left);
 				output.push(left({ _tag: OP_PARALLEL_CASE }));
-				break;
 		}
 	}
 	const accumulator = [];
@@ -26969,9 +26946,7 @@ var reduceWithContext$1 = /*#__PURE__*/ dual(3, (self, context, reducer) => {
 					}
 				}
 				break;
-			case "Right":
-				accumulator.push(either.right);
-				break;
+			case "Right": accumulator.push(either.right);
 		}
 	}
 	if (accumulator.length === 0) throw new Error("BUG: Cause.reduceWithContext - please report an issue at https://github.com/Effect-TS/effect/issues");
@@ -28373,9 +28348,7 @@ var reduceWithContext = /*#__PURE__*/ dual(3, (self, context, reducer) => {
 			case OP_SOURCE_UNAVAILABLE:
 				output.push(right(reducer.sourceUnavailableCase(context, error.path, error.message, error.cause)));
 				break;
-			case OP_UNSUPPORTED:
-				output.push(right(reducer.unsupportedCase(context, error.path, error.message)));
-				break;
+			case OP_UNSUPPORTED: output.push(right(reducer.unsupportedCase(context, error.path, error.message)));
 		}
 	}
 	const accumulator = [];
@@ -28400,9 +28373,7 @@ var reduceWithContext = /*#__PURE__*/ dual(3, (self, context, reducer) => {
 					}
 				}
 				break;
-			case "Right":
-				accumulator.push(either.right);
-				break;
+			case "Right": accumulator.push(either.right);
 		}
 	}
 	if (accumulator.length === 0) throw new Error("BUG: ConfigError.reduceWithContext - please report an issue at https://github.com/Effect-TS/effect/issues");
@@ -28435,12 +28406,10 @@ var patch$3 = /*#__PURE__*/ dual(2, (path, patch) => {
 				output = prepend$2(output, patch.name);
 				input = input.tail;
 				break;
-			case "Unnested":
-				if (pipe(head(output), contains(patch.name))) {
-					output = tailNonEmpty$1(output);
-					input = input.tail;
-				} else return left(MissingData(output, `Expected ${patch.name} to be in path in ConfigProvider#unnested`));
-				break;
+			case "Unnested": if (pipe(head(output), contains(patch.name))) {
+				output = tailNonEmpty$1(output);
+				input = input.tail;
+			} else return left(MissingData(output, `Expected ${patch.name} to be in path in ConfigProvider#unnested`));
 		}
 	}
 	return right(output);
@@ -29302,9 +29271,7 @@ var patch$2 = /*#__PURE__*/ dual(3, (self, fiberId, oldValue) => {
 				patches = tail;
 				break;
 			}
-			case OP_AND_THEN$1:
-				patches = prepend$2(head.first)(prepend$2(head.second)(tail));
-				break;
+			case OP_AND_THEN$1: patches = prepend$2(head.first)(prepend$2(head.second)(tail));
 		}
 	}
 	return fiberRefs;
@@ -31537,9 +31504,7 @@ var patchLoop = (_supervisor, _patches) => {
 				supervisor = removeSupervisor(supervisor, head.supervisor);
 				patches = tailNonEmpty(patches);
 				break;
-			case OP_AND_THEN:
-				patches = prepend$1(head.first)(prepend$1(head.second)(tailNonEmpty(patches)));
-				break;
+			case OP_AND_THEN: patches = prepend$1(head.first)(prepend$1(head.second)(tailNonEmpty(patches)));
 		}
 	}
 	return supervisor;
@@ -32104,9 +32069,7 @@ var FiberRuntime = class extends Class {
 				case OP_SUCCESS:
 					fiberSuccesses.unsafeUpdate(1, tags);
 					break;
-				case OP_FAILURE:
-					fiberFailures.unsafeUpdate(1, tags);
-					break;
+				case OP_FAILURE: fiberFailures.unsafeUpdate(1, tags);
 			}
 		}
 		if (exit._tag === "Failure") {
@@ -33712,8 +33675,8 @@ var unsafeMake$1 = (input) => {
 	return unsafeFromDate$1(new Date(input));
 };
 var hasZone = (input) => /Z|[+-]\d{2}$|[+-]\d{2}:?\d{2}$|\]$/.test(input);
-var minEpochMillis = -86399999568e5;
-var maxEpochMillis = 864e13 - 840 * 60 * 1e3;
+var minEpochMillis = -864e13 + 432e5;
+var maxEpochMillis = 864e13 - 504e5;
 /** @internal */
 var unsafeMakeZoned$1 = (input, options) => {
 	if (options?.timeZone === void 0 && isDateTime$1(input) && isZoned$1(input)) return input;
@@ -33819,8 +33782,8 @@ var zonedOffset = (self) => {
 };
 var offsetToString = (offset) => {
 	const abs = Math.abs(offset);
-	let hours = Math.floor(abs / (3600 * 1e3));
-	let minutes = Math.round(abs % (3600 * 1e3) / (60 * 1e3));
+	let hours = Math.floor(abs / 36e5);
+	let minutes = Math.round(abs % 36e5 / 6e4);
 	if (minutes === 60) {
 		hours += 1;
 		minutes = 0;
@@ -33844,7 +33807,7 @@ var setPartsDate = (date, parts) => {
 	if (parts.seconds !== void 0) date.setUTCSeconds(parts.seconds);
 	if (parts.millis !== void 0) date.setUTCMilliseconds(parts.millis);
 };
-var constDayMillis = 1440 * 60 * 1e3;
+var constDayMillis = 864e5;
 var makeZonedFromAdjusted = (adjustedMillis, zone, disambiguation) => {
 	if (zone._tag === "Offset") return makeZonedProto(adjustedMillis - zone.offset, zone);
 	const beforeOffset = calculateNamedOffset(adjustedMillis - constDayMillis, adjustedMillis, zone);
@@ -37997,11 +37960,9 @@ var intersectUnionMembers = (xs, ys, path) => flatMap$4(xs, (x) => flatMap$4(ys,
 				}
 			}
 			break;
-		case "Transformation":
-			if (isTransformation$1(x)) {
-				if (isTypeLiteralTransformation(y.transformation) && isTypeLiteralTransformation(x.transformation)) return [new Transformation$1(intersectTypeLiterals(x.from, y.from, path), intersectTypeLiterals(x.to, y.to, path), new TypeLiteralTransformation(y.transformation.propertySignatureTransformations.concat(x.transformation.propertySignatureTransformations)))];
-			} else return intersectUnionMembers([y], [x], path);
-			break;
+		case "Transformation": if (isTransformation$1(x)) {
+			if (isTypeLiteralTransformation(y.transformation) && isTypeLiteralTransformation(x.transformation)) return [new Transformation$1(intersectTypeLiterals(x.from, y.from, path), intersectTypeLiterals(x.to, y.to, path), new TypeLiteralTransformation(y.transformation.propertySignatureTransformations.concat(x.transformation.propertySignatureTransformations)))];
+		} else return intersectUnionMembers([y], [x], path);
 	}
 	throw new Error(getSchemaExtendErrorMessage(x, y, path));
 }));
@@ -38915,8 +38876,8 @@ transformOrFail(String$.annotations({ description: "a string to be decoded into 
 	encode: (a) => succeed(formatIso(a))
 }).annotations({ identifier: "DateTimeUtc" });
 var timeZoneOffsetArbitrary = () => (fc) => fc.integer({
-	min: -720 * 60 * 1e3,
-	max: 840 * 60 * 1e3
+	min: -432e5,
+	max: 504e5
 }).map(zoneMakeOffset);
 /**
 * Describes a schema that represents a `TimeZone.Offset` instance.
@@ -39486,4 +39447,4 @@ var GitService = class extends Service()("GitService", { succeed: { createWorktr
 //#endregion
 export { sync as $, andThen as A, setSecret as At, gen as B, redacted as C, debug as Ct, Service as D, info as Dt, isConfigError as E, getState as Et, catchTag as F, HttpCodes as Ft, mapError$1 as G, logInfo as H, catchTags as I, require_undici as It, promise as J, option$2 as K, fail$1 as L, require_tunnel as Lt, catchAll as M, exec as Mt, catchAllCause as N, BearerCredentialHandler as Nt, acquireRelease as O, setFailed as Ot, catchIf as P, HttpClient as Pt, succeed$2 as Q, flatMap$1 as R, option as S, pipe as St, value as T, getInput as Tt, logWarning as U, logError as V, map$2 as W, runPromise as X, provide as Y, scoped as Z, Struct as _, getOrElse as _t, GitHubApiError as a, mergeAll as at, pattern as b, map$7 as bt, MissingAttributesError as c, withConfigProviderScoped as ct, NixPathInfoError as d, set as dt, tapError as et, NotPullRequestContextError as f, fromEnv as ft, NonEmptyString as g, fromNullable as gt, Literal as h, flatMap$5 as ht, AttributeParseError as i, merge as it, as as j, warning as jt, all as k, setOutput as kt, NixBuildError as l, get as lt, Config as m, orElse$1 as mt, removeWorktree as n, try_ as nt, InvalidCommentStrategyError as o, scopedDiscard as ot, Array$ as p, fromMap as pt, orElseSucceed as q, ArtifactError as r, TaggedError$1 as rt, InvalidDirectoryError as s, pretty as st, GitService as t, tryPromise as tt, NixDixError as u, make$8 as ut, decodeUnknown as v, getOrUndefined as vt, string as w, error as wt, boolean as x, match$4 as xt, filter as y, isNone as yt, forEach as z };
 
-//# sourceMappingURL=git-C8p4VvVT.js.map
+//# sourceMappingURL=git-X81EY5xg.js.map
