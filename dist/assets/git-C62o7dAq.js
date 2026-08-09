@@ -958,20 +958,22 @@ var require_tree = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			while (true) {
 				const code = key.charCodeAt(index);
 				if (code > 127) throw new TypeError("key must be ascii string");
-				if (node.code === code) if (length === ++index) {
-					node.value = value;
-					break;
-				} else if (node.middle !== null) node = node.middle;
-				else {
-					node.middle = new TstNode(key, value, index);
-					break;
-				}
-				else if (node.code < code) if (node.left !== null) node = node.left;
-				else {
-					node.left = new TstNode(key, value, index);
-					break;
-				}
-				else if (node.right !== null) node = node.right;
+				if (node.code === code) {
+					if (length === ++index) {
+						node.value = value;
+						break;
+					} else if (node.middle !== null) node = node.middle;
+					else {
+						node.middle = new TstNode(key, value, index);
+						break;
+					}
+				} else if (node.code < code) {
+					if (node.left !== null) node = node.left;
+					else {
+						node.left = new TstNode(key, value, index);
+						break;
+					}
+				} else if (node.right !== null) node = node.right;
 				else {
 					node.right = new TstNode(key, value, index);
 					break;
@@ -1646,15 +1648,16 @@ var require_request$1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			if (Array.isArray(headers)) {
 				if (headers.length % 2 !== 0) throw new InvalidArgumentError("headers array must be even");
 				for (let i = 0; i < headers.length; i += 2) processHeader(this, headers[i], headers[i + 1]);
-			} else if (headers && typeof headers === "object") if (headers[Symbol.iterator]) for (const header of headers) {
-				if (!Array.isArray(header) || header.length !== 2) throw new InvalidArgumentError("headers must be in key-value pair format");
-				processHeader(this, header[0], header[1]);
-			}
-			else {
-				const keys = Object.keys(headers);
-				for (let i = 0; i < keys.length; ++i) processHeader(this, keys[i], headers[keys[i]]);
-			}
-			else if (headers != null) throw new InvalidArgumentError("headers must be an object or an array");
+			} else if (headers && typeof headers === "object") {
+				if (headers[Symbol.iterator]) for (const header of headers) {
+					if (!Array.isArray(header) || header.length !== 2) throw new InvalidArgumentError("headers must be in key-value pair format");
+					processHeader(this, header[0], header[1]);
+				}
+				else {
+					const keys = Object.keys(headers);
+					for (let i = 0; i < keys.length; ++i) processHeader(this, keys[i], headers[keys[i]]);
+				}
+			} else if (headers != null) throw new InvalidArgumentError("headers must be an object or an array");
 			validateHandler(handler, method, upgrade);
 			this.servername = servername || getServerName(this.host);
 			this[kHandler] = handler;
@@ -1773,12 +1776,19 @@ var require_request$1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 				arr.push(val[i]);
 			} else if (val[i] === null) arr.push("");
 			else if (typeof val[i] === "object") throw new InvalidArgumentError(`invalid ${key} header`);
-			else arr.push(`${val[i]}`);
+			else {
+				const str = `${val[i]}`;
+				if (!isValidHeaderValue(str)) throw new InvalidArgumentError(`invalid ${key} header`);
+				arr.push(str);
+			}
 			val = arr;
 		} else if (typeof val === "string") {
 			if (!isValidHeaderValue(val)) throw new InvalidArgumentError(`invalid ${key} header`);
 		} else if (val === null) val = "";
-		else val = `${val}`;
+		else {
+			val = `${val}`;
+			if (!isValidHeaderValue(val)) throw new InvalidArgumentError(`invalid ${key} header`);
+		}
 		if (headerName === "host") {
 			if (request.host !== null) throw new InvalidArgumentError("duplicate host header");
 			if (typeof val !== "string") throw new InvalidArgumentError("invalid host header");
@@ -4001,8 +4011,10 @@ var require_util$6 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			const algorithm = item.algo;
 			const expectedValue = item.hash;
 			let actualValue = crypto.createHash(algorithm).update(bytes).digest("base64");
-			if (actualValue[actualValue.length - 1] === "=") if (actualValue[actualValue.length - 2] === "=") actualValue = actualValue.slice(0, -2);
-			else actualValue = actualValue.slice(0, -1);
+			if (actualValue[actualValue.length - 1] === "=") {
+				if (actualValue[actualValue.length - 2] === "=") actualValue = actualValue.slice(0, -2);
+				else actualValue = actualValue.slice(0, -1);
+			}
 			if (compareBase64Mixed(actualValue, expectedValue)) return true;
 		}
 		return false;
@@ -4445,12 +4457,14 @@ var require_util$6 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		let temporaryValue = "";
 		while (position.position < input.length) {
 			temporaryValue += collectASequenceOfCodePoints((char) => char !== "\"" && char !== ",", input, position);
-			if (position.position < input.length) if (input.charCodeAt(position.position) === 34) {
-				temporaryValue += collectAnHTTPQuotedString(input, position);
-				if (position.position < input.length) continue;
-			} else {
-				assert$22(input.charCodeAt(position.position) === 44);
-				position.position++;
+			if (position.position < input.length) {
+				if (input.charCodeAt(position.position) === 34) {
+					temporaryValue += collectAnHTTPQuotedString(input, position);
+					if (position.position < input.length) continue;
+				} else {
+					assert$22(input.charCodeAt(position.position) === 44);
+					position.position++;
+				}
 			}
 			temporaryValue = removeChars(temporaryValue, true, true, (char) => char === 9 || char === 32);
 			values.push(temporaryValue);
@@ -4700,9 +4714,10 @@ var require_formdata = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		}
 		[nodeUtil$2.inspect.custom](depth, options) {
 			const state = this[kState].reduce((a, b) => {
-				if (a[b.name]) if (Array.isArray(a[b.name])) a[b.name].push(b.value);
-				else a[b.name] = [a[b.name], b.value];
-				else a[b.name] = b.value;
+				if (a[b.name]) {
+					if (Array.isArray(a[b.name])) a[b.name].push(b.value);
+					else a[b.name] = [a[b.name], b.value];
+				} else a[b.name] = b.value;
 				return a;
 			}, { __proto__: null });
 			options.depth ??= depth;
@@ -5216,7 +5231,7 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	var util = require_util$7();
 	var { channels } = require_diagnostics();
 	var timers = require_timers();
-	var { RequestContentLengthMismatchError, ResponseContentLengthMismatchError, RequestAbortedError, HeadersTimeoutError, HeadersOverflowError, SocketError, InformationalError, BodyTimeoutError, HTTPParserError, ResponseExceededMaxSizeError } = require_errors();
+	var { RequestContentLengthMismatchError, ResponseContentLengthMismatchError, RequestAbortedError, InvalidArgumentError, HeadersTimeoutError, HeadersOverflowError, SocketError, InformationalError, BodyTimeoutError, HTTPParserError, ResponseExceededMaxSizeError } = require_errors();
 	var { kUrl, kReset, kClient, kParser, kBlocking, kRunning, kPending, kSize, kWriting, kQueue, kNoRef, kKeepAliveDefaultTimeout, kHostHeader, kPendingIdx, kRunningIdx, kError, kPipelining, kSocket, kKeepAliveTimeoutValue, kMaxHeadersSize, kKeepAliveMaxTimeout, kKeepAliveTimeoutThreshold, kHeadersTimeout, kBodyTimeout, kStrictContentLength, kMaxRequests, kCounter, kMaxResponseSize, kOnError, kResume, kHTTPContext } = require_symbols$4();
 	var constants = require_constants$3();
 	var EMPTY_BUF = Buffer.alloc(0);
@@ -5317,10 +5332,12 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 					timers.clearTimeout(this.timeout);
 					this.timeout = null;
 				}
-				if (delay) if (type & USE_FAST_TIMER) this.timeout = timers.setFastTimeout(onParserTimeout, delay, new WeakRef(this));
-				else {
-					this.timeout = setTimeout(onParserTimeout, delay, new WeakRef(this));
-					this.timeout.unref();
+				if (delay) {
+					if (type & USE_FAST_TIMER) this.timeout = timers.setFastTimeout(onParserTimeout, delay, new WeakRef(this));
+					else {
+						this.timeout = setTimeout(onParserTimeout, delay, new WeakRef(this));
+						this.timeout.unref();
+					}
 				}
 				this.timeoutValue = delay;
 			} else if (this.timeout) {
@@ -5806,7 +5823,17 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			if (request.contentType == null) headers.push("content-type", contentType);
 			body = bodyStream.stream;
 			contentLength = bodyStream.length;
-		} else if (util.isBlobLike(body) && request.contentType == null && body.type) headers.push("content-type", body.type);
+		} else if (util.isBlobLike(body) && request.contentType == null) {
+			const contentType = body.type;
+			if (contentType) {
+				const contentTypeValue = `${contentType}`;
+				if (!util.isValidHeaderValue(contentTypeValue)) {
+					util.errorRequest(client, request, new InvalidArgumentError("invalid content-type header"));
+					return false;
+				}
+				headers.push("content-type", contentTypeValue);
+			}
+		}
 		if (body && typeof body.read === "function") body.read(0);
 		const bodyLength = util.bodyLength(body);
 		contentLength = bodyLength ?? contentLength;
@@ -5858,9 +5885,10 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		/* istanbul ignore else: assertion */
 		if (!body || bodyLength === 0) writeBuffer(abort, null, client, request, socket, contentLength, header, expectsPayload);
 		else if (util.isBuffer(body)) writeBuffer(abort, body, client, request, socket, contentLength, header, expectsPayload);
-		else if (util.isBlobLike(body)) if (typeof body.stream === "function") writeIterable(abort, body.stream(), client, request, socket, contentLength, header, expectsPayload);
-		else writeBlob(abort, body, client, request, socket, contentLength, header, expectsPayload);
-		else if (util.isStream(body)) writeStream(abort, body, client, request, socket, contentLength, header, expectsPayload);
+		else if (util.isBlobLike(body)) {
+			if (typeof body.stream === "function") writeIterable(abort, body.stream(), client, request, socket, contentLength, header, expectsPayload);
+			else writeBlob(abort, body, client, request, socket, contentLength, header, expectsPayload);
+		} else if (util.isStream(body)) writeStream(abort, body, client, request, socket, contentLength, header, expectsPayload);
 		else if (util.isIterable(body)) writeIterable(abort, body, client, request, socket, contentLength, header, expectsPayload);
 		else assert$19(false);
 		return true;
@@ -5922,12 +5950,13 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	}
 	function writeBuffer(abort, body, client, request, socket, contentLength, header, expectsPayload) {
 		try {
-			if (!body) if (contentLength === 0) socket.write(`${header}content-length: 0\r\n\r\n`, "latin1");
-			else {
-				assert$19(contentLength === null, "no body must not have content length");
-				socket.write(`${header}\r\n`, "latin1");
-			}
-			else if (util.isBuffer(body)) {
+			if (!body) {
+				if (contentLength === 0) socket.write(`${header}content-length: 0\r\n\r\n`, "latin1");
+				else {
+					assert$19(contentLength === null, "no body must not have content length");
+					socket.write(`${header}\r\n`, "latin1");
+				}
+			} else if (util.isBuffer(body)) {
 				assert$19(contentLength === body.byteLength, "buffer body must have content length");
 				socket.cork();
 				socket.write(`${header}content-length: ${contentLength}\r\n\r\n`, "latin1");
@@ -6043,11 +6072,14 @@ var require_client_h1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			socket[kWriting] = false;
 			if (socket[kError]) throw socket[kError];
 			if (socket.destroyed) return;
-			if (bytesWritten === 0) if (expectsPayload) socket.write(`${header}content-length: 0\r\n\r\n`, "latin1");
-			else socket.write(`${header}\r\n`, "latin1");
-			else if (contentLength === null) socket.write("\r\n0\r\n\r\n", "latin1");
-			if (contentLength !== null && bytesWritten !== contentLength) if (client[kStrictContentLength]) throw new RequestContentLengthMismatchError();
-			else process.emitWarning(new RequestContentLengthMismatchError());
+			if (bytesWritten === 0) {
+				if (expectsPayload) socket.write(`${header}content-length: 0\r\n\r\n`, "latin1");
+				else socket.write(`${header}\r\n`, "latin1");
+			} else if (contentLength === null) socket.write("\r\n0\r\n\r\n", "latin1");
+			if (contentLength !== null && bytesWritten !== contentLength) {
+				if (client[kStrictContentLength]) throw new RequestContentLengthMismatchError();
+				else process.emitWarning(new RequestContentLengthMismatchError());
+			}
 			if (socket[kParser].timeout && socket[kParser].timeoutType === TIMEOUT_HEADERS) {
 				// istanbul ignore else: only for jest
 				if (socket[kParser].timeout.refresh) socket[kParser].timeout.refresh();
@@ -6168,12 +6200,14 @@ var require_client_h2 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	}
 	function resumeH2(client) {
 		const socket = client[kSocket];
-		if (socket?.destroyed === false) if (client[kSize] === 0 && client[kMaxConcurrentStreams] === 0) {
-			socket.unref();
-			client[kHTTP2Session].unref();
-		} else {
-			socket.ref();
-			client[kHTTP2Session].ref();
+		if (socket?.destroyed === false) {
+			if (client[kSize] === 0 && client[kMaxConcurrentStreams] === 0) {
+				socket.unref();
+				client[kHTTP2Session].unref();
+			} else {
+				socket.ref();
+				client[kHTTP2Session].ref();
+			}
 		}
 	}
 	function onHttp2SessionError(err) {
@@ -6357,9 +6391,10 @@ var require_client_h2 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			/* istanbul ignore else: assertion */
 			if (!body || contentLength === 0) writeBuffer(abort, stream, null, client, request, client[kSocket], contentLength, expectsPayload);
 			else if (util.isBuffer(body)) writeBuffer(abort, stream, body, client, request, client[kSocket], contentLength, expectsPayload);
-			else if (util.isBlobLike(body)) if (typeof body.stream === "function") writeIterable(abort, stream, body.stream(), client, request, client[kSocket], contentLength, expectsPayload);
-			else writeBlob(abort, stream, body, client, request, client[kSocket], contentLength, expectsPayload);
-			else if (util.isStream(body)) writeStream(abort, client[kSocket], expectsPayload, stream, body, client, request, contentLength);
+			else if (util.isBlobLike(body)) {
+				if (typeof body.stream === "function") writeIterable(abort, stream, body.stream(), client, request, client[kSocket], contentLength, expectsPayload);
+				else writeBlob(abort, stream, body, client, request, client[kSocket], contentLength, expectsPayload);
+			} else if (util.isStream(body)) writeStream(abort, client[kSocket], expectsPayload, stream, body, client, request, contentLength);
 			else if (util.isIterable(body)) writeIterable(abort, stream, body, client, request, client[kSocket], contentLength, expectsPayload);
 			else assert$18(false);
 		}
@@ -7706,6 +7741,18 @@ var require_retry_handler = /* @__PURE__ */ __commonJSMin(((exports, module) => 
 		const current = Date.now();
 		return new Date(retryAfter).getTime() - current;
 	}
+	function validatePartialResponseContentLength(headers, range, statusCode, retryCount) {
+		const contentLength = headers["content-length"];
+		if (contentLength == null) return null;
+		if (!Number.isFinite(range.start) || !Number.isFinite(range.end)) return null;
+		const length = Number(contentLength);
+		const expectedLength = range.end - range.start + 1;
+		if (!Number.isFinite(length) || length !== expectedLength) return new RequestRetryError("Content-Length mismatch", statusCode, {
+			headers,
+			data: { count: retryCount }
+		});
+		return null;
+	}
 	module.exports = class RetryHandler {
 		constructor(opts, handlers) {
 			const { retryOptions, ...dispatchOpts } = opts;
@@ -7809,13 +7856,15 @@ var require_retry_handler = /* @__PURE__ */ __commonJSMin(((exports, module) => 
 		onHeaders(statusCode, rawHeaders, resume, statusMessage) {
 			const headers = parseHeaders(rawHeaders);
 			this.retryCount += 1;
-			if (statusCode >= 300) if (this.retryOpts.statusCodes.includes(statusCode) === false) return this.handler.onHeaders(statusCode, rawHeaders, resume, statusMessage);
-			else {
-				this.abort(new RequestRetryError("Request failed", statusCode, {
-					headers,
-					data: { count: this.retryCount }
-				}));
-				return false;
+			if (statusCode >= 300) {
+				if (this.retryOpts.statusCodes.includes(statusCode) === false) return this.handler.onHeaders(statusCode, rawHeaders, resume, statusMessage);
+				else {
+					this.abort(new RequestRetryError("Request failed", statusCode, {
+						headers,
+						data: { count: this.retryCount }
+					}));
+					return false;
+				}
 			}
 			if (this.resume != null) {
 				this.resume = null;
@@ -7841,6 +7890,11 @@ var require_retry_handler = /* @__PURE__ */ __commonJSMin(((exports, module) => 
 					}));
 					return false;
 				}
+				const contentLengthError = validatePartialResponseContentLength(headers, contentRange, statusCode, this.retryCount);
+				if (contentLengthError != null) {
+					this.abort(contentLengthError);
+					return false;
+				}
 				const { start, size, end = size - 1 } = contentRange;
 				assert$15(this.start === start, "content-range mismatch");
 				assert$15(this.end == null || this.end === end, "content-range mismatch");
@@ -7851,6 +7905,11 @@ var require_retry_handler = /* @__PURE__ */ __commonJSMin(((exports, module) => 
 				if (statusCode === 206) {
 					const range = parseRangeHeader(headers["content-range"]);
 					if (range == null) return this.handler.onHeaders(statusCode, rawHeaders, resume, statusMessage);
+					const contentLengthError = validatePartialResponseContentLength(headers, range, statusCode, this.retryCount);
+					if (contentLengthError != null) {
+						this.abort(contentLengthError);
+						return false;
+					}
 					const { start, size, end = size - 1 } = range;
 					assert$15(start != null && Number.isFinite(start), "content-range mismatch");
 					assert$15(end != null && Number.isFinite(end), "invalid content-length");
@@ -8272,17 +8331,19 @@ var require_api_request = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			if (util.isStream(body)) body.on("error", (err) => {
 				this.onError(err);
 			});
-			if (this.signal) if (this.signal.aborted) this.reason = this.signal.reason ?? new RequestAbortedError();
-			else this.removeAbortListener = util.addAbortListener(this.signal, () => {
-				this.reason = this.signal.reason ?? new RequestAbortedError();
-				if (this.res) util.destroy(this.res.on("error", util.nop), this.reason);
-				else if (this.abort) this.abort(this.reason);
-				if (this.removeAbortListener) {
-					this.res?.off("close", this.removeAbortListener);
-					this.removeAbortListener();
-					this.removeAbortListener = null;
-				}
-			});
+			if (this.signal) {
+				if (this.signal.aborted) this.reason = this.signal.reason ?? new RequestAbortedError();
+				else this.removeAbortListener = util.addAbortListener(this.signal, () => {
+					this.reason = this.signal.reason ?? new RequestAbortedError();
+					if (this.res) util.destroy(this.res.on("error", util.nop), this.reason);
+					else if (this.abort) this.abort(this.reason);
+					if (this.removeAbortListener) {
+						this.res?.off("close", this.removeAbortListener);
+						this.removeAbortListener();
+						this.removeAbortListener = null;
+					}
+				});
+			}
 		}
 		onConnect(abort, context) {
 			if (this.reason) {
@@ -8316,22 +8377,24 @@ var require_api_request = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			if (this.removeAbortListener) res.on("close", this.removeAbortListener);
 			this.callback = null;
 			this.res = res;
-			if (callback !== null) if (this.throwOnError && statusCode >= 400) this.runInAsyncScope(getResolveErrorBodyCallback, null, {
-				callback,
-				body: res,
-				contentType,
-				statusCode,
-				statusMessage,
-				headers
-			});
-			else this.runInAsyncScope(callback, null, null, {
-				statusCode,
-				headers,
-				trailers: this.trailers,
-				opaque,
-				body: res,
-				context
-			});
+			if (callback !== null) {
+				if (this.throwOnError && statusCode >= 400) this.runInAsyncScope(getResolveErrorBodyCallback, null, {
+					callback,
+					body: res,
+					contentType,
+					statusCode,
+					statusMessage,
+					headers
+				});
+				else this.runInAsyncScope(callback, null, null, {
+					statusCode,
+					headers,
+					trailers: this.trailers,
+					opaque,
+					body: res,
+					context
+				});
+			}
 		}
 		onData(chunk) {
 			return this.res.push(chunk);
@@ -9227,10 +9290,12 @@ var require_mock_interceptor = /* @__PURE__ */ __commonJSMin(((exports, module) 
 			if (typeof opts !== "object") throw new InvalidArgumentError("opts must be an object");
 			if (typeof opts.path === "undefined") throw new InvalidArgumentError("opts.path must be defined");
 			if (typeof opts.method === "undefined") opts.method = "GET";
-			if (typeof opts.path === "string") if (opts.query) opts.path = buildURL(opts.path, opts.query);
-			else {
-				const parsedURL = new URL(opts.path, "data://");
-				opts.path = parsedURL.pathname + parsedURL.search;
+			if (typeof opts.path === "string") {
+				if (opts.query) opts.path = buildURL(opts.path, opts.query);
+				else {
+					const parsedURL = new URL(opts.path, "data://");
+					opts.path = parsedURL.pathname + parsedURL.search;
+				}
 			}
 			if (typeof opts.method === "string") opts.method = opts.method.toUpperCase();
 			this[kDispatchKey] = buildKey(opts);
@@ -9521,9 +9586,10 @@ var require_mock_agent = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			this[kIsMockActive] = true;
 		}
 		enableNetConnect(matcher) {
-			if (typeof matcher === "string" || typeof matcher === "function" || matcher instanceof RegExp) if (Array.isArray(this[kNetConnect])) this[kNetConnect].push(matcher);
-			else this[kNetConnect] = [matcher];
-			else if (typeof matcher === "undefined") this[kNetConnect] = true;
+			if (typeof matcher === "string" || typeof matcher === "function" || matcher instanceof RegExp) {
+				if (Array.isArray(this[kNetConnect])) this[kNetConnect].push(matcher);
+				else this[kNetConnect] = [matcher];
+			} else if (typeof matcher === "undefined") this[kNetConnect] = true;
 			else throw new InvalidArgumentError("Unsupported matcher. Must be one of String|Function|RegExp.");
 		}
 		disableNetConnect() {
@@ -9826,12 +9892,14 @@ var require_dns = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			const { records, offset } = hostnameRecords;
 			let family;
 			if (this.dualStack) {
-				if (affinity == null) if (offset == null || offset === maxInt) {
-					hostnameRecords.offset = 0;
-					affinity = 4;
-				} else {
-					hostnameRecords.offset++;
-					affinity = (hostnameRecords.offset & 1) === 1 ? 6 : 4;
+				if (affinity == null) {
+					if (offset == null || offset === maxInt) {
+						hostnameRecords.offset = 0;
+						affinity = 4;
+					} else {
+						hostnameRecords.offset++;
+						affinity = (hostnameRecords.offset & 1) === 1 ? 6 : 4;
+					}
 				}
 				if (records[affinity] != null && records[affinity].ips.length > 0) family = records[affinity];
 				else family = records[affinity === 4 ? 6 : 4];
@@ -11325,8 +11393,10 @@ var require_fetch = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		assert$4(!request.body || request.body.stream);
 		if (request.window === "client") request.window = request.client?.globalObject?.constructor?.name === "Window" ? request.client : "no-window";
 		if (request.origin === "client") request.origin = request.client.origin;
-		if (request.policyContainer === "client") if (request.client != null) request.policyContainer = clonePolicyContainer(request.client.policyContainer);
-		else request.policyContainer = makePolicyContainer();
+		if (request.policyContainer === "client") {
+			if (request.client != null) request.policyContainer = clonePolicyContainer(request.client.policyContainer);
+			else request.policyContainer = makePolicyContainer();
+		}
 		if (!request.headersList.contains("accept", true)) request.headersList.append("accept", "*/*", true);
 		if (!request.headersList.contains("accept-language", true)) request.headersList.append("accept-language", "*", true);
 		if (request.priority === null) {}
@@ -11593,8 +11663,10 @@ var require_fetch = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			if (!httpRequest.headersList.contains("cache-control", true)) httpRequest.headersList.append("cache-control", "no-cache", true);
 		}
 		if (httpRequest.headersList.contains("range", true)) httpRequest.headersList.append("accept-encoding", "identity", true);
-		if (!httpRequest.headersList.contains("accept-encoding", true)) if (urlHasHttpsScheme(requestCurrentURL(httpRequest))) httpRequest.headersList.append("accept-encoding", "br, gzip, deflate", true);
-		else httpRequest.headersList.append("accept-encoding", "gzip, deflate", true);
+		if (!httpRequest.headersList.contains("accept-encoding", true)) {
+			if (urlHasHttpsScheme(requestCurrentURL(httpRequest))) httpRequest.headersList.append("accept-encoding", "br, gzip, deflate", true);
+			else httpRequest.headersList.append("accept-encoding", "gzip, deflate", true);
+		}
 		httpRequest.headersList.delete("host", true);
 		if (includeCredentials) {}
 		httpRequest.cache = "no-store";
@@ -13224,16 +13296,54 @@ var require_util$2 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	function validateCookiePath(path) {
 		for (let i = 0; i < path.length; ++i) {
 			const code = path.charCodeAt(i);
-			if (code < 32 || code === 127 || code === 59) throw new Error("Invalid cookie path");
+			if (code < 32 || code > 126 || code === 59) throw new Error("Invalid cookie path");
 		}
 	}
 	/**
-	* I have no idea why these values aren't allowed to be honest,
-	* but Deno tests these. - Khafra
+	* <let-dig> ::= <letter> | <digit>
+	*
+	* <letter> ::= any one of the 52 alphabetic characters A through Z in
+	* upper case and a through z in lower case
+	*
+	* <digit> ::= any one of the ten digits 0 through 9r
+	*
+	* @see https://www.rfc-editor.org/rfc/rfc1034#section-3.5
+	* @param {number} code
+	*/
+	function isLetterOrDigit(code) {
+		return code >= 48 && code <= 57 || code >= 65 && code <= 90 || code >= 97 && code <= 122;
+	}
+	/**
+	* Validates a cookie domain against the "preferred name syntax".
+	*
+	* <domain>      ::= <subdomain> | " "
+	* <subdomain>   ::= <label> | <subdomain> "." <label>
+	* <label>       ::= <let-dig> [ [ <ldh-str> ] <let-dig> ]
+	* <ldh-str>     ::= <let-dig-hyp> | <let-dig-hyp> <ldh-str>
+	* <let-dig-hyp> ::= <let-dig> | "-"
+	*
+	* @see https://www.rfc-editor.org/rfc/rfc1034#section-3.5
+	* @see https://www.rfc-editor.org/rfc/rfc1123#section-2.1
+	* @see https://www.rfc-editor.org/rfc/rfc1035#section-2.3.4
 	* @param {string} domain
 	*/
 	function validateCookieDomain(domain) {
-		if (domain.startsWith("-") || domain.endsWith(".") || domain.endsWith("-")) throw new Error("Invalid cookie domain");
+		if (domain === " ") return;
+		if (domain.length > 255) throw new Error("Invalid cookie domain");
+		let labelLength = 0;
+		for (let i = 0; i < domain.length; ++i) {
+			const code = domain.charCodeAt(i);
+			if (code === 46) {
+				if (labelLength === 0) throw new Error("Invalid cookie domain");
+				if (domain.charCodeAt(i - 1) === 45) throw new Error("Invalid cookie domain");
+				labelLength = 0;
+				continue;
+			}
+			if (labelLength === 0 && !isLetterOrDigit(code)) throw new Error("Invalid cookie domain");
+			if (!isLetterOrDigit(code) && code !== 45) throw new Error("Invalid cookie domain");
+			if (++labelLength > 63) throw new Error("Invalid cookie domain");
+		}
+		if (labelLength === 0 || domain.charCodeAt(domain.length - 1) === 45) throw new Error("Invalid cookie domain");
 	}
 	var IMFDays = [
 		"Sun",
@@ -13348,7 +13458,11 @@ var require_util$2 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		for (const part of cookie.unparsed) {
 			if (!part.includes("=")) throw new Error("Invalid unparsed");
 			const [key, ...value] = part.split("=");
-			out.push(`${key.trim()}=${value.join("=")}`);
+			const trimmedKey = key.trim();
+			const joinedValue = value.join("=");
+			validateCookieName(trimmedKey);
+			validateCookieValue(joinedValue);
+			out.push(`${trimmedKey}=${joinedValue}`);
 		}
 		return out.join("; ");
 	}
@@ -13998,8 +14112,10 @@ var require_util$1 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			failWebsocketConnection(ws, "Received invalid UTF-8 in text frame.");
 			return;
 		}
-		else if (type === opcodes.BINARY) if (ws[kBinaryType] === "blob") dataForEvent = new Blob([data]);
-		else dataForEvent = toArrayBuffer(data);
+		else if (type === opcodes.BINARY) {
+			if (ws[kBinaryType] === "blob") dataForEvent = new Blob([data]);
+			else dataForEvent = toArrayBuffer(data);
+		}
 		fireEvent("message", ws, createFastMessageEvent, {
 			origin: ws[kWebSocketURL].origin,
 			data: dataForEvent
@@ -15560,13 +15676,15 @@ var require_eventsource = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			};
 			fetchParams.processResponseEndOfBody = processEventSourceEndOfBody;
 			fetchParams.processResponse = (response) => {
-				if (isNetworkError(response)) if (response.aborted) {
-					this.close();
-					this.dispatchEvent(new Event("error"));
-					return;
-				} else {
-					this.#reconnect();
-					return;
+				if (isNetworkError(response)) {
+					if (response.aborted) {
+						this.close();
+						this.dispatchEvent(new Event("error"));
+						return;
+					} else {
+						this.#reconnect();
+						return;
+					}
 				}
 				const contentType = response.headersList.get("content-type", true);
 				const mimeType = contentType !== null ? parseMIMEType(contentType) : "failure";
@@ -16229,14 +16347,18 @@ var HttpClient = class {
 		let clientHeader;
 		if (this.requestOptions && this.requestOptions.headers) {
 			const headerValue = lowercaseKeys(this.requestOptions.headers)[Headers.ContentType];
-			if (headerValue) if (typeof headerValue === "number") clientHeader = String(headerValue);
-			else if (Array.isArray(headerValue)) clientHeader = headerValue.join(", ");
-			else clientHeader = headerValue;
+			if (headerValue) {
+				if (typeof headerValue === "number") clientHeader = String(headerValue);
+				else if (Array.isArray(headerValue)) clientHeader = headerValue.join(", ");
+				else clientHeader = headerValue;
+			}
 		}
 		const additionalValue = additionalHeaders[Headers.ContentType];
-		if (additionalValue !== void 0) if (typeof additionalValue === "number") return String(additionalValue);
-		else if (Array.isArray(additionalValue)) return additionalValue.join(", ");
-		else return additionalValue;
+		if (additionalValue !== void 0) {
+			if (typeof additionalValue === "number") return String(additionalValue);
+			else if (Array.isArray(additionalValue)) return additionalValue.join(", ");
+			else return additionalValue;
+		}
 		if (clientHeader !== void 0) return clientHeader;
 		return _default;
 	}
@@ -16828,8 +16950,10 @@ function which(tool, check) {
 		if (!tool) throw new Error("parameter 'tool' is required");
 		if (check) {
 			const result = yield which(tool, false);
-			if (!result) if (IS_WINDOWS$1) throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also verify the file has a valid extension for an executable file.`);
-			else throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also check the file mode to verify the file is executable.`);
+			if (!result) {
+				if (IS_WINDOWS$1) throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also verify the file has a valid extension for an executable file.`);
+				else throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also check the file mode to verify the file is executable.`);
+			}
 			return result;
 		}
 		const matches = yield findInPath(tool);
@@ -16912,17 +17036,18 @@ var ToolRunner = class extends events.EventEmitter {
 		const toolPath = this._getSpawnFileName();
 		const args = this._getSpawnArgs(options);
 		let cmd = noPrefix ? "" : "[command]";
-		if (IS_WINDOWS) if (this._isCmdFile()) {
-			cmd += toolPath;
-			for (const a of args) cmd += ` ${a}`;
-		} else if (options.windowsVerbatimArguments) {
-			cmd += `"${toolPath}"`;
-			for (const a of args) cmd += ` ${a}`;
+		if (IS_WINDOWS) {
+			if (this._isCmdFile()) {
+				cmd += toolPath;
+				for (const a of args) cmd += ` ${a}`;
+			} else if (options.windowsVerbatimArguments) {
+				cmd += `"${toolPath}"`;
+				for (const a of args) cmd += ` ${a}`;
+			} else {
+				cmd += this._windowsQuoteCmdArg(toolPath);
+				for (const a of args) cmd += ` ${this._windowsQuoteCmdArg(a)}`;
+			}
 		} else {
-			cmd += this._windowsQuoteCmdArg(toolPath);
-			for (const a of args) cmd += ` ${this._windowsQuoteCmdArg(a)}`;
-		}
-		else {
 			cmd += toolPath;
 			for (const a of args) cmd += ` ${a}`;
 		}
@@ -18523,9 +18648,10 @@ function compareBoth(self, that) {
 	if (selfType !== typeof that) return false;
 	if (selfType === "object" || selfType === "function") {
 		if (self !== null && that !== null) {
-			if (isEqual(self) && isEqual(that)) if (hash(self) === hash(that) && self[symbol](that)) return true;
-			else return structuralRegionState.enabled && structuralRegionState.tester ? structuralRegionState.tester(self, that) : false;
-			else if (self instanceof Date && that instanceof Date) {
+			if (isEqual(self) && isEqual(that)) {
+				if (hash(self) === hash(that) && self[symbol](that)) return true;
+				else return structuralRegionState.enabled && structuralRegionState.tester ? structuralRegionState.tester(self, that) : false;
+			} else if (self instanceof Date && that instanceof Date) {
 				const t1 = self.getTime();
 				const t2 = that.getTime();
 				return t1 === t2 || Number.isNaN(t1) && Number.isNaN(t2);
@@ -18766,7 +18892,7 @@ var OP_YIELD = "Yield";
 var OP_REVERT_FLAGS = "RevertFlags";
 //#endregion
 //#region node_modules/effect/dist/esm/internal/version.js
-var moduleVersion = "3.22.0";
+var moduleVersion = "3.22.1";
 var getCurrentVersion = () => moduleVersion;
 //#endregion
 //#region node_modules/effect/dist/esm/internal/effectable.js
@@ -22495,14 +22621,16 @@ var zero$1 = /*#__PURE__*/ unsafeMakeNormalized(bigint0$2, 0);
 * @category scaling
 */
 var normalize$1 = (self) => {
-	if (self.normalized === void 0) if (self.value === bigint0$2) self.normalized = zero$1;
-	else {
-		const digits = `${self.value}`;
-		let trail = 0;
-		for (let i = digits.length - 1; i >= 0; i--) if (digits[i] === "0") trail++;
-		else break;
-		if (trail === 0) self.normalized = self;
-		self.normalized = unsafeMakeNormalized(BigInt(digits.substring(0, digits.length - trail)), self.scale - trail);
+	if (self.normalized === void 0) {
+		if (self.value === bigint0$2) self.normalized = zero$1;
+		else {
+			const digits = `${self.value}`;
+			let trail = 0;
+			for (let i = digits.length - 1; i >= 0; i--) if (digits[i] === "0") trail++;
+			else break;
+			if (trail === 0) self.normalized = self;
+			self.normalized = unsafeMakeNormalized(BigInt(digits.substring(0, digits.length - trail)), self.scale - trail);
+		}
 	}
 	return self.normalized;
 };
@@ -23063,7 +23191,7 @@ var mergeAll$2 = (...ctxs) => {
 //#endregion
 //#region node_modules/effect/dist/esm/Context.js
 /**
-* Creates a new `Tag` instance with an optional key parameter.
+* Creates a new `Tag` instance with the specified key.
 *
 * @example
 * ```ts
@@ -23676,37 +23804,38 @@ var appendAll$1 = /*#__PURE__*/ dual(2, (self, that) => {
 		left: self,
 		right: that
 	});
-	else if (diff < -1) if (self.left.depth >= self.right.depth) {
-		const nr = appendAll$1(self.right, that);
-		return makeChunk({
-			_tag: "IConcat",
-			left: self.left,
-			right: nr
-		});
-	} else {
-		const nrr = appendAll$1(self.right.right, that);
-		if (nrr.depth === self.depth - 3) {
-			const nr = makeChunk({
-				_tag: "IConcat",
-				left: self.right.left,
-				right: nrr
-			});
+	else if (diff < -1) {
+		if (self.left.depth >= self.right.depth) {
+			const nr = appendAll$1(self.right, that);
 			return makeChunk({
 				_tag: "IConcat",
 				left: self.left,
 				right: nr
 			});
-		} else return makeChunk({
-			_tag: "IConcat",
-			left: makeChunk({
+		} else {
+			const nrr = appendAll$1(self.right.right, that);
+			if (nrr.depth === self.depth - 3) {
+				const nr = makeChunk({
+					_tag: "IConcat",
+					left: self.right.left,
+					right: nrr
+				});
+				return makeChunk({
+					_tag: "IConcat",
+					left: self.left,
+					right: nr
+				});
+			} else return makeChunk({
 				_tag: "IConcat",
-				left: self.left,
-				right: self.right.left
-			}),
-			right: nrr
-		});
-	}
-	else if (that.right.depth >= that.left.depth) return makeChunk({
+				left: makeChunk({
+					_tag: "IConcat",
+					left: self.left,
+					right: self.right.left
+				}),
+				right: nrr
+			});
+		}
+	} else if (that.right.depth >= that.left.depth) return makeChunk({
 		_tag: "IConcat",
 		left: appendAll$1(self, that.left),
 		right: that.right
@@ -23864,17 +23993,18 @@ var DurationProto = {
 };
 var make$20 = (input) => {
 	const duration = Object.create(DurationProto);
-	if (isNumber(input)) if (isNaN(input) || input <= 0) duration.value = zeroValue;
-	else if (!Number.isFinite(input)) duration.value = infinityValue;
-	else if (!Number.isInteger(input)) duration.value = {
-		_tag: "Nanos",
-		nanos: BigInt(Math.round(input * 1e6))
-	};
-	else duration.value = {
-		_tag: "Millis",
-		millis: input
-	};
-	else if (input <= bigint0$1) duration.value = zeroValue;
+	if (isNumber(input)) {
+		if (isNaN(input) || input <= 0) duration.value = zeroValue;
+		else if (!Number.isFinite(input)) duration.value = infinityValue;
+		else if (!Number.isInteger(input)) duration.value = {
+			_tag: "Nanos",
+			nanos: BigInt(Math.round(input * 1e6))
+		};
+		else duration.value = {
+			_tag: "Millis",
+			millis: input
+		};
+	} else if (input <= bigint0$1) duration.value = zeroValue;
 	else duration.value = {
 		_tag: "Nanos",
 		nanos: input
@@ -24645,9 +24775,11 @@ var reduce$5 = /*#__PURE__*/ dual(3, (self, zero, f) => {
 	let children;
 	while (children = toVisit.pop()) for (let i = 0, len = children.length; i < len;) {
 		const child = children[i++];
-		if (child && !isEmptyNode(child)) if (child._tag === "LeafNode") {
-			if (isSome(child.value)) zero = f(zero, child.value.value, child.key);
-		} else toVisit.push(child.children);
+		if (child && !isEmptyNode(child)) {
+			if (child._tag === "LeafNode") {
+				if (isSome(child.value)) zero = f(zero, child.value.value, child.key);
+			} else toVisit.push(child.children);
+		}
 	}
 	return zero;
 });
@@ -28433,6 +28565,8 @@ var OP_NESTED = "Nested";
 /** @internal */
 var OP_PRIMITIVE = "Primitive";
 /** @internal */
+var OP_REDACTED = "Redacted";
+/** @internal */
 var OP_SEQUENCE = "Sequence";
 /** @internal */
 var OP_HASHMAP = "HashMap";
@@ -28547,6 +28681,15 @@ var appendConfigPath = (path, config) => {
 	}
 	return path;
 };
+var RedactedConfigErrorReducer = {
+	andCase: (_, left, right) => And(left, right),
+	orCase: (_, left, right) => Or(left, right),
+	invalidDataCase: (_, path) => InvalidData$1(path, "<redacted>"),
+	missingDataCase: (_, path) => MissingData(path, "<redacted>"),
+	sourceUnavailableCase: (_, path, _message, cause) => SourceUnavailable(path, "<redacted>", cause),
+	unsupportedCase: (_, path) => Unsupported(path, "<redacted>")
+};
+var redactConfigError = (error) => reduceWithContext(error, void 0, RedactedConfigErrorReducer);
 var fromFlatLoop = (flat, prefix, config, split) => {
 	const op = config;
 	switch (op._tag) {
@@ -28567,6 +28710,7 @@ var fromFlatLoop = (flat, prefix, config, split) => {
 			}
 			return succeed$5(values);
 		}))));
+		case OP_REDACTED: return suspend$4(() => pipe(fromFlatLoop(flat, prefix, op.original, split), mapError$2(redactConfigError), map$3(map$6(op.redact))));
 		case OP_SEQUENCE: return pipe(patch$3(prefix, flat.patch), flatMap$3((patchedPrefix) => pipe(flat.enumerateChildren(patchedPrefix), flatMap$3(indicesFrom), flatMap$3((indices) => {
 			if (indices.length === 0) return suspend$4(() => map$3(fromFlatLoop(flat, prefix, op.config, true), of$2));
 			return pipe(forEachSequential(indices, (index) => fromFlatLoop(flat, append$1(prefix, `[${index}]`), op.config, true)), map$3((chunkChunk) => {
@@ -29013,9 +29157,10 @@ var unsafeUpdateAs = (locals, fiberId, fiberRef, value) => {
 	let newStack;
 	if (isNonEmptyReadonlyArray(oldStack)) {
 		const [currentId, currentValue] = headNonEmpty$1(oldStack);
-		if (currentId[symbol](fiberId)) if (equals$2(currentValue, value)) return;
-		else newStack = [[fiberId, value], ...oldStack.slice(1)];
-		else newStack = [[fiberId, value], ...oldStack];
+		if (currentId[symbol](fiberId)) {
+			if (equals$2(currentValue, value)) return;
+			else newStack = [[fiberId, value], ...oldStack.slice(1)];
+		} else newStack = [[fiberId, value], ...oldStack];
 	} else newStack = [[fiberId, value]];
 	locals.set(fiberRef, newStack);
 };
@@ -30216,11 +30361,13 @@ var uninterruptibleMask = (f) => withMicroFiber((fiber) => {
 var runFork$1 = (effect, options) => {
 	const fiber = new MicroFiberImpl(CurrentScheduler.context(options?.scheduler ?? new MicroSchedulerDefault()));
 	fiber.evaluate(effect);
-	if (options?.signal) if (options.signal.aborted) fiber.unsafeInterrupt();
-	else {
-		const abort = () => fiber.unsafeInterrupt();
-		options.signal.addEventListener("abort", abort, { once: true });
-		fiber.addObserver(() => options.signal.removeEventListener("abort", abort));
+	if (options?.signal) {
+		if (options.signal.aborted) fiber.unsafeInterrupt();
+		else {
+			const abort = () => fiber.unsafeInterrupt();
+			options.signal.addEventListener("abort", abort, { once: true });
+			fiber.addObserver(() => options.signal.removeEventListener("abort", abort));
+		}
 	}
 	return fiber;
 };
@@ -30978,8 +31125,10 @@ var histogram$1 = (key) => {
 			const mid = Math.floor(from + (to - from) / 2);
 			if (value <= boundaries[mid]) to = mid;
 			else from = mid;
-			if (to === from + 1) if (value <= boundaries[from]) to = from;
-			else from = to;
+			if (to === from + 1) {
+				if (value <= boundaries[from]) to = from;
+				else from = to;
+			}
 		}
 		values[from] = values[from] + 1;
 		count = count + 1;
@@ -32153,12 +32302,13 @@ var FiberRuntime = class extends Class {
 				if (exit === YieldedOp) {
 					const op = yieldedOpChannel.currentOp;
 					yieldedOpChannel.currentOp = null;
-					if (op._op === "Yield") if (cooperativeYielding(this.currentRuntimeFlags)) {
-						this.tell(yieldNow());
-						this.tell(resume(exitVoid$1));
-						effect = null;
-					} else effect = exitVoid$1;
-					else if (op._op === "Async") effect = null;
+					if (op._op === "Yield") {
+						if (cooperativeYielding(this.currentRuntimeFlags)) {
+							this.tell(yieldNow());
+							this.tell(resume(exitVoid$1));
+							effect = null;
+						} else effect = exitVoid$1;
+					} else if (op._op === "Async") effect = null;
 				} else {
 					this.currentRuntimeFlags = pipe(this.currentRuntimeFlags, enable$1(16));
 					const interruption = this.interruptAllChildren();
@@ -33221,10 +33371,12 @@ var unsafeRunPromiseExit = /*#__PURE__*/ makeDual((runtime, effect, options) => 
 	fiber.addObserver((exit) => {
 		resolve(exit);
 	});
-	if (options?.signal !== void 0) if (options.signal.aborted) fiber.unsafeInterruptAsFork(fiber.id());
-	else options.signal.addEventListener("abort", () => {
-		fiber.unsafeInterruptAsFork(fiber.id());
-	}, { once: true });
+	if (options?.signal !== void 0) {
+		if (options.signal.aborted) fiber.unsafeInterruptAsFork(fiber.id());
+		else options.signal.addEventListener("abort", () => {
+			fiber.unsafeInterruptAsFork(fiber.id());
+		}, { once: true });
+	}
 }));
 /** @internal */
 var RuntimeImpl = class {
@@ -36034,7 +36186,12 @@ var primitive = (description, parse) => {
 };
 /** @internal */
 var redacted$1 = (nameOrConfig) => {
-	return map$1(isConfig(nameOrConfig) ? nameOrConfig : string$1(nameOrConfig), make$1);
+	const config = isConfig(nameOrConfig) ? nameOrConfig : string$1(nameOrConfig);
+	const redacted = Object.create(proto);
+	redacted._tag = OP_REDACTED;
+	redacted.original = config;
+	redacted.redact = make$1;
+	return redacted;
 };
 /** @internal */
 var string$1 = (name) => {
@@ -36666,6 +36823,18 @@ var go = (ast, isDecoding) => {
 		case "ObjectKeyword": return fromRefinement(ast, isObject);
 		case "Enums": return fromRefinement(ast, (u) => ast.enums.some(([_, value]) => value === u));
 		case "TemplateLiteral": {
+			if (ast.spans.every((span) => isStringKeyword(span.type))) return fromRefinement(ast, (u) => {
+				if (!isString(u) || !u.startsWith(ast.head)) return false;
+				let position = ast.head.length;
+				for (let i = 0; i < ast.spans.length - 1; i++) {
+					const literal = ast.spans[i].literal;
+					const index = u.indexOf(literal, position);
+					if (index === -1) return false;
+					position = index + literal.length;
+				}
+				const literal = ast.spans[ast.spans.length - 1].literal;
+				return u.endsWith(literal) && u.length - literal.length >= position;
+			});
 			const regex = getTemplateLiteralRegExp(ast);
 			return fromRefinement(ast, (u) => isString(u) && regex.test(u));
 		}
@@ -36736,14 +36905,15 @@ var go = (ast, isDecoding) => {
 					const [head, ...tail] = rest;
 					for (; i < len - tail.length; i++) {
 						const te = head(input[i], options);
-						if (isEither(te)) if (isLeft(te)) {
-							const e = new Pointer(i, input, te.left);
-							if (allErrors) {
-								es.push([stepKey++, e]);
-								continue;
-							} else return left(new Composite(ast, input, e, sortByIndex(output)));
-						} else output.push([stepKey++, te.right]);
-						else {
+						if (isEither(te)) {
+							if (isLeft(te)) {
+								const e = new Pointer(i, input, te.left);
+								if (allErrors) {
+									es.push([stepKey++, e]);
+									continue;
+								} else return left(new Composite(ast, input, e, sortByIndex(output)));
+							} else output.push([stepKey++, te.right]);
+						} else {
 							const nk = stepKey++;
 							const index = i;
 							if (!queue) queue = [];
@@ -36846,13 +37016,15 @@ var go = (ast, isDecoding) => {
 					inputKeys = Reflect.ownKeys(input);
 					for (const key of inputKeys) {
 						const te = expected(key, options);
-						if (isEither(te) && isLeft(te)) if (onExcessPropertyError) {
-							const e = new Pointer(key, input, new Unexpected(input[key], `is unexpected, expected: ${String(expectedAST)}`));
-							if (allErrors) {
-								es.push([stepKey++, e]);
-								continue;
-							} else return left(new Composite(ast, input, e, output));
-						} else output[key] = input[key];
+						if (isEither(te) && isLeft(te)) {
+							if (onExcessPropertyError) {
+								const e = new Pointer(key, input, new Unexpected(input[key], `is unexpected, expected: ${String(expectedAST)}`));
+								if (allErrors) {
+									es.push([stepKey++, e]);
+									continue;
+								} else return left(new Composite(ast, input, e, output));
+							} else output[key] = input[key];
+						}
 					}
 				}
 				let queue = void 0;
@@ -36980,37 +37152,40 @@ var go = (ast, isDecoding) => {
 				const es = [];
 				let stepKey = 0;
 				let candidates = [];
-				if (ownKeysLen > 0) if (isRecordOrArray(input)) for (let i = 0; i < ownKeysLen; i++) {
-					const name = ownKeys[i];
-					const buckets = searchTree.keys[name].buckets;
-					if (Object.prototype.hasOwnProperty.call(input, name)) {
-						const literal = String(input[name]);
-						if (Object.prototype.hasOwnProperty.call(buckets, literal)) candidates = candidates.concat(buckets[literal]);
-						else {
+				if (ownKeysLen > 0) {
+					if (isRecordOrArray(input)) for (let i = 0; i < ownKeysLen; i++) {
+						const name = ownKeys[i];
+						const buckets = searchTree.keys[name].buckets;
+						if (Object.prototype.hasOwnProperty.call(input, name)) {
+							const literal = String(input[name]);
+							if (Object.prototype.hasOwnProperty.call(buckets, literal)) candidates = candidates.concat(buckets[literal]);
+							else {
+								const { candidates, literals } = searchTree.keys[name];
+								const literalsUnion = Union$1.make(literals);
+								const errorAst = candidates.length === astTypesLen ? new TypeLiteral([new PropertySignature(name, literalsUnion, false, true)], []) : Union$1.make(candidates);
+								es.push([stepKey++, new Composite(errorAst, input, new Pointer(name, input, new Type(literalsUnion, input[name])))]);
+							}
+						} else {
 							const { candidates, literals } = searchTree.keys[name];
-							const literalsUnion = Union$1.make(literals);
-							const errorAst = candidates.length === astTypesLen ? new TypeLiteral([new PropertySignature(name, literalsUnion, false, true)], []) : Union$1.make(candidates);
-							es.push([stepKey++, new Composite(errorAst, input, new Pointer(name, input, new Type(literalsUnion, input[name])))]);
+							const fakePropertySignature = new PropertySignature(name, Union$1.make(literals), false, true);
+							const errorAst = candidates.length === astTypesLen ? new TypeLiteral([fakePropertySignature], []) : Union$1.make(candidates);
+							es.push([stepKey++, new Composite(errorAst, input, new Pointer(name, input, new Missing(fakePropertySignature)))]);
 						}
-					} else {
-						const { candidates, literals } = searchTree.keys[name];
-						const fakePropertySignature = new PropertySignature(name, Union$1.make(literals), false, true);
-						const errorAst = candidates.length === astTypesLen ? new TypeLiteral([fakePropertySignature], []) : Union$1.make(candidates);
-						es.push([stepKey++, new Composite(errorAst, input, new Pointer(name, input, new Missing(fakePropertySignature)))]);
 					}
-				}
-				else {
-					const errorAst = searchTree.candidates.length === astTypesLen ? ast : Union$1.make(searchTree.candidates);
-					es.push([stepKey++, new Type(errorAst, input)]);
+					else {
+						const errorAst = searchTree.candidates.length === astTypesLen ? ast : Union$1.make(searchTree.candidates);
+						es.push([stepKey++, new Type(errorAst, input)]);
+					}
 				}
 				if (searchTree.otherwise.length > 0) candidates = candidates.concat(searchTree.otherwise);
 				let queue = void 0;
 				for (let i = 0; i < candidates.length; i++) {
 					const candidate = candidates[i];
 					const pr = map.get(candidate)(input, options);
-					if (isEither(pr) && (!queue || queue.length === 0)) if (isRight(pr)) return pr;
-					else es.push([stepKey++, pr.left]);
-					else {
+					if (isEither(pr) && (!queue || queue.length === 0)) {
+						if (isRight(pr)) return pr;
+						else es.push([stepKey++, pr.left]);
+					} else {
 						const nk = stepKey++;
 						if (!queue) queue = [];
 						queue.push((state) => suspend$2(() => {
@@ -39447,4 +39622,4 @@ var GitService = class extends Service()("GitService", { succeed: { createWorktr
 //#endregion
 export { sync as $, andThen as A, setSecret as At, gen as B, redacted as C, debug as Ct, Service as D, info as Dt, isConfigError as E, getState as Et, catchTag as F, HttpCodes as Ft, mapError$1 as G, logInfo as H, catchTags as I, require_undici as It, promise as J, option$2 as K, fail$1 as L, require_tunnel as Lt, catchAll as M, exec as Mt, catchAllCause as N, BearerCredentialHandler as Nt, acquireRelease as O, setFailed as Ot, catchIf as P, HttpClient as Pt, succeed$2 as Q, flatMap$1 as R, option as S, pipe as St, value as T, getInput as Tt, logWarning as U, logError as V, map$2 as W, runPromise as X, provide as Y, scoped as Z, Struct as _, getOrElse as _t, GitHubApiError as a, mergeAll as at, pattern as b, map$7 as bt, MissingAttributesError as c, withConfigProviderScoped as ct, NixPathInfoError as d, set as dt, tapError as et, NotPullRequestContextError as f, fromEnv as ft, NonEmptyString as g, fromNullable as gt, Literal as h, flatMap$5 as ht, AttributeParseError as i, merge as it, as as j, warning as jt, all as k, setOutput as kt, NixBuildError as l, get as lt, Config as m, orElse$1 as mt, removeWorktree as n, try_ as nt, InvalidCommentStrategyError as o, scopedDiscard as ot, Array$ as p, fromMap as pt, orElseSucceed as q, ArtifactError as r, TaggedError$1 as rt, InvalidDirectoryError as s, pretty as st, GitService as t, tryPromise as tt, NixDixError as u, make$8 as ut, decodeUnknown as v, getOrUndefined as vt, string as w, error as wt, boolean as x, match$4 as xt, filter as y, isNone as yt, forEach as z };
 
-//# sourceMappingURL=git-X81EY5xg.js.map
+//# sourceMappingURL=git-C62o7dAq.js.map
