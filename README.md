@@ -1,6 +1,6 @@
 # nix-diff-action
 
-A GitHub Action to compare Nix derivations between base and PR branches using [dix](https://github.com/faukah/dix).
+A GitHub Action to compare Nix derivations between base and PR branches using [dix](https://github.com/manic-systems/dix).
 
 > [!WARNING]
 > **Alpha Version** - This action is under active development. APIs and behavior may change without notice. We recommend pinning to a specific release version or commit SHA.
