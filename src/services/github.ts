@@ -289,7 +289,7 @@ export class GitHubService extends Effect.Service<GitHubService>()("GitHubServic
       formatOptions?: FormatCommentOptions,
     ): Effect.Effect<void, GitHubApiError> =>
       Effect.gen(function* () {
-        const hasChanges = results.some((r) => hasDixChanges(r.diff));
+        const hasChanges = results.some((r) => hasDixChanges(r));
         const commentBody = formatAggregatedComment(results, pr.head.sha, formatOptions);
         // Use displayName-specific marker for single attribute
         const displayName = results.length === 1 ? results[0].displayName : undefined;

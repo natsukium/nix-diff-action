@@ -53,6 +53,12 @@ export const DiffResult = Schema.Struct({
   prRef: Schema.NonEmptyString.annotations({
     description: "Commit SHA of the PR head",
   }),
+  basePath: Schema.NonEmptyString.annotations({
+    description: "Nix store path of the base branch output",
+  }),
+  prPath: Schema.NonEmptyString.annotations({
+    description: "Nix store path of the PR head output",
+  }),
   diff: Schema.NonEmptyString.annotations({
     description: "Diff output from dix tool",
   }),

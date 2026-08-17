@@ -47,6 +47,8 @@ const makeResult = (host: string): DiffResult => ({
   attributePath: `nixosConfigurations.${host}.config.system.build.toplevel`,
   baseRef: "abc123",
   prRef: "def456",
+  basePath: "/nix/store/aaa-base",
+  prPath: "/nix/store/bbb-pr",
   diff: `diff for ${host}`,
 });
 

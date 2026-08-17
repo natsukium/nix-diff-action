@@ -5,23 +5,17 @@
  * Import services from "./index.js" and utilities from "./utils.js".
  */
 
+import type { DiffResult } from "../schemas.js";
+
 // Nix utilities
 
-// Detect if dix output indicates actual changes by comparing paths
-// Nix store paths are content-addressed: same paths = same content
-export const hasDixChanges = (diff: string | undefined): boolean => {
-  if (!diff || diff.trim() === "") return false;
-
-  // Extract paths from dix output format:
-  // <<< /nix/store/xxx-name.drv
-  // >>> /nix/store/yyy-name.drv
-  const baseMatch = diff.match(/^<<<\s*(.+)$/m);
-  const prMatch = diff.match(/^>>>\s*(.+)$/m);
-
-  if (!baseMatch || !prMatch) return true; // Cannot parse, assume changes
-
-  return baseMatch[1].trim() !== prMatch[1].trim();
-};
+// Detect actual changes by comparing store paths: they are content-addressed,
+// so identical paths mean identical content. The paths come from nix path-info
+// rather than being parsed back out of dix's human-readable output, which is
+// not a stable format across dix versions (and JSON output omits the paths
+// entirely).
+export const hasDixChanges = (result: Pick<DiffResult, "basePath" | "prPath">): boolean =>
+  result.basePath !== result.prPath;
 
 // Git utilities
 export { sanitizeBranchName } from "./git.js";
