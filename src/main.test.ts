@@ -146,7 +146,7 @@ describe("formatAggregatedComment", () => {
     expect(comment).toContain("some diff output");
     expect(comment).toContain("<!-- nix-diff-action-footer sha=abc123def456 -->");
     expect(comment).toContain("[nix-diff-action](https://github.com/natsukium/nix-diff-action)");
-    expect(comment).toContain("[dix](https://github.com/faukah/dix)");
+    expect(comment).toContain("[dix](https://github.com/manic-systems/dix)");
   });
 
   test("formats multiple results with generic marker", () => {
