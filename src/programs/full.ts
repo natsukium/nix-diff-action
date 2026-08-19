@@ -82,6 +82,8 @@ const processNixOutput = (
       attributePath: config.attribute,
       baseRef: baseSha,
       prRef: headSha,
+      basePath,
+      prPath,
       diff,
     };
   });

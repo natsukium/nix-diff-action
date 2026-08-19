@@ -130,6 +130,8 @@ describe("formatAggregatedComment", () => {
         attributePath: "nixosConfigurations.host1.config.system.build.toplevel",
         baseRef: "github:owner/repo",
         prRef: ".",
+        basePath: "/nix/store/aaa-base",
+        prPath: "/nix/store/bbb-pr",
         diff: "some diff output",
       },
     ];
@@ -156,6 +158,8 @@ describe("formatAggregatedComment", () => {
         attributePath: "nixosConfigurations.host1...",
         baseRef: "github:owner/repo",
         prRef: ".",
+        basePath: "/nix/store/aaa-base",
+        prPath: "/nix/store/bbb-pr",
         diff: "diff1",
       },
       {
@@ -163,6 +167,8 @@ describe("formatAggregatedComment", () => {
         attributePath: "nixosConfigurations.host2...",
         baseRef: "github:owner/repo",
         prRef: ".",
+        basePath: "/nix/store/aaa-base",
+        prPath: "/nix/store/bbb-pr",
         diff: "diff2",
       },
     ];
@@ -185,6 +191,8 @@ describe("formatAggregatedComment", () => {
         attributePath: "nixosConfigurations.host1...",
         baseRef: "github:owner/repo",
         prRef: ".",
+        basePath: "/nix/store/aaa-base",
+        prPath: "/nix/store/bbb-pr",
         diff: largeDiff,
       },
     ];
@@ -202,6 +210,8 @@ describe("formatAggregatedComment", () => {
         attributePath: "nixosConfigurations.host1...",
         baseRef: "github:owner/repo",
         prRef: ".",
+        basePath: "/nix/store/aaa-base",
+        prPath: "/nix/store/bbb-pr",
         diff: largeDiff,
       },
       {
@@ -209,6 +219,8 @@ describe("formatAggregatedComment", () => {
         attributePath: "nixosConfigurations.host2...",
         baseRef: "github:owner/repo",
         prRef: ".",
+        basePath: "/nix/store/aaa-base",
+        prPath: "/nix/store/bbb-pr",
         diff: largeDiff,
       },
     ];
@@ -226,6 +238,8 @@ describe("formatAggregatedComment", () => {
       attributePath: `nixosConfigurations.host${i + 1}...`,
       baseRef: "github:owner/repo",
       prRef: ".",
+      basePath: "/nix/store/aaa-base",
+      prPath: "/nix/store/bbb-pr",
       diff: largeDiff,
     }));
     const comment = formatAggregatedComment(results, "abc123def456");
@@ -241,6 +255,8 @@ describe("formatAggregatedComment", () => {
         attributePath: "nixosConfigurations.host1...",
         baseRef: "github:owner/repo",
         prRef: ".",
+        basePath: "/nix/store/aaa-base",
+        prPath: "/nix/store/bbb-pr",
         diff: largeDiff,
       },
     ];
@@ -262,6 +278,8 @@ describe("formatAggregatedComment", () => {
         attributePath: "nixosConfigurations.host1...",
         baseRef: "github:owner/repo",
         prRef: ".",
+        basePath: "/nix/store/aaa-base",
+        prPath: "/nix/store/bbb-pr",
         diff: smallDiff,
       },
     ];
@@ -286,6 +304,8 @@ describe("formatAggregatedComment", () => {
         attributePath: "nixosConfigurations.host1...",
         baseRef: "github:owner/repo",
         prRef: ".",
+        basePath: "/nix/store/aaa-base",
+        prPath: "/nix/store/bbb-pr",
         diff: "small diff",
       },
     ];
@@ -305,6 +325,8 @@ describe("formatAggregatedComment", () => {
         attributePath: "nixosConfigurations.host1...",
         baseRef: "github:owner/repo",
         prRef: ".",
+        basePath: "/nix/store/aaa-base",
+        prPath: "/nix/store/bbb-pr",
         diff: "small diff",
       },
     ];
@@ -513,6 +535,8 @@ describe("processDiffResults", () => {
     expect(result[0].baseRef).toBe("abc123def456");
     expect(result[0].prRef).toBe("789ghi012jkl");
     expect(result[0].diff).toBe("mock diff output");
+    expect(result[0].basePath).toBe("/nix/store/mock-hash");
+    expect(result[0].prPath).toBe("/nix/store/mock-hash");
 
     // Verify getNixPath was called with correct flake refs
     expect(capturedFlakeRefs).toContain("path:/tmp/dix-base-main#packages.x86_64-linux.default");
@@ -682,57 +706,22 @@ describe("createArtifactName", () => {
 });
 
 describe("hasDixChanges", () => {
-  test("returns false for undefined", () => {
-    expect(hasDixChanges(undefined)).toBe(false);
+  test("returns false when store paths are identical", () => {
+    expect(
+      hasDixChanges({
+        basePath: "/nix/store/c46hfz9v6wx96dbchx8szp3xf6di3hb7-nix-shell.drv",
+        prPath: "/nix/store/c46hfz9v6wx96dbchx8szp3xf6di3hb7-nix-shell.drv",
+      }),
+    ).toBe(false);
   });
 
-  test("returns false for empty string", () => {
-    expect(hasDixChanges("")).toBe(false);
-  });
-
-  test("returns false for whitespace only", () => {
-    expect(hasDixChanges("   \n  ")).toBe(false);
-  });
-
-  test("returns false when paths are identical", () => {
-    const diff = `<<< /nix/store/c46hfz9v6wx96dbchx8szp3xf6di3hb7-nix-shell.drv
->>> /nix/store/c46hfz9v6wx96dbchx8szp3xf6di3hb7-nix-shell.drv
-
-SIZE: 14.6 MiB -> 14.6 MiB
-DIFF: 0 bytes`;
-    expect(hasDixChanges(diff)).toBe(false);
-  });
-
-  test("returns true when paths differ", () => {
-    const diff = `<<< /nix/store/abc123-old.drv
->>> /nix/store/def456-new.drv
-
-SIZE: 10.0 MiB -> 12.0 MiB
-DIFF: 500 KiB`;
-    expect(hasDixChanges(diff)).toBe(true);
-  });
-
-  test("returns true when cannot parse base path", () => {
-    const diff = `>>> /nix/store/def456-new.drv
-
-SIZE: 10.0 MiB`;
-    expect(hasDixChanges(diff)).toBe(true);
-  });
-
-  test("returns true when cannot parse pr path", () => {
-    const diff = `<<< /nix/store/abc123-old.drv
-
-SIZE: 10.0 MiB`;
-    expect(hasDixChanges(diff)).toBe(true);
-  });
-
-  test("handles paths with spaces correctly", () => {
-    const diff = `<<<   /nix/store/abc123-test.drv
->>>   /nix/store/abc123-test.drv
-
-SIZE: 5.0 MiB -> 5.0 MiB
-DIFF: 0 bytes`;
-    expect(hasDixChanges(diff)).toBe(false);
+  test("returns true when store paths differ", () => {
+    expect(
+      hasDixChanges({
+        basePath: "/nix/store/abc123-old.drv",
+        prPath: "/nix/store/def456-new.drv",
+      }),
+    ).toBe(true);
   });
 });
 
@@ -840,6 +829,8 @@ describe("generateDiffHtml", () => {
     attributePath: "nixosConfigurations.host1.config.system.build.toplevel",
     baseRef: "abc123",
     prRef: "def456",
+    basePath: "/nix/store/aaa-base",
+    prPath: "/nix/store/bbb-pr",
     diff: `<<< /nix/store/abc-old.drv
 >>> /nix/store/def-new.drv
 
@@ -867,6 +858,8 @@ SIZE: 10.0 MiB -> 12.0 MiB`,
         attributePath: "a&b",
         baseRef: "<base>",
         prRef: "<pr>",
+        basePath: "/nix/store/aaa-base",
+        prPath: "/nix/store/bbb-pr",
         diff: "plain",
       },
     ]);

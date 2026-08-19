@@ -73470,6 +73470,8 @@ var DiffResult = Struct({
 	attributePath: NonEmptyString.annotations({ description: "Nix attribute path that was compared" }),
 	baseRef: NonEmptyString.annotations({ description: "Commit SHA of the base branch" }),
 	prRef: NonEmptyString.annotations({ description: "Commit SHA of the PR head" }),
+	basePath: NonEmptyString.annotations({ description: "Nix store path of the base branch output" }),
+	prPath: NonEmptyString.annotations({ description: "Nix store path of the PR head output" }),
 	diff: NonEmptyString.annotations({ description: "Diff output from dix tool" })
 }).annotations({ identifier: "DiffResult" });
 var DiffResultArray = Array$(DiffResult).annotations({ identifier: "DiffResultArray" });
@@ -73793,19 +73795,7 @@ var ArtifactService = class extends Service()("ArtifactService", { succeed: {
 } }) {};
 //#endregion
 //#region src/services/utils.ts
-/**
-* Utility functions re-exported from service files
-*
-* This module separates pure utility functions from service interfaces.
-* Import services from "./index.js" and utilities from "./utils.js".
-*/
-var hasDixChanges = (diff) => {
-	if (!diff || diff.trim() === "") return false;
-	const baseMatch = diff.match(/^<<<\s*(.+)$/m);
-	const prMatch = diff.match(/^>>>\s*(.+)$/m);
-	if (!baseMatch || !prMatch) return true;
-	return baseMatch[1].trim() !== prMatch[1].trim();
-};
+var hasDixChanges = (result) => result.basePath !== result.prPath;
 //#endregion
 //#region src/services/github.ts
 var NIX_DIFF_ACTION_MARKER_BASE = "<!-- nix-diff-action";
@@ -73923,7 +73913,7 @@ var GitHubService = class extends Service()("GitHubService", { succeed: {
 	}),
 	createOctokit: (token) => getOctokit(token),
 	postAggregatedComment: (octokit, context, pr, results, options, formatOptions) => gen(function* () {
-		const hasChanges = results.some((r) => hasDixChanges(r.diff));
+		const hasChanges = results.some((r) => hasDixChanges(r));
 		const commentBody = formatAggregatedComment(results, pr.head.sha, formatOptions);
 		const displayName = results.length === 1 ? results[0].displayName : void 0;
 		if (options.skipNoChange && !hasChanges) return yield* logInfo("No differences found. Skipping comment (skip-no-change is enabled).");
@@ -80735,6 +80725,8 @@ var processNixOutput = (config, baseFlakeRef, prFlakeRef, baseSha, headSha, buil
 		attributePath: config.attribute,
 		baseRef: baseSha,
 		prRef: headSha,
+		basePath,
+		prPath,
 		diff
 	};
 });
