@@ -18892,7 +18892,7 @@ var OP_YIELD = "Yield";
 var OP_REVERT_FLAGS = "RevertFlags";
 //#endregion
 //#region node_modules/effect/dist/esm/internal/version.js
-var moduleVersion = "3.22.1";
+var moduleVersion = "3.22.2";
 var getCurrentVersion = () => moduleVersion;
 //#endregion
 //#region node_modules/effect/dist/esm/internal/effectable.js
@@ -37588,7 +37588,7 @@ var toASTAnnotations = (annotations) => {
 	}
 	return out;
 };
-var mergeSchemaAnnotations = (ast, annotations$1) => annotations(ast, toASTAnnotations(annotations$1));
+var mergeSchemaAnnotations = (ast, annotations$3) => annotations(ast, toASTAnnotations(annotations$3));
 /**
 * @category formatting
 * @since 3.10.0
@@ -39622,4 +39622,4 @@ var GitService = class extends Service()("GitService", { succeed: { createWorktr
 //#endregion
 export { sync as $, andThen as A, setSecret as At, gen as B, redacted as C, debug as Ct, Service as D, info as Dt, isConfigError as E, getState as Et, catchTag as F, HttpCodes as Ft, mapError$1 as G, logInfo as H, catchTags as I, require_undici as It, promise as J, option$2 as K, fail$1 as L, require_tunnel as Lt, catchAll as M, exec as Mt, catchAllCause as N, BearerCredentialHandler as Nt, acquireRelease as O, setFailed as Ot, catchIf as P, HttpClient as Pt, succeed$2 as Q, flatMap$1 as R, option as S, pipe as St, value as T, getInput as Tt, logWarning as U, logError as V, map$2 as W, runPromise as X, provide as Y, scoped as Z, Struct as _, getOrElse as _t, GitHubApiError as a, mergeAll as at, pattern as b, map$7 as bt, MissingAttributesError as c, withConfigProviderScoped as ct, NixPathInfoError as d, set as dt, tapError as et, NotPullRequestContextError as f, fromEnv as ft, NonEmptyString as g, fromNullable as gt, Literal as h, flatMap$5 as ht, AttributeParseError as i, merge as it, as as j, warning as jt, all as k, setOutput as kt, NixBuildError as l, get as lt, Config as m, orElse$1 as mt, removeWorktree as n, try_ as nt, InvalidCommentStrategyError as o, scopedDiscard as ot, Array$ as p, fromMap as pt, orElseSucceed as q, ArtifactError as r, TaggedError$1 as rt, InvalidDirectoryError as s, pretty as st, GitService as t, tryPromise as tt, NixDixError as u, make$8 as ut, decodeUnknown as v, getOrUndefined as vt, string as w, error as wt, boolean as x, match$4 as xt, filter as y, isNone as yt, forEach as z };
 
-//# sourceMappingURL=git-C62o7dAq.js.map
+//# sourceMappingURL=git-CF_6fz6P.js.map
