@@ -1,5 +1,5 @@
 import { a as __toCommonJS, i as __require, n as __esmMin, o as __toESM, r as __exportAll, t as __commonJSMin } from "./assets/rolldown-runtime-BMI-E3GI.js";
-import { $ as sync, A as andThen, At as setSecret, B as gen, C as redacted, Ct as debug, D as Service, Dt as info, E as isConfigError, F as catchTag, Ft as HttpCodes, G as mapError, H as logInfo, I as catchTags, It as require_undici, J as promise, K as option, L as fail, Lt as require_tunnel, M as catchAll, Mt as exec, N as catchAllCause, Nt as BearerCredentialHandler, O as acquireRelease, Ot as setFailed$1, P as catchIf, Pt as HttpClient, Q as succeed, R as flatMap, S as option$1, St as pipe, T as value$1, Tt as getInput, U as logWarning, V as logError, W as map$2, X as runPromise, Y as provide, Z as scoped, _ as Struct, _t as getOrElse, a as GitHubApiError, at as mergeAll$1, b as pattern, bt as map$3, c as MissingAttributesError, ct as withConfigProviderScoped, d as NixPathInfoError, dt as set$1, et as tapError, f as NotPullRequestContextError, ft as fromEnv$1, g as NonEmptyString, gt as fromNullable, h as Literal, ht as flatMap$1, i as AttributeParseError, it as merge$2, j as as, jt as warning, k as all, kt as setOutput, l as NixBuildError, lt as get$1, m as Config, mt as orElse$1, nt as try_, o as InvalidCommentStrategyError, ot as scopedDiscard, p as Array$, pt as fromMap$1, q as orElseSucceed, r as ArtifactError, rt as TaggedError, s as InvalidDirectoryError, st as pretty, t as GitService, tt as tryPromise, u as NixDixError, ut as make$1, v as decodeUnknown, vt as getOrUndefined, w as string, wt as error, x as boolean, xt as match, y as filter$2, yt as isNone, z as forEach } from "./assets/git-selqsK61.js";
+import { $ as sync, A as andThen, At as setSecret, B as gen, C as redacted, Ct as debug, D as Service, Dt as info, E as isConfigError, F as catchTag, Ft as HttpCodes, G as mapError, H as logInfo, I as catchTags, It as require_undici, J as promise, K as option, L as fail, Lt as require_tunnel, M as catchAll, Mt as exec, N as catchAllCause, Nt as BearerCredentialHandler, O as acquireRelease, Ot as setFailed$1, P as catchIf, Pt as HttpClient, Q as succeed, R as flatMap, S as option$1, St as pipe, T as value$1, Tt as getInput, U as logWarning, V as logError, W as map$2, X as runPromise, Y as provide, Z as scoped, _ as Struct, _t as getOrElse, a as GitHubApiError, at as mergeAll$1, b as pattern, bt as map$3, c as MissingAttributesError, ct as withConfigProviderScoped, d as NixPathInfoError, dt as set$1, et as tapError, f as NotPullRequestContextError, ft as fromEnv$1, g as NonEmptyString, gt as fromNullable, h as Literal, ht as flatMap$1, i as AttributeParseError, it as merge$2, j as as, jt as warning, k as all, kt as setOutput, l as NixBuildError, lt as get$1, m as Config, mt as orElse$1, nt as try_, o as InvalidCommentStrategyError, ot as scopedDiscard, p as Array$, pt as fromMap$1, q as orElseSucceed, r as ArtifactError, rt as TaggedError, s as InvalidDirectoryError, st as pretty, t as GitService, tt as tryPromise, u as NixDixError, ut as make$1, v as decodeUnknown, vt as getOrUndefined, w as string, wt as error, x as boolean, xt as match, y as filter$2, yt as isNone, z as forEach } from "./assets/git-zRTXUyKu.js";
 import * as os$2 from "os";
 import os, { EOL } from "os";
 import * as crypto from "crypto";
@@ -1296,127 +1296,184 @@ function withDefaults$2(oldDefaults, newDefaults) {
 	});
 }
 var endpoint = withDefaults$2(null, DEFAULTS);
+//#endregion
+//#region node_modules/content-type/dist/index.js
 /*!
 * content-type
 * Copyright(c) 2015 Douglas Christopher Wilson
 * MIT Licensed
 */
-//#endregion
-//#region node_modules/json-with-bigint/json-with-bigint.js
-var import_dist$3 = (/* @__PURE__ */ __commonJSMin(((exports) => {
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.parse = parse;
-	/**
-	* Null object perf optimization. Faster than `Object.create(null)` and `{ __proto__: null }`.
-	*/
-	var NullObject = /* @__PURE__ */ (() => {
-		const C = function() {};
-		C.prototype = Object.create(null);
-		return C;
-	})();
-	/**
-	* Parse a `Content-Type` header.
-	*/
-	function parse(header, options) {
-		const len = header.length;
-		let index = skipOWS(header, 0, len);
-		const valueStart = index;
-		index = skipValue(header, index, len);
-		const valueEnd = trailingOWS(header, valueStart, index);
-		return {
-			type: header.slice(valueStart, valueEnd).toLowerCase(),
-			parameters: options?.parameters === false ? new NullObject() : parseParameters(header, index, len)
-		};
+var SP = 32;
+var HTAB = 9;
+var SEMI = 59;
+var EQ = 61;
+var DQUOTE = 34;
+var BSLASH = 92;
+var COMMA = 44;
+var LOWER_CASE = 1;
+var OWS = 2;
+var SEMI_FLAG = 4;
+var COMMA_FLAG = 8;
+var TOKEN_FLAG = 16;
+var NON_ASCII = 65280;
+var CASE_FLAGS = 65281;
+/**
+* Character flags used to normalize HTTP field values while scanning.
+* Out-of-range reads intentionally coerce to zero in bitwise expressions.
+*/
+var CHAR_MAP = /* @__PURE__ */ new Uint8Array(256);
+CHAR_MAP[HTAB] |= OWS;
+CHAR_MAP[SP] |= OWS;
+CHAR_MAP[SEMI] |= SEMI_FLAG;
+CHAR_MAP[COMMA] |= COMMA_FLAG;
+for (let code = 128; code <= 255; code++) CHAR_MAP[code] |= LOWER_CASE;
+for (const char of "!#$%&'*+-.^_`|~") CHAR_MAP[char.charCodeAt(0)] |= TOKEN_FLAG;
+for (let code = 48; code <= 57; code++) CHAR_MAP[code] |= TOKEN_FLAG;
+for (let code = 65; code <= 90; code++) CHAR_MAP[code] |= 17;
+for (let code = 97; code <= 122; code++) CHAR_MAP[code] |= TOKEN_FLAG;
+/**
+* Null object perf optimization. Faster than `Object.create(null)` and `{ __proto__: null }`.
+*/
+var NullObject = /* @__PURE__ */ (() => {
+	const C = function() {};
+	C.prototype = Object.create(null);
+	return C;
+})();
+/**
+* Parse a `Content-Type` header.
+*/
+function parse$1(header, options) {
+	const stopFlags = SEMI_FLAG | (options?.comma === true ? COMMA_FLAG : 0);
+	const len = header.length;
+	let valueStart = options?.start ?? 0;
+	while ((CHAR_MAP[header.charCodeAt(valueStart)] & OWS) !== 0) valueStart++;
+	let index = valueStart;
+	let typeFlags = 0;
+	let whitespace = -1;
+	let stop = options?.parameters === false ? COMMA_FLAG : 0;
+	while (index < len) {
+		const code = header.charCodeAt(index);
+		const flags = CHAR_MAP[code];
+		if ((flags & stopFlags) !== 0) {
+			stop |= flags & COMMA_FLAG;
+			break;
+		}
+		if ((flags & OWS) !== 0) {
+			if (whitespace === -1) whitespace = index;
+		} else whitespace = -1;
+		typeFlags |= code & NON_ASCII | flags;
+		index++;
 	}
-	var SP = 32;
-	var HTAB = 9;
-	var SEMI = 59;
-	var EQ = 61;
-	var DQUOTE = 34;
-	var BSLASH = 92;
-	/**
-	* Parses the parameters of a `Content-Type` header starting at the given index.
-	*/
-	function parseParameters(header, index, len) {
-		const parameters = new NullObject();
-		parameter: while (index < len) {
-			index = skipOWS(header, index + 1, len);
-			const keyStart = index;
-			while (index < len) {
-				const code = header.charCodeAt(index);
-				if (code === SEMI) continue parameter;
-				if (code === EQ) {
-					const keyEnd = trailingOWS(header, keyStart, index);
-					const key = header.slice(keyStart, keyEnd).toLowerCase();
-					index = skipOWS(header, index + 1, len);
-					if (index < len && header.charCodeAt(index) === DQUOTE) {
-						index++;
-						let value = "";
-						while (index < len) {
-							const code = header.charCodeAt(index++);
-							if (code === DQUOTE) {
-								index = skipValue(header, index, len);
-								if (parameters[key] === void 0) parameters[key] = value;
-								break;
+	const valueEnd = whitespace === -1 ? index : whitespace;
+	const value = header.slice(valueStart, valueEnd);
+	const type = (typeFlags & CASE_FLAGS) === 0 ? value : value.toLowerCase();
+	if (index === len || stop !== 0) return {
+		type,
+		index,
+		parameters: new NullObject()
+	};
+	return parseParameters(header, type, index, len, stopFlags);
+}
+/**
+* Parses the parameters of a `Content-Type` header starting at the given index.
+*/
+function parseParameters(header, type, index, len, stopFlags) {
+	const parameters = new NullObject();
+	parameter: while (index < len) {
+		index++;
+		while ((CHAR_MAP[header.charCodeAt(index)] & OWS) !== 0) index++;
+		const keyStart = index;
+		let keyFlags = 0;
+		let keyWhitespace = -1;
+		while (index < len) {
+			const code = header.charCodeAt(index);
+			const flags = CHAR_MAP[code];
+			if ((flags & stopFlags) !== 0) {
+				if ((flags & COMMA_FLAG) !== 0) break parameter;
+				continue parameter;
+			}
+			if (code === EQ) {
+				const keyEnd = keyWhitespace === -1 ? index : keyWhitespace;
+				const value = header.slice(keyStart, keyEnd);
+				const key = (keyFlags & CASE_FLAGS) === 0 ? value : value.toLowerCase();
+				index++;
+				while ((CHAR_MAP[header.charCodeAt(index)] & OWS) !== 0) index++;
+				if (index < len && header.charCodeAt(index) === DQUOTE) {
+					const quotedStart = ++index;
+					let escaped = false;
+					while (index < len) {
+						const code = header.charCodeAt(index);
+						if (code === DQUOTE) {
+							if (parameters[key] === void 0) parameters[key] = escaped ? unescapeQuotedPairs(header, quotedStart, index) : header.slice(quotedStart, index);
+							index++;
+							let stop = 0;
+							while (index < len) {
+								const flags = CHAR_MAP[header.charCodeAt(index)];
+								if ((flags & stopFlags) !== 0) {
+									stop = flags & COMMA_FLAG;
+									break;
+								}
+								index++;
 							}
-							if (code === BSLASH && index < len) {
-								value += header[index++];
-								continue;
-							}
-							value += String.fromCharCode(code);
+							if (stop !== 0) break parameter;
+							continue parameter;
 						}
-						continue parameter;
-					}
-					const valueStart = index;
-					index = skipValue(header, index, len);
-					if (parameters[key] === void 0) {
-						const valueEnd = trailingOWS(header, valueStart, index);
-						parameters[key] = header.slice(valueStart, valueEnd);
+						if (code === BSLASH && index + 1 < len) {
+							escaped = true;
+							index += 2;
+							continue;
+						}
+						index++;
 					}
 					continue parameter;
 				}
-				index++;
+				const valueStart = index;
+				let stop = 0;
+				let valueWhitespace = -1;
+				while (index < len) {
+					const flags = CHAR_MAP[header.charCodeAt(index)];
+					if ((flags & stopFlags) !== 0) {
+						stop = flags & COMMA_FLAG;
+						break;
+					}
+					if ((flags & OWS) !== 0) {
+						if (valueWhitespace === -1) valueWhitespace = index;
+					} else valueWhitespace = -1;
+					index++;
+				}
+				if (parameters[key] === void 0) {
+					const valueEnd = valueWhitespace === -1 ? index : valueWhitespace;
+					parameters[key] = header.slice(valueStart, valueEnd);
+				}
+				if (stop !== 0) break parameter;
+				continue parameter;
 			}
-		}
-		return parameters;
-	}
-	/**
-	* Skip over characters until a semicolon.
-	*/
-	function skipValue(str, index, len) {
-		while (index < len) {
-			if (str.charCodeAt(index) === SEMI) break;
+			if ((flags & OWS) !== 0) {
+				if (keyWhitespace === -1) keyWhitespace = index;
+			} else keyWhitespace = -1;
+			keyFlags |= code & NON_ASCII | flags;
 			index++;
 		}
-		return index;
 	}
-	/**
-	* Skip optional whitespace (OWS) in an HTTP header value.
-	*
-	* OWS is defined in RFC 9110 sec 5.6.3 as SP (" ") or HTAB ("\t").
-	*/
-	function skipOWS(header, index, len) {
-		while (index < len) {
-			const char = header.charCodeAt(index);
-			if (char !== SP && char !== HTAB) break;
-			index++;
-		}
-		return index;
+	return {
+		type,
+		index,
+		parameters
+	};
+}
+/**
+* Remove backslashes from quoted pairs in a known-terminated quoted string body.
+*/
+function unescapeQuotedPairs(str, start, end) {
+	let result = "";
+	for (let index = start; index < end; index++) if (str.charCodeAt(index) === BSLASH) {
+		result += str.slice(start, index);
+		start = ++index;
 	}
-	/**
-	* Trim optional whitespace (OWS) from the end of a substring.
-	*
-	* OWS is defined in RFC 9110 sec 5.6.3 as SP (" ") or HTAB ("\t").
-	*/
-	function trailingOWS(header, start, end) {
-		while (end > start) {
-			const char = header.charCodeAt(end - 1);
-			if (char !== SP && char !== HTAB) break;
-			end--;
-		}
-		return end;
-	}
-})))();
+	return result + str.slice(start, end);
+}
+//#endregion
+//#region node_modules/json-with-bigint/json-with-bigint.js
 var intRegex = /^-?\d+$/;
 var noiseValue = /^-?\d+n+$/;
 var originalStringify = JSON.stringify;
@@ -1685,7 +1742,7 @@ var JSONParseV2 = (text, reviver) => {
 };
 var MAX_INT = Number.MAX_SAFE_INTEGER.toString();
 var MAX_DIGITS = MAX_INT.length;
-var stringsOrLargeNumbers = /"(?:\\.|[^"])*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
+var stringsOrLargeNumbers = /"(?:[^"\\]|\\.)*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
 var noiseValueWithQuotes = /^"-?\d+n+"$/;
 /**
 * Iteratively traverses the parsed object bottom-up (post-order),
@@ -1805,7 +1862,7 @@ var RequestError = class extends Error {
 };
 //#endregion
 //#region node_modules/@octokit/request/dist-bundle/index.js
-var defaults_default = { headers: { "user-agent": `octokit-request.js/10.0.13 ${getUserAgent()}` } };
+var defaults_default = { headers: { "user-agent": `octokit-request.js/10.0.16 ${getUserAgent()}` } };
 function isPlainObject(value) {
 	if (typeof value !== "object" || value === null) return false;
 	if (Object.prototype.toString.call(value) !== "[object Object]") return false;
@@ -1892,7 +1949,7 @@ async function fetchWrapper(requestOptions) {
 async function getResponseData(response) {
 	const contentType = response.headers.get("content-type");
 	if (!contentType) return response.text().catch(noop$1);
-	const mimetype = (0, import_dist$3.parse)(contentType);
+	const mimetype = parse$1(contentType);
 	if (isJSONResponse(mimetype)) {
 		let text = "";
 		try {
@@ -2066,7 +2123,7 @@ var createTokenAuth = function createTokenAuth2(token) {
 };
 //#endregion
 //#region node_modules/@octokit/core/dist-src/version.js
-var VERSION$4 = "7.0.7";
+var VERSION$4 = "7.0.8";
 //#endregion
 //#region node_modules/@octokit/core/dist-src/index.js
 var noop = () => {};
@@ -9214,7 +9271,6 @@ var NodeHttpClient = class {
 				body = uploadReportStream;
 			}
 			const res = await this.makeRequest(request, abortController, body);
-			if (timeoutId !== void 0) clearTimeout(timeoutId);
 			const headers = getResponseHeaders(res);
 			const response = {
 				status: res.statusCode ?? 0,
@@ -9239,6 +9295,7 @@ var NodeHttpClient = class {
 			else response.bodyAsText = await streamToText(responseStream);
 			return response;
 		} finally {
+			if (timeoutId !== void 0) clearTimeout(timeoutId);
 			if (request.abortSignal && abortListener) {
 				let uploadStreamDone = Promise.resolve();
 				if (isReadableStream(body)) uploadStreamDone = isStreamComplete(body);
@@ -9598,7 +9655,6 @@ function retryPolicy(strategies, options = { maxRetries: 3 }) {
 			let retryCount = -1;
 			retryRequest: while (true) {
 				retryCount += 1;
-				response = void 0;
 				responseError = void 0;
 				try {
 					logger.info(`Retry ${retryCount}: Attempting to send request`, request.requestId);
@@ -13551,7 +13607,7 @@ function serializeRequestBody(request, operationArguments, operationSpec, string
 				else if (!isStream) request.body = JSON.stringify(request.body);
 			}
 		} catch (error) {
-			throw new Error(`Error "${error.message}" occurred in serializing the payload - ${JSON.stringify(serializedName, void 0, "  ")}.`);
+			throw new Error(`Error "${error.message}" occurred in serializing the payload - ${JSON.stringify(serializedName, void 0, "  ")}.`, { cause: error });
 		}
 	} else if (operationSpec.formDataParameters && operationSpec.formDataParameters.length > 0) {
 		request.formData = {};
@@ -14530,11 +14586,86 @@ function readAttributeStr(xmlData, i) {
 	};
 }
 /**
-* Select all the attributes whether valid or invalid.
+* Walk `attrStr` once, left to right, splitting it into attribute tokens.
+*
+* This replaces a regex that used to do the same job
+* (`(\s*)([^\s=]+)(\s*=)?(\s*(['"])(([\s\S])*?)\5)?`). That regex led with an
+* optional whitespace group followed by a required "non-whitespace" group.
+* On a long run of whitespace that never resolves into an attribute name
+* (e.g. a tag with thousands of trailing spaces before `>`), the engine
+* backtracks the whitespace group one character at a time before giving up
+* and moving to the next starting position — one full backtrack per
+* position, which is quadratic in the length of the run.
+*
+* A single forward-only scan can never backtrack, so it can't be made slow
+* this way no matter how much whitespace the input contains — it's always
+* proportional to the length of the string, once.
+*
+* Each returned token mirrors the shape the old regex match array had, so
+* the validation logic below (which reads token[1]..token[6]) didn't need
+* to change:
+*   token.startIndex - where this token begins in attrStr
+*   token[1]          - leading whitespace before the name
+*   token[2]          - the attribute name
+*   token[3]          - whitespace + '=' if present, else undefined
+*   token[4]          - marker (any defined value) if a quoted value was found
+*   token[5]          - the quote character used ('"' or "'")
+*   token[6]          - the value's text, without the surrounding quotes
+*
+* A malformed leading character (e.g. a stray '=' with no name before it)
+* is simply skipped over, one character at a time — the same outcome the
+* old regex produced by failing to match at that position and retrying at
+* the next one.
 */
-var validAttrStrRegxp = /* @__PURE__ */ new RegExp("(\\s*)([^\\s=]+)(\\s*=)?(\\s*(['\"])(([\\s\\S])*?)\\5)?", "g");
+function scanAttributeTokens(attrStr) {
+	const tokens = [];
+	const len = attrStr.length;
+	let i = 0;
+	while (i < len) {
+		const tokenStart = i;
+		while (i < len && isWhiteSpace(attrStr[i])) i++;
+		if (i >= len) break;
+		if (attrStr[i] === "=") {
+			i = tokenStart + 1;
+			continue;
+		}
+		const leadingWs = attrStr.slice(tokenStart, i);
+		const nameStart = i;
+		while (i < len && !isWhiteSpace(attrStr[i]) && attrStr[i] !== "=") i++;
+		const name = attrStr.slice(nameStart, i);
+		let equalsGroup;
+		let j = i;
+		while (j < len && isWhiteSpace(attrStr[j])) j++;
+		if (j < len && attrStr[j] === "=") {
+			equalsGroup = attrStr.slice(i, j + 1);
+			i = j + 1;
+		}
+		let quoteChar;
+		let value;
+		let k = i;
+		while (k < len && isWhiteSpace(attrStr[k])) k++;
+		if (k < len && (attrStr[k] === "\"" || attrStr[k] === "'")) {
+			const valueStart = k + 1;
+			const closeIdx = attrStr.indexOf(attrStr[k], valueStart);
+			if (closeIdx !== -1) {
+				quoteChar = attrStr[k];
+				value = attrStr.slice(valueStart, closeIdx);
+				i = closeIdx + 1;
+			}
+		}
+		const token = { startIndex: tokenStart };
+		token[1] = leadingWs;
+		token[2] = name;
+		token[3] = equalsGroup;
+		token[4] = quoteChar !== void 0 ? true : void 0;
+		token[5] = quoteChar;
+		token[6] = value;
+		tokens.push(token);
+	}
+	return tokens;
+}
 function validateAttributeString(attrStr, options) {
-	const matches = getAllMatches(attrStr, validAttrStrRegxp);
+	const matches = scanAttributeTokens(attrStr);
 	const attrNames = {};
 	for (let i = 0; i < matches.length; i++) {
 		if (matches[i][1].length === 0) return getErrorObject("InvalidAttr", "Attribute '" + matches[i][2] + "' has no space in starting.", getPositionFromMatch(matches[i]));
@@ -15264,7 +15395,14 @@ var XmlNode = class {
 			[":@"]: node[":@"]
 		});
 		else this.child.push({ [node.tagname]: node.child });
+		this.addStartIndex(startIndex);
+	}
+	addStartIndex(startIndex) {
 		if (startIndex !== void 0) this.child[this.child.length - 1][METADATA_SYMBOL$1] = { startIndex };
+	}
+	addEndIndex(endIndex) {
+		const lastChild = this.child[this.child.length - 1];
+		if (lastChild !== void 0 && lastChild[METADATA_SYMBOL$1] !== void 0 && lastChild[METADATA_SYMBOL$1].endIndex === void 0) lastChild[METADATA_SYMBOL$1].endIndex = endIndex;
 	}
 	/** symbol used for metadata */
 	static getMetaDataSymbol() {
@@ -15364,41 +15502,54 @@ var DocTypeReader = class {
 			i = i + 9;
 			let angleBracketsCount = 1;
 			let hasBody = false, comment = false;
+			let quoteChar = null;
 			let exp = "";
-			for (; i < xmlData.length; i++) if (xmlData[i] === "<" && !comment) {
-				if (hasBody && hasSeq(xmlData, "!ENTITY", i)) {
-					i += 7;
-					let entityName, val;
-					[entityName, val, i] = this.readEntityExp(xmlData, i + 1, this.suppressValidationErr);
-					if (val.indexOf("&") === -1) {
-						if (this.options.enabled !== false && this.options.maxEntityCount != null && entityCount >= this.options.maxEntityCount) throw new Error(`Entity count (${entityCount + 1}) exceeds maximum allowed (${this.options.maxEntityCount})`);
-						entities[entityName] = val;
-						entityCount++;
-					}
-				} else if (hasBody && hasSeq(xmlData, "!ELEMENT", i)) {
-					i += 8;
-					const { index } = this.readElementExp(xmlData, i + 1);
-					i = index;
-				} else if (hasBody && hasSeq(xmlData, "!ATTLIST", i)) i += 8;
-				else if (hasBody && hasSeq(xmlData, "!NOTATION", i)) {
-					i += 9;
-					const { index } = this.readNotationExp(xmlData, i + 1, this.suppressValidationErr);
-					i = index;
-				} else if (hasSeq(xmlData, "!--", i)) comment = true;
-				else throw new Error(`Invalid DOCTYPE`);
-				angleBracketsCount++;
-				exp = "";
-			} else if (xmlData[i] === ">") {
-				if (comment) {
-					if (xmlData[i - 1] === "-" && xmlData[i - 2] === "-") {
-						comment = false;
-						angleBracketsCount--;
-					}
-				} else angleBracketsCount--;
-				if (angleBracketsCount === 0) break;
-			} else if (xmlData[i] === "[") hasBody = true;
-			else exp += xmlData[i];
-			if (angleBracketsCount !== 0) throw new Error(`Unclosed DOCTYPE`);
+			for (; i < xmlData.length; i++) {
+				if (quoteChar !== null) {
+					if (xmlData[i] === quoteChar) quoteChar = null;
+					exp += xmlData[i];
+					continue;
+				}
+				if (!hasBody && !comment && (xmlData[i] === "\"" || xmlData[i] === "'")) {
+					quoteChar = xmlData[i];
+					exp += xmlData[i];
+					continue;
+				}
+				if (xmlData[i] === "<" && !comment) {
+					if (hasBody && hasSeq(xmlData, "!ENTITY", i)) {
+						i += 7;
+						let entityName, val;
+						[entityName, val, i] = this.readEntityExp(xmlData, i + 1, this.suppressValidationErr);
+						if (val.indexOf("&") === -1) {
+							if (this.options.enabled !== false && this.options.maxEntityCount != null && entityCount >= this.options.maxEntityCount) throw new Error(`Entity count (${entityCount + 1}) exceeds maximum allowed (${this.options.maxEntityCount})`);
+							entities[entityName] = val;
+							entityCount++;
+						}
+					} else if (hasBody && hasSeq(xmlData, "!ELEMENT", i)) {
+						i += 8;
+						const { index } = this.readElementExp(xmlData, i + 1);
+						i = index;
+					} else if (hasBody && hasSeq(xmlData, "!ATTLIST", i)) i += 8;
+					else if (hasBody && hasSeq(xmlData, "!NOTATION", i)) {
+						i += 9;
+						const { index } = this.readNotationExp(xmlData, i + 1, this.suppressValidationErr);
+						i = index;
+					} else if (hasSeq(xmlData, "!--", i)) comment = true;
+					else throw new Error(`Invalid DOCTYPE`);
+					angleBracketsCount++;
+					exp = "";
+				} else if (xmlData[i] === ">") {
+					if (comment) {
+						if (xmlData[i - 1] === "-" && xmlData[i - 2] === "-") {
+							comment = false;
+							angleBracketsCount--;
+						}
+					} else angleBracketsCount--;
+					if (angleBracketsCount === 0) break;
+				} else if (xmlData[i] === "[") hasBody = true;
+				else exp += xmlData[i];
+			}
+			if (quoteChar !== null || angleBracketsCount !== 0) throw new Error(`Unclosed DOCTYPE`);
 		} else throw new Error(`Invalid Tag instead of DOCTYPE`);
 		return {
 			entities,
@@ -15837,7 +15988,9 @@ function resolveEnotation(str, trimmedStr, options) {
 */
 function trimZeros(numStr) {
 	if (numStr && numStr.indexOf(".") !== -1) {
-		numStr = numStr.replace(/0+$/, "");
+		let end = numStr.length;
+		while (end > 0 && numStr.charCodeAt(end - 1) === 48) end--;
+		numStr = numStr.slice(0, end);
 		if (numStr === ".") numStr = "0";
 		else if (numStr[0] === ".") numStr = "0" + numStr;
 		else if (numStr[numStr.length - 1] === ".") numStr = numStr.substring(0, numStr.length - 1);
@@ -16881,7 +17034,7 @@ var XML_PATTERNS = [
 	{
 		id: "xml-namespace-confusion",
 		description: "xmlns: attribute injection — can redefine namespaces to confuse parsers",
-		pattern: /\bxmlns\s*(?::\w{1,40})?\s*=/i
+		pattern: /\bxmlns(?::\w{1,40})?\s*=/i
 	},
 	{
 		id: "xml-comment-injection",
@@ -17761,7 +17914,8 @@ var parseXml = function(xmlData) {
 			}
 			this.matcher.pop();
 			this.isCurrentNodeStopNode = false;
-			currentNode = this.tagsNodeStack.pop();
+			currentNode = this.tagsNodeStack.pop() || xmlObj;
+			if (options.captureMetaData && currentNode) currentNode.addEndIndex(closeIndex + 1);
 			textData = "";
 			i = closeIndex;
 		} else if (c1 === 63) {
@@ -17779,6 +17933,7 @@ var parseXml = function(xmlData) {
 				childNode.add(options.textNodeName, "");
 				if (tagData.tagName !== tagData.tagExp && tagData.attrExpPresent && options.ignoreAttributes !== true) childNode[":@"] = attsMap;
 				this.addChild(currentNode, childNode, this.readonlyMatcher, i);
+				if (options.captureMetaData) currentNode.addEndIndex(tagData.closeIndex + 2);
 			}
 			i = tagData.closeIndex + 1;
 		} else if (c1 === 33 && xmlData.charCodeAt(i + 2) === 45 && xmlData.charCodeAt(i + 3) === 45) {
@@ -17860,18 +18015,21 @@ var parseXml = function(xmlData) {
 				this.matcher.pop();
 				this.isCurrentNodeStopNode = false;
 				this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
+				if (options.captureMetaData) currentNode.addEndIndex(i + 1);
 			} else {
 				if (isSelfClosing) {
 					({tagName, tagExp} = transformTagName(options.transformTagName, tagName, tagExp, options));
 					const childNode = new XmlNode(tagName);
 					if (prefixedAttrs) childNode[":@"] = prefixedAttrs;
 					this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
+					if (options.captureMetaData) currentNode.addEndIndex(closeIndex + 1);
 					this.matcher.pop();
 					this.isCurrentNodeStopNode = false;
 				} else if (options.unpairedTagsSet.has(tagName)) {
 					const childNode = new XmlNode(tagName);
 					if (prefixedAttrs) childNode[":@"] = prefixedAttrs;
 					this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
+					if (options.captureMetaData) currentNode.addEndIndex(result.closeIndex + 1);
 					this.matcher.pop();
 					this.isCurrentNodeStopNode = false;
 					i = result.closeIndex;
@@ -18228,14 +18386,17 @@ var XMLParser = class {
 };
 //#endregion
 //#region node_modules/fast-xml-builder/src/util.js
+function valToStr(val) {
+	return typeof val === "number" && Object.is(val, -0) ? "-0" : String(val);
+}
 function safeComment(val) {
-	return String(val).replace(/--/g, "- -").replace(/--/g, "- -").replace(/-$/, "- ");
+	return valToStr(val).replace(/--/g, "- -").replace(/--/g, "- -").replace(/-$/, "- ");
 }
 function safeCdata(val) {
-	return String(val).replace(/\]\]>/g, "]]]]><![CDATA[>");
+	return valToStr(val).replace(/\]\]>/g, "]]]]><![CDATA[>");
 }
 function escapeAttribute(val) {
-	return String(val).replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+	return valToStr(val).replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 //#endregion
 //#region node_modules/fast-xml-builder/src/orderedJs2Xml.js
@@ -18304,7 +18465,7 @@ function arrToStr(arr, options, indentation, matcher, stopNodeExpressions, qName
 	if (options.maxNestedTags && matcher.getDepth() > options.maxNestedTags) throw new Error("Maximum nested tags exceeded");
 	if (!Array.isArray(arr)) {
 		if (arr !== void 0 && arr !== null) {
-			let text = arr.toString();
+			let text = valToStr(arr);
 			text = replaceEntitiesValue(text, options);
 			return text;
 		}
@@ -18324,6 +18485,7 @@ function arrToStr(arr, options, indentation, matcher, stopNodeExpressions, qName
 				tagText = options.tagValueProcessor(tagName, tagText);
 				tagText = replaceEntitiesValue(tagText, options);
 			}
+			tagText = valToStr(tagText);
 			if (isPreviousElementTag) xmlStr += indentation;
 			xmlStr += tagText;
 			isPreviousElementTag = false;
@@ -18395,14 +18557,14 @@ function extractAttributeValues(attrMap, options) {
 */
 function getRawContent(arr, options) {
 	if (!Array.isArray(arr)) {
-		if (arr !== void 0 && arr !== null) return arr.toString();
+		if (arr !== void 0 && arr !== null) return valToStr(arr);
 		return "";
 	}
 	let content = "";
 	for (let i = 0; i < arr.length; i++) {
 		const item = arr[i];
 		const tagName = propName(item);
-		if (tagName === options.textNodeName) content += item[tagName];
+		if (tagName === options.textNodeName) content += valToStr(item[tagName]);
 		else if (tagName === options.cdataPropName) content += item[tagName][0][options.textNodeName];
 		else if (tagName === options.commentPropName) content += item[tagName][0][options.textNodeName];
 		else if (tagName && tagName[0] === "?") continue;
@@ -18632,17 +18794,17 @@ Builder.prototype.j2x = function(jObj, level, matcher, qNameValidator) {
 			const attr = this.isAttribute(key);
 			if (attr && !this.ignoreAttributesFn(attr, jPath)) {
 				const resolvedAttr = resolveTagName(attr, true, this.options, matcher, qNameValidator);
-				attrStr += this.buildAttrPairStr(resolvedAttr, "" + jObj[key], isCurrentStopNode);
+				attrStr += this.buildAttrPairStr(resolvedAttr, valToStr(jObj[key]), isCurrentStopNode);
 			} else if (!attr) {
 				if (key === this.options.textNodeName) {
-					let newval = this.options.tagValueProcessor(key, "" + jObj[key]);
+					let newval = this.options.tagValueProcessor(key, valToStr(jObj[key]));
 					val += this.replaceEntitiesValue(newval);
 				} else {
 					matcher.push(resolvedKey);
 					const isStopNode = this.checkStopNode(matcher);
 					matcher.pop();
 					if (isStopNode) {
-						const textValue = "" + jObj[key];
+						const textValue = valToStr(jObj[key]);
 						if (textValue === "") val += this.indentate(level) + "<" + resolvedKey + this.closeTag(resolvedKey) + this.tagEndChar;
 						else val += this.indentate(level) + "<" + resolvedKey + ">" + textValue + "</" + resolvedKey + this.tagEndChar;
 					} else val += this.buildTextValNode(jObj[key], resolvedKey, "", level, matcher);
@@ -18668,13 +18830,14 @@ Builder.prototype.j2x = function(jObj, level, matcher, qNameValidator) {
 				} else if (this.options.oneListGroup) {
 					let textValue = this.options.tagValueProcessor(resolvedKey, item);
 					textValue = this.replaceEntitiesValue(textValue);
+					textValue = valToStr(textValue);
 					listTagVal += textValue;
 				} else {
 					matcher.push(resolvedKey);
 					const isStopNode = this.checkStopNode(matcher);
 					matcher.pop();
 					if (isStopNode) {
-						const textValue = "" + item;
+						const textValue = valToStr(item);
 						if (textValue === "") listTagVal += this.indentate(level) + "<" + resolvedKey + this.closeTag(resolvedKey) + this.tagEndChar;
 						else listTagVal += this.indentate(level) + "<" + resolvedKey + ">" + textValue + "</" + resolvedKey + this.tagEndChar;
 					} else listTagVal += this.buildTextValNode(item, resolvedKey, "", level, matcher);
@@ -18687,7 +18850,7 @@ Builder.prototype.j2x = function(jObj, level, matcher, qNameValidator) {
 			const L = Ks.length;
 			for (let j = 0; j < L; j++) {
 				const resolvedAttr = resolveTagName(Ks[j], true, this.options, matcher, qNameValidator);
-				attrStr += this.buildAttrPairStr(resolvedAttr, "" + jObj[key][Ks[j]], isCurrentStopNode);
+				attrStr += this.buildAttrPairStr(resolvedAttr, valToStr(jObj[key][Ks[j]]), isCurrentStopNode);
 			}
 		} else val += this.processTextOrObjNode(jObj[key], resolvedKey, level, matcher, qNameValidator);
 	}
@@ -18698,7 +18861,7 @@ Builder.prototype.j2x = function(jObj, level, matcher, qNameValidator) {
 };
 Builder.prototype.buildAttrPairStr = function(attrName, val, isStopNode) {
 	if (!isStopNode) {
-		val = this.options.attributeValueProcessor(attrName, "" + val);
+		val = this.options.attributeValueProcessor(attrName, valToStr(val));
 		val = this.replaceEntitiesValue(val);
 	}
 	if (this.options.suppressBooleanAttributes && val === "true") return " " + attrName;
@@ -18833,6 +18996,7 @@ Builder.prototype.buildTextValNode = function(val, key, attrStr, level, matcher)
 	else {
 		let textValue = this.options.tagValueProcessor(key, val);
 		textValue = this.replaceEntitiesValue(textValue);
+		textValue = valToStr(textValue);
 		if (textValue === "") return this.indentate(level) + "<" + key + attrStr + this.closeTag(key) + this.tagEndChar;
 		else return this.indentate(level) + "<" + key + attrStr + ">" + textValue + "</" + key + this.tagEndChar;
 	}
@@ -42014,6 +42178,8 @@ var require_brace_expansion$1 = /* @__PURE__ */ __commonJSMin(((exports, module)
 	var escPeriod = "\0PERIOD" + Math.random() + "\0";
 	var EXPANSION_MAX = 1e5;
 	var EXPANSION_MAX_LENGTH = 4e6;
+	var EXPANSION_MAX_DEPTH = 1e3;
+	var EXPANSION_MAX_REWRITES = 1e3;
 	function numeric(str) {
 		return parseInt(str, 10) == str ? parseInt(str, 10) : str.charCodeAt(0);
 	}
@@ -42023,31 +42189,44 @@ var require_brace_expansion$1 = /* @__PURE__ */ __commonJSMin(((exports, module)
 	function unescapeBraces(str) {
 		return str.split(escSlash).join("\\").split(escOpen).join("{").split(escClose).join("}").split(escComma).join(",").split(escPeriod).join(".");
 	}
+	function pushAll(target, items) {
+		for (var i = 0; i < items.length; i++) target.push(items[i]);
+	}
 	function parseCommaParts(str) {
-		if (!str) return [""];
 		var parts = [];
-		var m = balanced("{", "}", str);
-		if (!m) return str.split(",");
-		var pre = m.pre;
-		var body = m.body;
-		var post = m.post;
-		var p = pre.split(",");
-		p[p.length - 1] += "{" + body + "}";
-		var postParts = parseCommaParts(post);
-		if (post.length) {
-			p[p.length - 1] += postParts.shift();
-			p.push.apply(p, postParts);
+		var carry = "";
+		for (;;) {
+			var m = balanced("{", "}", str);
+			if (!m) {
+				var tail = str.split(",");
+				tail[0] = carry + tail[0];
+				pushAll(parts, tail);
+				return parts;
+			}
+			var pre = m.pre;
+			var body = m.body;
+			var post = m.post;
+			var p = pre.split(",");
+			p[0] = carry + p[0];
+			p[p.length - 1] += "{" + body + "}";
+			if (!post.length) {
+				pushAll(parts, p);
+				return parts;
+			}
+			carry = p.pop();
+			pushAll(parts, p);
+			str = post;
 		}
-		parts.push.apply(parts, p);
-		return parts;
 	}
 	function expandTop(str, options) {
 		if (!str) return [];
 		options = options || {};
 		var max = options.max == null ? EXPANSION_MAX : options.max;
 		var maxLength = options.maxLength == null ? EXPANSION_MAX_LENGTH : options.maxLength;
+		var maxDepth = options.maxDepth == null ? EXPANSION_MAX_DEPTH : options.maxDepth;
+		var maxRewrites = options.maxRewrites == null ? EXPANSION_MAX_REWRITES : options.maxRewrites;
 		if (str.substr(0, 2) === "{}") str = "\\{\\}" + str.substr(2);
-		return expand(escapeBraces(str), max, maxLength, true).map(unescapeBraces);
+		return expand(escapeBraces(str), max, maxLength, maxDepth, 0, maxRewrites, true).map(unescapeBraces);
 	}
 	function embrace(str) {
 		return "{" + str + "}";
@@ -42113,8 +42292,10 @@ var require_brace_expansion$1 = /* @__PURE__ */ __commonJSMin(((exports, module)
 		}
 		return N;
 	}
-	function expand(str, max, maxLength, isTop) {
+	function expand(str, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
+		if (depth > maxDepth) return [str];
 		var acc = [""];
+		var rewrites = 0;
 		var dropEmpties = false;
 		var firstGroup = true;
 		for (;;) {
@@ -42133,7 +42314,8 @@ var require_brace_expansion$1 = /* @__PURE__ */ __commonJSMin(((exports, module)
 			var isSequence = isNumericSequence || isAlphaSequence;
 			var isOptions = m.body.indexOf(",") >= 0;
 			if (!isSequence && !isOptions) {
-				if (m.post.match(/,(?!,).*\}/)) {
+				if (rewrites < maxRewrites && m.post.match(/,(?!,).*\}/)) {
+					rewrites++;
 					str = m.pre + "{" + m.body + escClose + m.post;
 					isTop = true;
 					continue;
@@ -42149,7 +42331,7 @@ var require_brace_expansion$1 = /* @__PURE__ */ __commonJSMin(((exports, module)
 			else {
 				var n = parseCommaParts(m.body);
 				if (n.length === 1 && n[0] !== void 0) {
-					n = expand(n[0], max, maxLength, false).map(embrace);
+					n = expand(n[0], max, maxLength, maxDepth, depth + 1, maxRewrites, false).map(embrace);
 					/* c8 ignore start */
 					if (n.length === 1) {
 						acc = combine(acc, pre + n[0], [""], max, maxLength, dropEmpties && !m.post.length);
@@ -42163,7 +42345,7 @@ var require_brace_expansion$1 = /* @__PURE__ */ __commonJSMin(((exports, module)
 				values = [];
 				var valuesLength = 0;
 				outer: for (var j = 0; j < n.length; j++) {
-					var expanded = expand(n[j], max, maxLength, false);
+					var expanded = expand(n[j], max, maxLength, maxDepth, depth + 1, maxRewrites, false);
 					for (var k = 0; k < expanded.length; k++) {
 						var v = expanded[k];
 						if (dropsEmpties && !v) continue;
@@ -58214,6 +58396,8 @@ var require_brace_expansion = /* @__PURE__ */ __commonJSMin(((exports, module) =
 	var escPeriod = "\0PERIOD" + Math.random() + "\0";
 	var EXPANSION_MAX = 1e5;
 	var EXPANSION_MAX_LENGTH = 4e6;
+	var EXPANSION_MAX_DEPTH = 1e3;
+	var EXPANSION_MAX_REWRITES = 1e3;
 	function numeric(str) {
 		return parseInt(str, 10) == str ? parseInt(str, 10) : str.charCodeAt(0);
 	}
@@ -58223,31 +58407,44 @@ var require_brace_expansion = /* @__PURE__ */ __commonJSMin(((exports, module) =
 	function unescapeBraces(str) {
 		return str.split(escSlash).join("\\").split(escOpen).join("{").split(escClose).join("}").split(escComma).join(",").split(escPeriod).join(".");
 	}
+	function pushAll(target, items) {
+		for (var i = 0; i < items.length; i++) target.push(items[i]);
+	}
 	function parseCommaParts(str) {
-		if (!str) return [""];
 		var parts = [];
-		var m = balanced("{", "}", str);
-		if (!m) return str.split(",");
-		var pre = m.pre;
-		var body = m.body;
-		var post = m.post;
-		var p = pre.split(",");
-		p[p.length - 1] += "{" + body + "}";
-		var postParts = parseCommaParts(post);
-		if (post.length) {
-			p[p.length - 1] += postParts.shift();
-			p.push.apply(p, postParts);
+		var carry = "";
+		for (;;) {
+			var m = balanced("{", "}", str);
+			if (!m) {
+				var tail = str.split(",");
+				tail[0] = carry + tail[0];
+				pushAll(parts, tail);
+				return parts;
+			}
+			var pre = m.pre;
+			var body = m.body;
+			var post = m.post;
+			var p = pre.split(",");
+			p[0] = carry + p[0];
+			p[p.length - 1] += "{" + body + "}";
+			if (!post.length) {
+				pushAll(parts, p);
+				return parts;
+			}
+			carry = p.pop();
+			pushAll(parts, p);
+			str = post;
 		}
-		parts.push.apply(parts, p);
-		return parts;
 	}
 	function expandTop(str, options) {
 		if (!str) return [];
 		options = options || {};
 		var max = options.max == null ? EXPANSION_MAX : options.max;
 		var maxLength = options.maxLength == null ? EXPANSION_MAX_LENGTH : options.maxLength;
+		var maxDepth = options.maxDepth == null ? EXPANSION_MAX_DEPTH : options.maxDepth;
+		var maxRewrites = options.maxRewrites == null ? EXPANSION_MAX_REWRITES : options.maxRewrites;
 		if (str.substr(0, 2) === "{}") str = "\\{\\}" + str.substr(2);
-		return expand(escapeBraces(str), max, maxLength, true).map(unescapeBraces);
+		return expand(escapeBraces(str), max, maxLength, maxDepth, 0, maxRewrites, true).map(unescapeBraces);
 	}
 	function embrace(str) {
 		return "{" + str + "}";
@@ -58313,8 +58510,10 @@ var require_brace_expansion = /* @__PURE__ */ __commonJSMin(((exports, module) =
 		}
 		return N;
 	}
-	function expand(str, max, maxLength, isTop) {
+	function expand(str, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
+		if (depth > maxDepth) return [str];
 		var acc = [""];
+		var rewrites = 0;
 		var dropEmpties = false;
 		var firstGroup = true;
 		for (;;) {
@@ -58333,7 +58532,8 @@ var require_brace_expansion = /* @__PURE__ */ __commonJSMin(((exports, module) =
 			var isSequence = isNumericSequence || isAlphaSequence;
 			var isOptions = m.body.indexOf(",") >= 0;
 			if (!isSequence && !isOptions) {
-				if (m.post.match(/,(?!,).*\}/)) {
+				if (rewrites < maxRewrites && m.post.match(/,(?!,).*\}/)) {
+					rewrites++;
 					str = m.pre + "{" + m.body + escClose + m.post;
 					isTop = true;
 					continue;
@@ -58349,7 +58549,7 @@ var require_brace_expansion = /* @__PURE__ */ __commonJSMin(((exports, module) =
 			else {
 				var n = parseCommaParts(m.body);
 				if (n.length === 1 && n[0] !== void 0) {
-					n = expand(n[0], max, maxLength, false).map(embrace);
+					n = expand(n[0], max, maxLength, maxDepth, depth + 1, maxRewrites, false).map(embrace);
 					/* c8 ignore start */
 					if (n.length === 1) {
 						acc = combine(acc, pre + n[0], [""], max, maxLength, dropEmpties && !m.post.length);
@@ -58363,7 +58563,7 @@ var require_brace_expansion = /* @__PURE__ */ __commonJSMin(((exports, module) =
 				values = [];
 				var valuesLength = 0;
 				outer: for (var j = 0; j < n.length; j++) {
-					var expanded = expand(n[j], max, maxLength, false);
+					var expanded = expand(n[j], max, maxLength, maxDepth, depth + 1, maxRewrites, false);
 					for (var k = 0; k < expanded.length; k++) {
 						var v = expanded[k];
 						if (dropsEmpties && !v) continue;
@@ -66957,6 +67157,9 @@ var require_b4a = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	function toString(buffer, encoding, start, end) {
 		return toBuffer(buffer).toString(encoding, start, end);
 	}
+	function toHex(buffer, start, end) {
+		return toBuffer(buffer).toString("hex", start, end);
+	}
 	function write(buffer, string, offset, length, encoding) {
 		return toBuffer(buffer).write(string, offset, length, encoding);
 	}
@@ -67029,6 +67232,7 @@ var require_b4a = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		swap64,
 		toBuffer,
 		toString,
+		toHex,
 		write,
 		readDoubleBE,
 		readDoubleLE,
@@ -74582,29 +74786,31 @@ var require_Alias = /* @__PURE__ */ __commonJSMin(((exports) => {
 				if (node === this) break;
 				if (node.anchor === this.source) found = node;
 			}
+			if (found && ctx) {
+				const { anchors, doc, maxAliasCount } = ctx;
+				let data = anchors.get(found);
+				if (!data) {
+					toJS.toJS(found, null, ctx);
+					data = anchors.get(found);
+				}
+				/* istanbul ignore if */
+				if (data?.res === void 0) throw new ReferenceError("This should not happen: Alias anchor was not resolved?");
+				if (maxAliasCount >= 0) {
+					data.count += 1;
+					if (data.aliasCount === 0) data.aliasCount = getAliasCount(doc, found, anchors);
+					if (data.count * data.aliasCount > maxAliasCount) throw new ReferenceError("Excessive alias count indicates a resource exhaustion attack");
+				}
+			}
 			return found;
 		}
 		toJSON(_arg, ctx) {
 			if (!ctx) return { source: this.source };
-			const { anchors, doc, maxAliasCount } = ctx;
-			const source = this.resolve(doc, ctx);
+			const source = this.resolve(ctx.doc, ctx);
 			if (!source) {
 				const msg = `Unresolved alias (the anchor must be set before the alias): ${this.source}`;
 				throw new ReferenceError(msg);
 			}
-			let data = anchors.get(source);
-			if (!data) {
-				toJS.toJS(source, null, ctx);
-				data = anchors.get(source);
-			}
-			/* istanbul ignore if */
-			if (data?.res === void 0) throw new ReferenceError("This should not happen: Alias anchor was not resolved?");
-			if (maxAliasCount >= 0) {
-				data.count += 1;
-				if (data.aliasCount === 0) data.aliasCount = getAliasCount(doc, source, anchors);
-				if (data.count * data.aliasCount > maxAliasCount) throw new ReferenceError("Excessive alias count indicates a resource exhaustion attack");
-			}
-			return data.res;
+			return ctx.anchors.get(source).res;
 		}
 		toString(ctx, _onComment, _onChompKeep) {
 			const src = `*${this.source}`;
@@ -77990,40 +78196,41 @@ var require_resolve_flow_scalar = /* @__PURE__ */ __commonJSMin(((exports) => {
 			case "`": badChar = `reserved character ${source[0]}`;
 		}
 		if (badChar) onError(0, "BAD_SCALAR_START", `Plain value cannot start with ${badChar}`);
-		return foldLines(source);
+		return unfoldLines(source);
 	}
 	function singleQuotedValue(source, onError) {
 		if (source[source.length - 1] !== "'" || source.length === 1) onError(source.length, "MISSING_CHAR", "Missing closing 'quote");
-		return foldLines(source.slice(1, -1)).replace(/''/g, "'");
+		return unfoldLines(source.slice(1, -1)).replace(/''/g, "'");
 	}
-	function foldLines(source) {
+	function unfoldLines(source) {
+		const line = /(.*?)\r?\n/sy;
+		let match = line.exec(source);
+		if (!match) return source;
 		/**
-		* The negative lookbehind here and in the `re` RegExp is to
+		* The negative lookbehinds in these RegExps are to
 		* prevent causing a polynomial search time in certain cases.
 		*
-		* The try-catch is for Safari, which doesn't support this yet:
+		* The try-catch is for Safari < 16.4 and other old browsers:
 		* https://caniuse.com/js-regexp-lookbehind
 		*/
-		let first, line;
+		let trimEnd, trimBoth;
 		try {
-			first = /* @__PURE__ */ new RegExp("(.*?)(?<![ 	])[ 	]*\r?\n", "sy");
-			line = /* @__PURE__ */ new RegExp("[ 	]*(.*?)(?:(?<![ 	])[ 	]*)?\r?\n", "sy");
+			trimEnd = /* @__PURE__ */ new RegExp("(?<![ 	])[ 	]+$");
+			trimBoth = /* @__PURE__ */ new RegExp("^[ 	]+|(?<![ 	])[ 	]+$", "g");
 		} catch {
-			first = /(.*?)[ \t]*\r?\n/sy;
-			line = /[ \t]*(.*?)[ \t]*\r?\n/sy;
+			trimEnd = /[ \t]+$/;
+			trimBoth = /^[ \t]+|[ \t]+$/g;
 		}
-		let match = first.exec(source);
-		if (!match) return source;
-		let res = match[1];
+		let res = match[1].replace(trimEnd, "");
 		let sep = " ";
-		let pos = first.lastIndex;
-		line.lastIndex = pos;
+		let pos = line.lastIndex;
 		while (match = line.exec(source)) {
-			if (match[1] === "") {
+			const lm = match[1].replace(trimBoth, "");
+			if (lm === "") {
 				if (sep === "\n") res += sep;
 				else sep = "\n";
 			} else {
-				res += sep + match[1];
+				res += sep + lm;
 				sep = " ";
 			}
 			pos = line.lastIndex;
