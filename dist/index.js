@@ -1731,9 +1731,7 @@ var convertMarkedBigIntsReviver = (key, value, context, userReviver) => {
 */
 var JSONParseV2 = (text, reviver) => {
 	return JSON.parse(text, (key, value, context) => {
-		const isNumber = typeof value === "number";
-		const isOutOfBounds = value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER;
-		const isBigNumber = isNumber && isOutOfBounds;
+		const isBigNumber = typeof value === "number" && (value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER);
 		const isInt = context && intRegex.test(context.source);
 		if (isBigNumber && isInt) return BigInt(context.source);
 		if (!(typeof reviver === "function")) return value;
