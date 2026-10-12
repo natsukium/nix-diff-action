@@ -7873,7 +7873,7 @@ var package_exports = /* @__PURE__ */ __exportAll({
 }), name, version$2, description, keywords, homepage, type, main, types, exports$1, directories, files, publishConfig, repository, scripts, bugs, dependencies, devDependencies, overrides, package_default;
 var init_package = __esmMin((() => {
 	name = "@actions/artifact";
-	version$2 = "6.2.1";
+	version$2 = "6.3.1";
 	description = "Actions artifact lib";
 	keywords = [
 		"github",
@@ -7909,26 +7909,27 @@ var init_package = __esmMin((() => {
 	};
 	bugs = { "url": "https://github.com/actions/toolkit/issues" };
 	dependencies = {
-		"@actions/core": "^3.0.0",
-		"@actions/github": "^9.0.0",
-		"@actions/http-client": "^4.0.0",
-		"@azure/storage-blob": "^12.30.0",
+		"@actions/core": "^3.0.1",
+		"@actions/github": "^9.1.1",
+		"@actions/http-client": "^4.0.1",
+		"@azure/storage-blob": "^12.31.0",
 		"@octokit/core": "^7.0.6",
 		"@octokit/plugin-request-log": "^6.0.0",
-		"@octokit/plugin-retry": "^8.0.0",
-		"@octokit/request": "^10.0.7",
+		"@octokit/plugin-retry": "^8.1.0",
+		"@octokit/request": "^10.0.8",
 		"@octokit/request-error": "^7.1.0",
-		"@protobuf-ts/plugin": "^2.2.3-alpha.1",
-		"@protobuf-ts/runtime": "^2.9.4",
+		"@protobuf-ts/runtime": "^2.11.1",
+		"@protobuf-ts/runtime-rpc": "^2.11.1",
 		"archiver": "^7.0.1",
 		"jwt-decode": "^4.0.0",
 		"unzip-stream": "^0.3.1"
 	};
 	devDependencies = {
+		"@protobuf-ts/plugin": "^2.11.1",
 		"@types/archiver": "^7.0.0",
 		"@types/unzip-stream": "^0.3.4",
-		"typedoc": "^0.28.16",
-		"typedoc-plugin-markdown": "^4.9.0",
+		"typedoc": "^0.28.19",
+		"typedoc-plugin-markdown": "^4.11.0",
 		"typescript": "^5.9.3"
 	};
 	overrides = {
@@ -8185,8 +8186,9 @@ var __awaiter$9 = function(thisArg, _arguments, P, generator) {
 var ArtifactHttpClient = class {
 	constructor(userAgent, maxAttempts, baseRetryIntervalMilliseconds, retryMultiplier) {
 		this.maxAttempts = 5;
-		this.baseRetryIntervalMilliseconds = 3e3;
+		this.baseRetryIntervalMilliseconds = 8e3;
 		this.retryMultiplier = 1.5;
+		this.retryTimeoutMilliseconds = 12e4;
 		const token = getRuntimeToken();
 		this.baseUrl = getResultsServiceUrl();
 		if (maxAttempts) this.maxAttempts = maxAttempts;
@@ -8214,11 +8216,14 @@ var ArtifactHttpClient = class {
 			let attempt = 0;
 			let errorMessage = "";
 			let rawBody = "";
+			let totalRetryWaitMilliseconds = 0;
 			while (attempt < this.maxAttempts) {
 				let isRetryable = false;
+				let retryAfterSeconds;
 				try {
 					const response = yield operation();
 					const statusCode = response.message.statusCode;
+					if (statusCode === HttpCodes.TooManyRequests) retryAfterSeconds = this.getRetryAfterSeconds(response);
 					rawBody = yield response.readBody();
 					debug(`[Response] - ${response.message.statusCode}`);
 					debug(`Headers: ${JSON.stringify(response.message.headers, null, 2)}`);
@@ -8244,9 +8249,11 @@ var ArtifactHttpClient = class {
 				}
 				if (!isRetryable) throw new Error(`Received non-retryable error: ${errorMessage}`);
 				if (attempt + 1 === this.maxAttempts) throw new Error(`Failed to make request after ${this.maxAttempts} attempts: ${errorMessage}`);
-				const retryTimeMilliseconds = this.getExponentialRetryTimeMilliseconds(attempt);
+				const retryTimeMilliseconds = retryAfterSeconds !== void 0 ? retryAfterSeconds * 1e3 : this.getExponentialRetryTimeMilliseconds(attempt);
+				if (totalRetryWaitMilliseconds + retryTimeMilliseconds > this.retryTimeoutMilliseconds) throw new Error(`Retry wait of ${retryTimeMilliseconds} ms would exceed the maximum total retry wait of ${this.retryTimeoutMilliseconds} ms: ${errorMessage}`);
 				info(`Attempt ${attempt + 1} of ${this.maxAttempts} failed with error: ${errorMessage}. Retrying request in ${retryTimeMilliseconds} ms...`);
 				yield this.sleep(retryTimeMilliseconds);
+				totalRetryWaitMilliseconds += retryTimeMilliseconds;
 				attempt++;
 			}
 			throw new Error(`Request failed`);
@@ -8265,6 +8272,14 @@ var ArtifactHttpClient = class {
 			HttpCodes.ServiceUnavailable,
 			HttpCodes.TooManyRequests
 		].includes(statusCode);
+	}
+	getRetryAfterSeconds(response) {
+		var _a;
+		const header = response.message.headers["retry-after"];
+		const value = (_a = Array.isArray(header) ? header[0] : header) === null || _a === void 0 ? void 0 : _a.trim();
+		if (value === void 0 || !/^\d+$/.test(value)) return;
+		const parsed = parseInt(value, 10);
+		return !isNaN(parsed) && parsed > 0 ? parsed : void 0;
 	}
 	sleep(milliseconds) {
 		return __awaiter$9(this, void 0, void 0, function* () {
