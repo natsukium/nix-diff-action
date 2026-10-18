@@ -42,7 +42,7 @@
     "@actions/core": "^3.0.0",
     "@actions/exec": "^3.0.0",
     "@actions/github": "^9.0.0",
-    "effect": "^3.19.12",
+    "effect": "^4.0.0",
     "yaml": "^2.8.2"
   },
   "devDependencies": {
