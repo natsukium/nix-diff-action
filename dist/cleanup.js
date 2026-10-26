@@ -1,4 +1,4 @@
-import { $ as sync, B as gen, Et as getState, H as logInfo, M as catchAll, X as runPromise, jt as warning, n as removeWorktree } from "./assets/git-CLwL7Dnd.js";
+import { $ as sync, B as gen, Et as getState, H as logInfo, M as catchAll, X as runPromise, jt as warning, n as removeWorktree } from "./assets/git-BkR1CKTh.js";
 //#region src/cleanup.ts
 var cleanup = gen(function* () {
 	const worktreePath = yield* sync(() => getState("worktreePath"));

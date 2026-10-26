@@ -19059,7 +19059,7 @@ var OP_YIELD = "Yield";
 var OP_REVERT_FLAGS = "RevertFlags";
 //#endregion
 //#region node_modules/effect/dist/esm/internal/version.js
-var moduleVersion = "3.22.2";
+var moduleVersion = "3.22.4";
 var getCurrentVersion = () => moduleVersion;
 //#endregion
 //#region node_modules/effect/dist/esm/internal/effectable.js
@@ -22492,7 +22492,7 @@ var normalize$1 = (self) => {
 			for (let i = digits.length - 1; i >= 0; i--) if (digits[i] === "0") trail++;
 			else break;
 			if (trail === 0) self.normalized = self;
-			self.normalized = unsafeMakeNormalized(BigInt(digits.substring(0, digits.length - trail)), self.scale - trail);
+			else self.normalized = unsafeMakeNormalized(BigInt(digits.substring(0, digits.length - trail)), self.scale - trail);
 		}
 	}
 	return self.normalized;
@@ -22646,6 +22646,41 @@ var isZero$1 = (n) => n.value === bigint0$2;
 */
 var isNegative = (n) => n.value < bigint0$2;
 //#endregion
+//#region node_modules/effect/dist/esm/internal/stackTraceLimit.js
+var ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+var ObjectPrototypeHasOwnProperty = Object.prototype.hasOwnProperty;
+var ObjectIsExtensible = Object.isExtensible;
+/**
+* Check if `Error.stackTraceLimit` is writable.
+* Returns `false` if the property is frozen, non-writable, or `Error` is non-extensible.
+*
+* @internal
+*/
+var isStackTraceLimitWritable = () => {
+	const desc = ObjectGetOwnPropertyDescriptor(Error, "stackTraceLimit");
+	if (desc === void 0) return ObjectIsExtensible(Error);
+	return ObjectPrototypeHasOwnProperty.call(desc, "writable") ? desc.writable === true : desc.set !== void 0;
+};
+var canWriteStackTraceLimit = /*#__PURE__*/ isStackTraceLimitWritable();
+/**
+* Get the current `Error.stackTraceLimit` value.
+* Returns `undefined` if the property doesn't exist.
+*
+* @internal
+*/
+var getStackTraceLimit = () => Error.stackTraceLimit;
+/**
+* Safely set `Error.stackTraceLimit` if possible, otherwise no-op.
+*
+* Accepts `undefined` so a value read via {@link getStackTraceLimit} can be
+* restored faithfully.
+*
+* @internal
+*/
+var setStackTraceLimit = (value) => {
+	if (canWriteStackTraceLimit) Error.stackTraceLimit = value;
+};
+//#endregion
 //#region node_modules/effect/dist/esm/internal/context.js
 /** @internal */
 var TagTypeId = /*#__PURE__*/ Symbol.for("effect/Context/Tag");
@@ -22688,10 +22723,10 @@ var ReferenceProto = {
 };
 /** @internal */
 var makeGenericTag = (key) => {
-	const limit = Error.stackTraceLimit;
-	Error.stackTraceLimit = 2;
+	const limit = getStackTraceLimit();
+	setStackTraceLimit(2);
 	const creationError = /* @__PURE__ */ new Error();
-	Error.stackTraceLimit = limit;
+	setStackTraceLimit(limit);
 	const tag = Object.create(TagProto);
 	Object.defineProperty(tag, "stack", { get() {
 		return creationError.stack;
@@ -22701,10 +22736,10 @@ var makeGenericTag = (key) => {
 };
 /** @internal */
 var Reference$1 = () => (id, options) => {
-	const limit = Error.stackTraceLimit;
-	Error.stackTraceLimit = 2;
+	const limit = getStackTraceLimit();
+	setStackTraceLimit(2);
 	const creationError = /* @__PURE__ */ new Error();
-	Error.stackTraceLimit = limit;
+	setStackTraceLimit(limit);
 	function ReferenceClass() {}
 	Object.setPrototypeOf(ReferenceClass, ReferenceProto);
 	ReferenceClass.key = id;
@@ -23532,6 +23567,7 @@ var bigint1e3 = /*#__PURE__*/ BigInt(1e3);
 var bigint1e6 = /*#__PURE__*/ BigInt(1e6);
 var bigint1e9 = /*#__PURE__*/ BigInt(1e9);
 var DURATION_REGEX = /^(-?\d+(?:\.\d+)?)\s+(nanos?|micros?|millis?|seconds?|minutes?|hours?|days?|weeks?)$/;
+var parseNanos = (input, scale) => input.includes(".") ? BigInt(Math.round(Number(input) * scale)) : BigInt(input) * BigInt(scale);
 /**
 * @since 2.0.0
 */
@@ -23550,9 +23586,9 @@ var decode = (input) => {
 			const value = Number(valueStr);
 			switch (unit) {
 				case "nano":
-				case "nanos": return nanos(BigInt(valueStr));
+				case "nanos": return nanos(parseNanos(valueStr, 1));
 				case "micro":
-				case "micros": return micros(BigInt(valueStr));
+				case "micros": return nanos(parseNanos(valueStr, 1e3));
 				case "milli":
 				case "millis": return millis(value);
 				case "second":
@@ -23662,11 +23698,6 @@ var infinity = /*#__PURE__*/ make$20(Infinity);
 * @category constructors
 */
 var nanos = (nanos) => make$20(nanos);
-/**
-* @since 2.0.0
-* @category constructors
-*/
-var micros = (micros) => make$20(micros * bigint1e3);
 /**
 * @since 2.0.0
 * @category constructors
@@ -26277,7 +26308,7 @@ var proto$4 = {
 			case "Fail": return {
 				_id: "Cause",
 				_tag: this._tag,
-				failure: toJSON(this.error)
+				error: toJSON(this.error)
 			};
 			case "Sequential":
 			case "Parallel": return {
@@ -26643,12 +26674,12 @@ var renderErrorCause = (cause, prefix) => {
 /** @internal */
 var makePrettyError = (originalError) => {
 	const originalErrorIsObject = typeof originalError === "object" && originalError !== null;
-	const prevLimit = Error.stackTraceLimit;
-	Error.stackTraceLimit = 1;
+	const prevLimit = getStackTraceLimit();
+	setStackTraceLimit(1);
 	const error = new Error(prettyErrorMessage(originalError), originalErrorIsObject && "cause" in originalError && typeof originalError.cause !== "undefined" ? { cause: makePrettyError(originalError.cause) } : void 0);
-	Error.stackTraceLimit = prevLimit;
+	setStackTraceLimit(prevLimit);
 	if (error.message === "") error.message = "An error has occurred";
-	Error.stackTraceLimit = prevLimit;
+	setStackTraceLimit(prevLimit);
 	error.name = originalError instanceof Error ? originalError.name : "Error";
 	if (originalErrorIsObject) {
 		if (spanSymbol in originalError) error.span = originalError[spanSymbol];
@@ -32122,10 +32153,12 @@ var addFinalizer = (finalizer) => withFiberRuntime((runtime) => {
 	return flatMap$3(scope, (scope) => scopeAddFinalizerExit(scope, (exit) => withFiberRuntime((runtimeFinalizer) => {
 		const preRefs = runtimeFinalizer.getFiberRefs();
 		const preFlags = runtimeFinalizer.currentRuntimeFlags;
+		const interruptedCause = runtimeFinalizer.getFiberRef(currentInterruptedCause);
 		const patchRefs = diff$1(preRefs, acquireRefs);
 		const patchFlags = diff$3(preFlags, acquireFlags);
 		const inverseRefs = diff$1(acquireRefs, preRefs);
 		runtimeFinalizer.setFiberRefs(patch$1(patchRefs, runtimeFinalizer.id(), acquireRefs));
+		runtimeFinalizer.setFiberRef(currentInterruptedCause, interruptedCause);
 		return ensuring(withRuntimeFlags(finalizer(exit), patchFlags), sync$2(() => {
 			runtimeFinalizer.setFiberRefs(patch$1(inverseRefs, runtimeFinalizer.id(), runtimeFinalizer.getFiberRefs()));
 		}));
@@ -32743,10 +32776,10 @@ var AsyncFiberExceptionImpl = class extends Error {
 	}
 };
 var asyncFiberException = (fiber) => {
-	const limit = Error.stackTraceLimit;
-	Error.stackTraceLimit = 0;
+	const limit = getStackTraceLimit();
+	setStackTraceLimit(0);
 	const error = new AsyncFiberExceptionImpl(fiber);
-	Error.stackTraceLimit = limit;
+	setStackTraceLimit(limit);
 	return error;
 };
 /** @internal */
@@ -32779,10 +32812,10 @@ var FiberFailureImpl = class extends Error {
 };
 /** @internal */
 var fiberFailure = (cause) => {
-	const limit = Error.stackTraceLimit;
-	Error.stackTraceLimit = 0;
+	const limit = getStackTraceLimit();
+	setStackTraceLimit(0);
 	const error = new FiberFailureImpl(cause);
-	Error.stackTraceLimit = limit;
+	setStackTraceLimit(limit);
 	return error;
 };
 var fastPath = (effect) => {
@@ -32824,9 +32857,16 @@ var unsafeRunPromiseExit = /*#__PURE__*/ makeDual((runtime, effect, options) => 
 	});
 	if (options?.signal !== void 0) {
 		if (options.signal.aborted) fiber.unsafeInterruptAsFork(fiber.id());
-		else options.signal.addEventListener("abort", () => {
-			fiber.unsafeInterruptAsFork(fiber.id());
-		}, { once: true });
+		else {
+			const signal = options.signal;
+			const onAbort = () => {
+				fiber.unsafeInterruptAsFork(fiber.id());
+			};
+			signal.addEventListener("abort", onAbort, { once: true });
+			fiber.addObserver(() => {
+				signal.removeEventListener("abort", onAbort);
+			});
+		}
 	}
 }));
 /** @internal */
@@ -33319,7 +33359,7 @@ var isEffect = isEffect$1;
 * // {
 * //   _id: 'Exit',
 * //   _tag: 'Failure',
-* //   cause: { _id: 'Cause', _tag: 'Fail', failure: 'Task2: Oh no!' }
+* //   cause: { _id: 'Cause', _tag: 'Fail', error: 'Task2: Oh no!' }
 * // }
 * ```
 *
@@ -33374,7 +33414,7 @@ var isEffect = isEffect$1;
 * //   cause: {
 * //     _id: 'Cause',
 * //     _tag: 'Fail',
-* //     failure: [
+* //     error: [
 * //       { _id: 'Option', _tag: 'None' },
 * //       { _id: 'Option', _tag: 'Some', value: 'Task2: Oh no!' },
 * //       { _id: 'Option', _tag: 'None' }
@@ -35022,10 +35062,10 @@ var Service = function() {
 	return function() {
 		const [id, maker] = arguments;
 		const proxy = "accessors" in maker ? maker["accessors"] : false;
-		const limit = Error.stackTraceLimit;
-		Error.stackTraceLimit = 2;
+		const limit = getStackTraceLimit();
+		setStackTraceLimit(2);
 		const creationError = /* @__PURE__ */ new Error();
-		Error.stackTraceLimit = limit;
+		setStackTraceLimit(limit);
 		let patchState = "unchecked";
 		const TagClass = function(service) {
 			if (patchState === "unchecked") {
@@ -37359,4 +37399,4 @@ var GitService = class extends Service()("GitService", { succeed: { createWorktr
 //#endregion
 export { sync as $, andThen as A, setSecret as At, gen as B, redacted as C, debug as Ct, Service as D, info as Dt, isConfigError as E, getState as Et, catchTag as F, HttpCodes as Ft, mapError$1 as G, logInfo as H, catchTags as I, require_undici as It, promise as J, option$2 as K, fail$1 as L, require_tunnel as Lt, catchAll as M, exec as Mt, catchAllCause as N, BearerCredentialHandler as Nt, acquireRelease as O, setFailed as Ot, catchIf as P, HttpClient as Pt, succeed$2 as Q, flatMap$1 as R, option as S, pipe as St, value as T, getInput as Tt, logWarning as U, logError as V, map$2 as W, runPromise as X, provide as Y, scoped as Z, Struct as _, getOrElse as _t, GitHubApiError as a, mergeAll as at, pattern as b, map$7 as bt, MissingAttributesError as c, withConfigProviderScoped as ct, NixPathInfoError as d, set as dt, tapError as et, NotPullRequestContextError as f, fromEnv as ft, NonEmptyString as g, fromNullable as gt, Literal as h, flatMap$5 as ht, AttributeParseError as i, merge as it, as as j, warning as jt, all as k, setOutput as kt, NixBuildError as l, get as lt, Config as m, orElse$1 as mt, removeWorktree as n, try_ as nt, InvalidCommentStrategyError as o, scopedDiscard as ot, Array$ as p, fromMap as pt, orElseSucceed as q, ArtifactError as r, TaggedError$1 as rt, InvalidDirectoryError as s, pretty as st, GitService as t, tryPromise as tt, NixDixError as u, make$8 as ut, decodeUnknown as v, getOrUndefined as vt, string as w, error as wt, boolean as x, match$4 as xt, filter as y, isNone as yt, forEach as z };
 
-//# sourceMappingURL=git-CLwL7Dnd.js.map
+//# sourceMappingURL=git-BkR1CKTh.js.map
