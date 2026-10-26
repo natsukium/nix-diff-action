@@ -1,5 +1,5 @@
-import { $ as sync, B as gen, Et as getState, H as logInfo, M as catchAll, X as runPromise, jt as warning, n as removeWorktree } from "./assets/git-CLwL7Dnd.js";
-//#region src/cleanup.ts
+import { $ as sync, B as gen, Et as getState, H as logInfo, M as catchAll, X as runPromise, jt as warning, n as removeWorktree } from "./assets/git-CeiR8qNj.js";
+// src/cleanup.ts
 var cleanup = gen(function* () {
 	const worktreePath = yield* sync(() => getState("worktreePath"));
 	if (!worktreePath) {
@@ -11,7 +11,6 @@ var cleanup = gen(function* () {
 });
 var run = () => cleanup.pipe(catchAll((error) => sync(() => warning(`Cleanup failed: ${error}`))), runPromise);
 run();
-//#endregion
 export { run };
 
 //# sourceMappingURL=cleanup.js.map
