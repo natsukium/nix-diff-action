@@ -19277,6 +19277,18 @@ var right = right$1;
 * @since 2.0.0
 */
 var left = left$1;
+var try_$2 = (evaluate) => {
+	if (isFunction(evaluate)) try {
+		return right(evaluate());
+	} catch (e) {
+		return left(e);
+	}
+	else try {
+		return right(evaluate.try());
+	} catch (e) {
+		return left(evaluate.catch(e));
+	}
+};
 /**
 * Tests if a value is a `Either`.
 *
@@ -19416,6 +19428,11 @@ var getOrThrowWith$1 = /*#__PURE__*/ dual(2, (self, onLeft) => {
 * @since 2.0.0
 */
 var getOrThrow$1 = /*#__PURE__*/ getOrThrowWith$1(() => /* @__PURE__ */ new Error("getOrThrow called on a Left"));
+/**
+* @category sequencing
+* @since 2.0.0
+*/
+var flatMap$6 = /*#__PURE__*/ dual(2, (self, f) => isLeft(self) ? left(self.left) : f(self.right));
 // node_modules/effect/dist/esm/internal/array.js
 /**
 * @since 2.0.0
@@ -21193,6 +21210,7 @@ var Literal$1 = class {
 * @since 3.10.0
 */
 var isLiteral = /*#__PURE__*/ createASTGuard("Literal");
+var $null = /*#__PURE__*/ new Literal$1(null);
 /**
 * @category model
 * @since 3.10.0
@@ -21815,15 +21833,15 @@ var unify = (candidates) => {
 * @category model
 * @since 3.10.0
 */
-var Union = class Union {
+var Union$1 = class Union$1 {
 	types;
 	annotations;
 	static make = (types, annotations) => {
-		return isMembers(types) ? new Union(types, annotations) : types.length === 1 ? types[0] : neverKeyword;
+		return isMembers(types) ? new Union$1(types, annotations) : types.length === 1 ? types[0] : neverKeyword;
 	};
 	/** @internal */
 	static unify = (candidates, annotations) => {
-		return Union.make(unify(flatten$2(candidates)), annotations);
+		return Union$1.make(unify(flatten$2(candidates)), annotations);
 	};
 	/**
 	* @since 3.10.0
@@ -22225,7 +22243,7 @@ var typeAST = (ast) => {
 		}
 		case "Union": {
 			const types = changeMap(ast.types, typeAST);
-			return types === ast.types ? ast : Union.make(types, ast.annotations);
+			return types === ast.types ? ast : Union$1.make(types, ast.annotations);
 		}
 		case "Suspend": return new Suspend(() => typeAST(ast.f()), ast.annotations);
 		case "Refinement": {
@@ -22290,7 +22308,7 @@ var encodedAST_ = (ast, isBound) => {
 		}
 		case "Union": {
 			const types = changeMap(ast.types, (ast) => encodedAST_(ast, isBound));
-			return types === ast.types ? ast : Union.make(types);
+			return types === ast.types ? ast : Union$1.make(types);
 		}
 		case "Suspend": {
 			let borrowedAnnotations = void 0;
@@ -25974,7 +25992,7 @@ var disable$2 = (flag) => make$14(flag, 0);
 /** @internal */
 var exclude$1 = /*#__PURE__*/ dual(2, (self, flag) => make$14(active(self) & ~flag, enabled(self)));
 /** @internal */
-var andThen$2 = /*#__PURE__*/ dual(2, (self, that) => self | that);
+var andThen$1 = /*#__PURE__*/ dual(2, (self, that) => self | that);
 /** @internal */
 var invert = (n) => ~n >>> 0 & BIT_MASK;
 /** @internal */
@@ -26004,7 +26022,7 @@ var patch$4 = /*#__PURE__*/ dual(2, (self, patch) => self & (invert(active(patch
 var differ$1 = /*#__PURE__*/ make$15({
 	empty: empty$7,
 	diff: (oldValue, newValue) => diff$3(oldValue, newValue),
-	combine: (first, second) => andThen$2(second)(first),
+	combine: (first, second) => andThen$1(second)(first),
 	patch: (_patch, oldValue) => patch$4(oldValue, _patch)
 });
 // node_modules/effect/dist/esm/RuntimeFlagsPatch.js
@@ -27039,7 +27057,7 @@ var flatMap$3 = /*#__PURE__*/ dual(2, (self, f) => {
 	effect.effect_instruction_i1 = f;
 	return effect;
 });
-var andThen$1 = /*#__PURE__*/ dual(2, (self, f) => flatMap$3(self, (a) => {
+var andThen = /*#__PURE__*/ dual(2, (self, f) => flatMap$3(self, (a) => {
 	const b = typeof f === "function" ? f(a) : f;
 	if (isEffect$1(b)) return b;
 	else if (isPromiseLike(b)) return unsafeAsync((resume) => {
@@ -28952,18 +28970,6 @@ var try_$1 = (arg) => {
 		}
 	});
 };
-var catchTag$1 = /*#__PURE__*/ dual((args) => isEffect$1(args[0]), (self, ...args) => {
-	const f = args[args.length - 1];
-	let predicate;
-	if (args.length === 2) predicate = isTagged(args[0]);
-	else predicate = (e) => {
-		const tag = hasProperty(e, "_tag") ? e["_tag"] : void 0;
-		if (!tag) return false;
-		for (let i = 0; i < args.length - 1; i++) if (args[i] === tag) return true;
-		return false;
-	};
-	return catchIf$1(self, predicate, f);
-});
 /** @internal */
 var catchTags$1 = /*#__PURE__*/ dual(2, (self, cases) => {
 	let keys;
@@ -33828,64 +33834,6 @@ var catchAllCause = catchAllCause$1;
 */
 var catchIf = catchIf$1;
 /**
-* Catches and handles specific errors by their `_tag` field, which is used as a
-* discriminator.
-*
-* **When to Use**
-*
-* `catchTag` is useful when your errors are tagged with a readonly `_tag` field
-* that identifies the error type. You can use this function to handle specific
-* error types by matching the `_tag` value. This allows for precise error
-* handling, ensuring that only specific errors are caught and handled.
-*
-* The error type must have a readonly `_tag` field to use `catchTag`. This
-* field is used to identify and match errors.
-*
-* **Example** (Handling Errors by Tag)
-*
-* ```ts
-* import { Effect, Random } from "effect"
-*
-* class HttpError {
-*   readonly _tag = "HttpError"
-* }
-*
-* class ValidationError {
-*   readonly _tag = "ValidationError"
-* }
-*
-* //      ┌─── Effect<string, HttpError | ValidationError, never>
-* //      ▼
-* const program = Effect.gen(function* () {
-*   const n1 = yield* Random.next
-*   const n2 = yield* Random.next
-*   if (n1 < 0.5) {
-*     yield* Effect.fail(new HttpError())
-*   }
-*   if (n2 < 0.5) {
-*     yield* Effect.fail(new ValidationError())
-*   }
-*   return "some result"
-* })
-*
-* //      ┌─── Effect<string, ValidationError, never>
-* //      ▼
-* const recovered = program.pipe(
-*   // Only handle HttpError errors
-*   Effect.catchTag("HttpError", (_HttpError) =>
-*     Effect.succeed("Recovering from HttpError")
-*   )
-* )
-* ```
-*
-* @see {@link catchTags} for a version that allows you to handle multiple error
-* types at once.
-*
-* @since 2.0.0
-* @category Error handling
-*/
-var catchTag = catchTag$1;
-/**
 * Handles multiple errors in a single block of code using their `_tag` field.
 *
 * **When to Use**
@@ -34498,82 +34446,6 @@ var either = either$1;
 */
 var flatMap$1 = flatMap$3;
 /**
-* Chains two actions, where the second action can depend on the result of the
-* first.
-*
-* **Syntax**
-*
-* ```ts skip-type-checking
-* const transformedEffect = pipe(myEffect, Effect.andThen(anotherEffect))
-* // or
-* const transformedEffect = Effect.andThen(myEffect, anotherEffect)
-* // or
-* const transformedEffect = myEffect.pipe(Effect.andThen(anotherEffect))
-* ```
-*
-* **When to Use**
-*
-* Use `andThen` when you need to run multiple actions in sequence, with the
-* second action depending on the result of the first. This is useful for
-* combining effects or handling computations that must happen in order.
-*
-* **Details**
-*
-* The second action can be:
-*
-* - A constant value (similar to {@link as})
-* - A function returning a value (similar to {@link map})
-* - A `Promise`
-* - A function returning a `Promise`
-* - An `Effect`
-* - A function returning an `Effect` (similar to {@link flatMap})
-*
-* **Note:** `andThen` works well with both `Option` and `Either` types,
-* treating them as effects.
-*
-* **Example** (Applying a Discount Based on Fetched Amount)
-*
-* ```ts
-* import { pipe, Effect } from "effect"
-*
-* // Function to apply a discount safely to a transaction amount
-* const applyDiscount = (
-*   total: number,
-*   discountRate: number
-* ): Effect.Effect<number, Error> =>
-*   discountRate === 0
-*     ? Effect.fail(new Error("Discount rate cannot be zero"))
-*     : Effect.succeed(total - (total * discountRate) / 100)
-*
-* // Simulated asynchronous task to fetch a transaction amount from database
-* const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-*
-* // Using Effect.map and Effect.flatMap
-* const result1 = pipe(
-*   fetchTransactionAmount,
-*   Effect.map((amount) => amount * 2),
-*   Effect.flatMap((amount) => applyDiscount(amount, 5))
-* )
-*
-* Effect.runPromise(result1).then(console.log)
-* // Output: 190
-*
-* // Using Effect.andThen
-* const result2 = pipe(
-*   fetchTransactionAmount,
-*   Effect.andThen((amount) => amount * 2),
-*   Effect.andThen((amount) => applyDiscount(amount, 5))
-* )
-*
-* Effect.runPromise(result2).then(console.log)
-* // Output: 190
-* ```
-*
-* @since 2.0.0
-* @category Sequencing
-*/
-var andThen = andThen$1;
-/**
 * Execute a side effect on failure without modifying the original effect.
 *
 * **Details**
@@ -34878,15 +34750,15 @@ var makeTagProxy = (TagClass) => {
 	return new Proxy(TagClass, { get(target, prop, receiver) {
 		if (prop in target) return Reflect.get(target, prop, receiver);
 		if (cache.has(prop)) return cache.get(prop);
-		const fn = (...args) => andThen$1(target, (s) => {
+		const fn = (...args) => andThen(target, (s) => {
 			if (typeof s[prop] === "function") {
-				cache.set(prop, (...args) => andThen$1(target, (s) => s[prop](...args)));
+				cache.set(prop, (...args) => andThen(target, (s) => s[prop](...args)));
 				return s[prop](...args);
 			}
-			cache.set(prop, andThen$1(target, (s) => s[prop]));
+			cache.set(prop, andThen(target, (s) => s[prop]));
 			return s[prop];
 		});
-		const cn = andThen$1(target, (s) => s[prop]);
+		const cn = andThen(target, (s) => s[prop]);
 		Object.assign(fn, cn);
 		const apply = fn.apply;
 		const bind = fn.bind;
@@ -34975,7 +34847,7 @@ var Service = function() {
 			return (service) => new this(service);
 		} });
 		Object.defineProperty(TagClass, "use", { get() {
-			return (body) => andThen$1(this, body);
+			return (body) => andThen(this, body);
 		} });
 		TagClass.key = id;
 		Object.assign(TagClass, TagProto);
@@ -35508,7 +35380,7 @@ var getEffect = (ast, isDecoding, options) => {
 * @category decoding
 * @since 3.10.0
 */
-var decodeUnknownEither = (schema, options) => getEither(schema.ast, true, options);
+var decodeUnknownEither$1 = (schema, options) => getEither(schema.ast, true, options);
 /**
 * @category decoding
 * @since 3.10.0
@@ -35779,7 +35651,7 @@ var go = (ast, isDecoding) => {
 				goMemo(is.type, isDecoding),
 				is.parameter
 			]);
-			const expectedAST = Union.make(ast.indexSignatures.map((is) => is.parameter).concat(expectedKeys.map((key) => isSymbol(key) ? new UniqueSymbol(key) : new Literal$1(key))));
+			const expectedAST = Union$1.make(ast.indexSignatures.map((is) => is.parameter).concat(expectedKeys.map((key) => isSymbol(key) ? new UniqueSymbol(key) : new Literal$1(key))));
 			const expected = goMemo(expectedAST, isDecoding);
 			const concurrency = getConcurrency(ast);
 			const batching = getBatching(ast);
@@ -35941,19 +35813,19 @@ var go = (ast, isDecoding) => {
 							if (Object.prototype.hasOwnProperty.call(buckets, literal)) candidates = candidates.concat(buckets[literal]);
 							else {
 								const { candidates, literals } = searchTree.keys[name];
-								const literalsUnion = Union.make(literals);
-								const errorAst = candidates.length === astTypesLen ? new TypeLiteral([new PropertySignature(name, literalsUnion, false, true)], []) : Union.make(candidates);
+								const literalsUnion = Union$1.make(literals);
+								const errorAst = candidates.length === astTypesLen ? new TypeLiteral([new PropertySignature(name, literalsUnion, false, true)], []) : Union$1.make(candidates);
 								es.push([stepKey++, new Composite(errorAst, input, new Pointer(name, input, new Type(literalsUnion, input[name])))]);
 							}
 						} else {
 							const { candidates, literals } = searchTree.keys[name];
-							const fakePropertySignature = new PropertySignature(name, Union.make(literals), false, true);
-							const errorAst = candidates.length === astTypesLen ? new TypeLiteral([fakePropertySignature], []) : Union.make(candidates);
+							const fakePropertySignature = new PropertySignature(name, Union$1.make(literals), false, true);
+							const errorAst = candidates.length === astTypesLen ? new TypeLiteral([fakePropertySignature], []) : Union$1.make(candidates);
 							es.push([stepKey++, new Composite(errorAst, input, new Pointer(name, input, new Missing(fakePropertySignature)))]);
 						}
 					}
 					else {
-						const errorAst = searchTree.candidates.length === astTypesLen ? ast : Union.make(searchTree.candidates);
+						const errorAst = searchTree.candidates.length === astTypesLen ? ast : Union$1.make(searchTree.candidates);
 						es.push([stepKey++, new Type(errorAst, input)]);
 					}
 				}
@@ -36394,6 +36266,14 @@ var decodeUnknown = (schema, options) => {
 	return (u, overrideOptions) => mapError(decodeUnknown(u, overrideOptions), parseError);
 };
 /**
+* @category decoding
+* @since 3.10.0
+*/
+var decodeUnknownEither = (schema, options) => {
+	const decodeUnknownEither = decodeUnknownEither$1(schema, options);
+	return (u, overrideOptions) => mapLeft(decodeUnknownEither(u, overrideOptions), parseError);
+};
+/**
 * Tests if a value is a `Schema`.
 *
 * @category guards
@@ -36401,7 +36281,7 @@ var decodeUnknown = (schema, options) => {
 */
 var isSchema = (u) => hasProperty(u, TypeId) && isObject(u[TypeId]);
 function getDefaultLiteralAST(literals) {
-	return isMembers(literals) ? Union.make(mapMembers(literals, (literal) => new Literal$1(literal))) : new Literal$1(literals[0]);
+	return isMembers(literals) ? Union$1.make(mapMembers(literals, (literal) => new Literal$1(literal))) : new Literal$1(literals[0]);
 }
 function makeLiteralClass(literals, ast = getDefaultLiteralAST(literals)) {
 	return class LiteralClass extends make(ast) {
@@ -36449,9 +36329,35 @@ var declare = function() {
 * @category primitives
 * @since 3.10.0
 */
+var Null = class extends (/*#__PURE__*/ make($null)) {};
+/**
+* @category primitives
+* @since 3.10.0
+*/
 var Never = class extends (/*#__PURE__*/ make(neverKeyword)) {};
 /** @ignore */
 var String$ = class extends (/*#__PURE__*/ make(stringKeyword)) {};
+/** @ignore */
+var Number$ = class extends (/*#__PURE__*/ make(numberKeyword)) {};
+/** @ignore */
+var Boolean$ = class extends (/*#__PURE__*/ make(booleanKeyword)) {};
+var getDefaultUnionAST = (members) => Union$1.make(members.map((m) => m.ast));
+function makeUnionClass(members, ast = getDefaultUnionAST(members)) {
+	return class UnionClass extends make(ast) {
+		static annotations(annotations) {
+			return makeUnionClass(this.members, mergeSchemaAnnotations(this.ast, annotations));
+		}
+		static members = [...members];
+	};
+}
+function Union(...members) {
+	return isMembers(members) ? makeUnionClass(members) : isNonEmptyReadonlyArray(members) ? members[0] : Never;
+}
+/**
+* @category combinators
+* @since 3.10.0
+*/
+var NullOr = (self) => Union(self, Null);
 var getDefaultTupleTypeAST = (elements, rest) => new TupleType(elements.map((el) => isSchema(el) ? new OptionalType(el.ast, false) : el.ast), rest.map((el) => isSchema(el) ? new Type$1(el.ast) : el.ast), true);
 function makeTupleTypeClass(elements, rest, ast = getDefaultTupleTypeAST(elements, rest)) {
 	return class TupleTypeClass extends make(ast) {
@@ -36733,7 +36639,7 @@ var intersectTypeLiterals = (x, y, path) => {
 };
 var preserveRefinementAnnotations = /*#__PURE__*/ omitAnnotations([IdentifierAnnotationId]);
 var addRefinementToMembers = (refinement, asts) => asts.map((ast) => new Refinement$1(ast, refinement.filter, preserveRefinementAnnotations(refinement)));
-var extendAST = (x, y, path) => Union.make(intersectUnionMembers([x], [y], path));
+var extendAST = (x, y, path) => Union$1.make(intersectUnionMembers([x], [y], path));
 var getTypes = (ast) => isUnion(ast) ? ast.types : [ast];
 var intersectUnionMembers = (xs, ys, path) => flatMap$4(xs, (x) => flatMap$4(ys, (y) => {
 	switch (y._tag) {
@@ -37171,8 +37077,8 @@ var makeClass = ({ Base, annotations, disableToString, fields, identifier, kind,
 * @since 3.10.0
 */
 var Config = (name, schema) => {
-	const decodeUnknownEither$1 = decodeUnknownEither(schema);
-	return string(name).pipe(mapOrFail((s) => decodeUnknownEither$1(s).pipe(mapLeft((error) => InvalidData([], TreeFormatter.formatIssueSync(error))))));
+	const decodeUnknownEither = decodeUnknownEither$1(schema);
+	return string(name).pipe(mapOrFail((s) => decodeUnknownEither(s).pipe(mapLeft((error) => InvalidData([], TreeFormatter.formatIssueSync(error))))));
 };
 // src/errors.ts
 var NotPullRequestContextError = class extends TaggedError()("NotPullRequestContextError", { message: String$ }) {};
@@ -37275,6 +37181,6 @@ var GitService = class extends Service()("GitService", { succeed: { createWorktr
 		yield* logInfo(`Cleaned up worktree at ${worktree.path}`);
 	}));
 } } }) {};
-export { sync as $, andThen as A, setSecret as At, gen as B, redacted as C, debug as Ct, Service as D, info as Dt, isConfigError as E, getState as Et, catchTag as F, HttpCodes as Ft, mapError$1 as G, logInfo as H, catchTags as I, require_undici as It, promise as J, option$2 as K, fail$1 as L, require_tunnel as Lt, catchAll as M, exec as Mt, catchAllCause as N, BearerCredentialHandler as Nt, acquireRelease as O, setFailed as Ot, catchIf as P, HttpClient as Pt, succeed$2 as Q, flatMap$1 as R, option as S, pipe as St, value as T, getInput as Tt, logWarning as U, logError as V, map$2 as W, runPromise as X, provide as Y, scoped as Z, Struct as _, getOrElse as _t, GitHubApiError as a, mergeAll as at, pattern as b, map$7 as bt, MissingAttributesError as c, withConfigProviderScoped as ct, NixPathInfoError as d, set as dt, tapError as et, NotPullRequestContextError as f, fromEnv as ft, NonEmptyString as g, fromNullable as gt, Literal as h, flatMap$5 as ht, AttributeParseError as i, merge as it, as as j, warning as jt, all as k, setOutput as kt, NixBuildError as l, get as lt, Config as m, orElse$1 as mt, removeWorktree as n, try_ as nt, InvalidCommentStrategyError as o, scopedDiscard as ot, Array$ as p, fromMap as pt, orElseSucceed as q, ArtifactError as r, TaggedError$1 as rt, InvalidDirectoryError as s, pretty as st, GitService as t, tryPromise as tt, NixDixError as u, make$8 as ut, decodeUnknown as v, getOrUndefined as vt, string as w, error as wt, boolean as x, match$4 as xt, filter as y, isNone as yt, forEach as z };
+export { provide as $, string as A, pipe as At, catchTags as B, exec as Bt, decodeUnknown as C, isNone as Ct, boolean as D, isRight as Dt, pattern as E, flatMap$6 as Et, all as F, info as Ft, logError as G, require_tunnel as Gt, flatMap$1 as H, HttpClient as Ht, as as I, setFailed as It, map$2 as J, logInfo as K, catchAll as L, setOutput as Lt, isConfigError as M, error as Mt, Service as N, getInput as Nt, option as O, mapLeft as Ot, acquireRelease as P, getState as Pt, promise as Q, catchAllCause as R, setSecret as Rt, Union as S, getOrUndefined as St, filter as T, match$4 as Tt, forEach as U, HttpCodes as Ut, fail$1 as V, BearerCredentialHandler as Vt, gen as W, require_undici as Wt, option$2 as X, mapError$1 as Y, orElseSucceed as Z, NonEmptyString as _, fromMap as _t, GitHubApiError as a, tryPromise as at, String$ as b, fromNullable as bt, MissingAttributesError as c, mergeAll as ct, NixPathInfoError as d, withConfigProviderScoped as dt, runPromise as et, NotPullRequestContextError as f, get as ft, Literal as g, fromEnv as gt, Config as h, update$1 as ht, AttributeParseError as i, tapError as it, value as j, debug as jt, redacted as k, try_$2 as kt, NixBuildError as l, scopedDiscard as lt, Boolean$ as m, set as mt, removeWorktree as n, succeed$2 as nt, InvalidCommentStrategyError as o, try_ as ot, Array$ as p, make$8 as pt, logWarning as q, ArtifactError as r, sync as rt, InvalidDirectoryError as s, merge as st, GitService as t, scoped as tt, NixDixError as u, pretty as ut, NullOr as v, orElse$1 as vt, decodeUnknownEither as w, map$7 as wt, Struct as x, getOrElse as xt, Number$ as y, flatMap$5 as yt, catchIf as z, warning as zt };
 
-//# sourceMappingURL=git-CeiR8qNj.js.map
+//# sourceMappingURL=git-uNXLhHWu.js.map

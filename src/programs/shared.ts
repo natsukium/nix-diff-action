@@ -3,6 +3,7 @@ import * as crypto from "crypto";
 import { Effect, Option, Redacted } from "effect";
 import type { ConfigError } from "effect/ConfigError";
 import { GitService, NixService, GitHubService } from "../services/index.js";
+import { hasDixChanges } from "../services/utils.js";
 import type { NixOutputConfig, DiffResult } from "../schemas.js";
 import {
   MissingAttributesError,
@@ -55,7 +56,11 @@ export const setDiffOutput = (results: readonly DiffResult[]): void => {
   if (results.length > 0) {
     const diffOutputs = results.map((r) => ({
       displayName: r.displayName,
-      diff: r.diff,
+      attributePath: r.attributePath,
+      basePath: r.basePath,
+      prPath: r.prPath,
+      hasChanges: hasDixChanges(r),
+      ...r.diff,
     }));
     core.setOutput("diff", JSON.stringify(diffOutputs));
   }
