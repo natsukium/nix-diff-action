@@ -591,6 +591,40 @@ describe("processDiffResults", () => {
     expect(capturedInputsFromRefs).toEqual(["path:/tmp/dix-base-main?dir=packages/myflake"]);
   });
 
+  test("percent-encodes reserved characters in the subdirectory query", async () => {
+    const worktreePath = "/tmp/dix-base-main";
+    const directory = "/workspace/repo/a&b/my flake%#?";
+    const cwd = "/workspace/repo";
+    const capturedFlakeRefs: string[] = [];
+    const capturedInputsFromRefs: string[] = [];
+
+    const mockGit = createMockGitService(worktreePath);
+    const mockNix = createMockNixService(capturedFlakeRefs, capturedInputsFromRefs);
+    const testLayer = Layer.mergeAll(mockGit, mockNix);
+
+    await Effect.runPromise(
+      Effect.scoped(
+        processDiffResults({
+          attributes: [{ displayName: "test", attribute: "packages.x86_64-linux.default" }],
+          build: false,
+          directory,
+          baseRef: "main",
+          baseSha: "abc123def456",
+          headSha: "789ghi012jkl",
+          cwd,
+          runId: "test-run-id",
+        }),
+      ).pipe(Effect.provide(testLayer)),
+    );
+
+    expect(capturedFlakeRefs).toContain(
+      "path:/tmp/dix-base-main?dir=a%26b/my%20flake%25%23%3F#packages.x86_64-linux.default",
+    );
+    expect(capturedInputsFromRefs).toEqual([
+      "path:/tmp/dix-base-main?dir=a%26b/my%20flake%25%23%3F",
+    ]);
+  });
+
   test("processes multiple attributes", async () => {
     const worktreePath = "/tmp/dix-base-main";
     const directory = "/workspace/repo";

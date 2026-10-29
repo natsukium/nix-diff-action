@@ -101,7 +101,7 @@ export const processDiffResults = (
     const baseFlakeRef =
       relativePath === "" || relativePath === "."
         ? `path:${worktree.path}`
-        : `path:${worktree.path}?dir=${relativePath}`;
+        : `path:${worktree.path}?dir=${relativePath.split(nodePath.sep).map(encodeURIComponent).join("/")}`;
     const prFlakeRef = options.directory;
 
     yield* Effect.all(
