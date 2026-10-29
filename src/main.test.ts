@@ -488,7 +488,7 @@ describe("processDiffResults", () => {
       }),
     );
 
-  const createMockNixService = (capturedFlakeRefs: string[], capturedInputsFromPaths?: string[]) =>
+  const createMockNixService = (capturedFlakeRefs: string[], capturedInputsFromRefs?: string[]) =>
     Layer.succeed(
       NixService,
       new NixService({
@@ -497,8 +497,8 @@ describe("processDiffResults", () => {
           capturedFlakeRefs.push(flakeRef);
           return Effect.succeed(`/nix/store/mock-hash`);
         },
-        getDixDiff: (_basePath: string, _prPath: string, inputsFromPath: string) => {
-          capturedInputsFromPaths?.push(inputsFromPath);
+        getDixDiff: (_basePath: string, _prPath: string, inputsFromRef: string) => {
+          capturedInputsFromRefs?.push(inputsFromRef);
           return Effect.succeed("mock diff output");
         },
       }),
@@ -509,10 +509,10 @@ describe("processDiffResults", () => {
     const directory = "/workspace/repo";
     const cwd = "/workspace/repo";
     const capturedFlakeRefs: string[] = [];
-    const capturedInputsFromPaths: string[] = [];
+    const capturedInputsFromRefs: string[] = [];
 
     const mockGit = createMockGitService(worktreePath);
-    const mockNix = createMockNixService(capturedFlakeRefs, capturedInputsFromPaths);
+    const mockNix = createMockNixService(capturedFlakeRefs, capturedInputsFromRefs);
     const testLayer = Layer.mergeAll(mockGit, mockNix);
 
     const result = await Effect.runPromise(
@@ -542,9 +542,9 @@ describe("processDiffResults", () => {
     expect(capturedFlakeRefs).toContain("path:/tmp/dix-base-main#packages.x86_64-linux.default");
     expect(capturedFlakeRefs).toContain("/workspace/repo#packages.x86_64-linux.default");
 
-    // Security: Verify getDixDiff uses base branch worktree path (not PR branch)
+    // Security: Verify getDixDiff uses base branch worktree (not PR branch)
     // This prevents malicious flake.lock in PR from injecting compromised dix
-    expect(capturedInputsFromPaths).toEqual([worktreePath]);
+    expect(capturedInputsFromRefs).toEqual([`path:${worktreePath}`]);
   });
 
   test("constructs correct paths for subdirectory", async () => {
@@ -552,9 +552,10 @@ describe("processDiffResults", () => {
     const directory = "/workspace/repo/packages/myflake";
     const cwd = "/workspace/repo";
     const capturedFlakeRefs: string[] = [];
+    const capturedInputsFromRefs: string[] = [];
 
     const mockGit = createMockGitService(worktreePath);
-    const mockNix = createMockNixService(capturedFlakeRefs);
+    const mockNix = createMockNixService(capturedFlakeRefs, capturedInputsFromRefs);
     const testLayer = Layer.mergeAll(mockGit, mockNix);
 
     const result = await Effect.runPromise(
@@ -584,6 +585,10 @@ describe("processDiffResults", () => {
     expect(capturedFlakeRefs).toContain(
       "/workspace/repo/packages/myflake#packages.x86_64-linux.default",
     );
+
+    // dix must resolve its inputs from the base flake inside the subdirectory,
+    // since the worktree root has no flake.nix
+    expect(capturedInputsFromRefs).toEqual(["path:/tmp/dix-base-main?dir=packages/myflake"]);
   });
 
   test("processes multiple attributes", async () => {

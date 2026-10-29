@@ -57,7 +57,6 @@ const processNixOutput = (
   baseSha: string,
   headSha: string,
   build: boolean,
-  worktreePath: string,
 ): Effect.Effect<DiffResult, DiffError, NixService> =>
   Effect.gen(function* () {
     const nix = yield* NixService;
@@ -75,7 +74,7 @@ const processNixOutput = (
     yield* Effect.logInfo(`Base path: ${basePath}`);
     yield* Effect.logInfo(`PR path: ${prPath}`);
 
-    const diff = yield* nix.getDixDiff(basePath, prPath, worktreePath);
+    const diff = yield* nix.getDixDiff(basePath, prPath, baseFlakeRef);
 
     return {
       displayName: config.displayName,
@@ -120,7 +119,6 @@ export const processDiffResults = (
         options.baseSha,
         options.headSha,
         options.build,
-        worktree.path,
       ),
     );
   });
