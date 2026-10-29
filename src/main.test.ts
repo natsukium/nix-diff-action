@@ -1,13 +1,24 @@
 import { describe, expect, test } from "vitest";
-import { Effect, Exit, Layer } from "effect";
+import { Effect, Either, Exit, Layer } from "effect";
 import { formatAggregatedComment, truncateDiff, sanitizeDisplayName } from "./services/github.js";
 import { parseCommentStrategy, parseAttributes, validateDirectory } from "./programs/index.js";
 import { processDiffResults } from "./programs/full.js";
 import { GitService, sanitizeBranchName } from "./services/git.js";
-import { NixService } from "./services/nix.js";
+import { NixService, decodeDixReport, selectDixCli } from "./services/nix.js";
 import { hasDixChanges } from "./services/utils.js";
 import { createArtifactName } from "./services/artifact.js";
-import { generateDiffHtml, isUnchanged, parseDiff, slugify, stripPrefix } from "./services/html.js";
+import { generateDiffHtml, slugify } from "./services/html.js";
+import {
+  formatBytes,
+  formatSignedBytes,
+  isUnchanged,
+  stripPrefix,
+  viewFromReport,
+  viewFromText,
+} from "./services/view.js";
+import type { DixPackageDiff, DixReport } from "./schemas.js";
+
+const textOutput = (text: string) => ({ format: "text" as const, text });
 
 describe("parseAttributes", () => {
   test("parses valid YAML array", async () => {
@@ -132,7 +143,7 @@ describe("formatAggregatedComment", () => {
         prRef: ".",
         basePath: "/nix/store/aaa-base",
         prPath: "/nix/store/bbb-pr",
-        diff: "some diff output",
+        diff: textOutput("some diff output"),
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456");
@@ -160,7 +171,7 @@ describe("formatAggregatedComment", () => {
         prRef: ".",
         basePath: "/nix/store/aaa-base",
         prPath: "/nix/store/bbb-pr",
-        diff: "diff1",
+        diff: textOutput("diff1"),
       },
       {
         displayName: "host2",
@@ -169,7 +180,7 @@ describe("formatAggregatedComment", () => {
         prRef: ".",
         basePath: "/nix/store/aaa-base",
         prPath: "/nix/store/bbb-pr",
-        diff: "diff2",
+        diff: textOutput("diff2"),
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456");
@@ -193,7 +204,7 @@ describe("formatAggregatedComment", () => {
         prRef: ".",
         basePath: "/nix/store/aaa-base",
         prPath: "/nix/store/bbb-pr",
-        diff: largeDiff,
+        diff: textOutput(largeDiff),
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456");
@@ -212,7 +223,7 @@ describe("formatAggregatedComment", () => {
         prRef: ".",
         basePath: "/nix/store/aaa-base",
         prPath: "/nix/store/bbb-pr",
-        diff: largeDiff,
+        diff: textOutput(largeDiff),
       },
       {
         displayName: "host2",
@@ -221,7 +232,7 @@ describe("formatAggregatedComment", () => {
         prRef: ".",
         basePath: "/nix/store/aaa-base",
         prPath: "/nix/store/bbb-pr",
-        diff: largeDiff,
+        diff: textOutput(largeDiff),
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456");
@@ -240,7 +251,7 @@ describe("formatAggregatedComment", () => {
       prRef: ".",
       basePath: "/nix/store/aaa-base",
       prPath: "/nix/store/bbb-pr",
-      diff: largeDiff,
+      diff: textOutput(largeDiff),
     }));
     const comment = formatAggregatedComment(results, "abc123def456");
 
@@ -257,7 +268,7 @@ describe("formatAggregatedComment", () => {
         prRef: ".",
         basePath: "/nix/store/aaa-base",
         prPath: "/nix/store/bbb-pr",
-        diff: largeDiff,
+        diff: textOutput(largeDiff),
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456", {
@@ -280,7 +291,7 @@ describe("formatAggregatedComment", () => {
         prRef: ".",
         basePath: "/nix/store/aaa-base",
         prPath: "/nix/store/bbb-pr",
-        diff: smallDiff,
+        diff: textOutput(smallDiff),
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456", {
@@ -306,7 +317,7 @@ describe("formatAggregatedComment", () => {
         prRef: ".",
         basePath: "/nix/store/aaa-base",
         prPath: "/nix/store/bbb-pr",
-        diff: "small diff",
+        diff: textOutput("small diff"),
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456", {
@@ -327,7 +338,7 @@ describe("formatAggregatedComment", () => {
         prRef: ".",
         basePath: "/nix/store/aaa-base",
         prPath: "/nix/store/bbb-pr",
-        diff: "small diff",
+        diff: textOutput("small diff"),
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456", {
@@ -499,7 +510,7 @@ describe("processDiffResults", () => {
         },
         getDixDiff: (_basePath: string, _prPath: string, inputsFromRef: string) => {
           capturedInputsFromRefs?.push(inputsFromRef);
-          return Effect.succeed("mock diff output");
+          return Effect.succeed(textOutput("mock diff output"));
         },
       }),
     );
@@ -534,7 +545,7 @@ describe("processDiffResults", () => {
     // baseRef and prRef should contain commit SHAs
     expect(result[0].baseRef).toBe("abc123def456");
     expect(result[0].prRef).toBe("789ghi012jkl");
-    expect(result[0].diff).toBe("mock diff output");
+    expect(result[0].diff).toEqual(textOutput("mock diff output"));
     expect(result[0].basePath).toBe("/nix/store/mock-hash");
     expect(result[0].prPath).toBe("/nix/store/mock-hash");
 
@@ -764,8 +775,8 @@ describe("hasDixChanges", () => {
   });
 });
 
-describe("parseDiff", () => {
-  test("parses base/PR paths, sections, and size lines", () => {
+describe("viewFromText", () => {
+  test("parses sections and size lines, ignoring the store path header", () => {
     const diff = `<<< /nix/store/abc123-old.drv
 >>> /nix/store/def456-new.drv
 
@@ -780,56 +791,42 @@ CHANGED
 
 SIZE: 10.0 MiB -> 12.0 MiB
 DIFF: 500 KiB`;
-    const parsed = parseDiff(diff);
+    const view = viewFromText(diff);
 
-    expect(parsed.oldPath).toBe("/nix/store/abc123-old.drv");
-    expect(parsed.newPath).toBe("/nix/store/def456-new.drv");
-    expect(parsed.added).toEqual(["[A.] new-pkg   1.0.0"]);
-    expect(parsed.removed).toEqual(["[R.] old-pkg   0.9.0"]);
-    expect(parsed.changed).toEqual(["[C.] shared-pkg   1.0.0 -> 2.0.0"]);
-    expect(parsed.sizeBefore).toBe("10.0 MiB");
-    expect(parsed.sizeAfter).toBe("12.0 MiB");
-    expect(parsed.diffSize).toBe("500 KiB");
-    expect(parsed.unparsed).toEqual([]);
+    expect(view.added).toEqual([{ name: "new-pkg", version: "1.0.0" }]);
+    expect(view.removed).toEqual([{ name: "old-pkg", version: "0.9.0" }]);
+    expect(view.changed).toEqual([{ name: "shared-pkg", version: "1.0.0 -> 2.0.0" }]);
+    expect(view.size).toEqual({ before: "10.0 MiB", after: "12.0 MiB", delta: "500 KiB" });
+  });
+
+  test("recognizes headings with a package count", () => {
+    const view = viewFromText(`CHANGED (1)
+[U.] pkg   1 → 2`);
+    expect(view.changed).toEqual([{ name: "pkg", version: "1 → 2" }]);
   });
 
   test("treats empty input as fully unchanged", () => {
-    const parsed = parseDiff("");
-    expect(isUnchanged(parsed)).toBe(true);
-    expect(parsed.oldPath).toBeUndefined();
-    expect(parsed.newPath).toBeUndefined();
+    const view = viewFromText("");
+    expect(isUnchanged(view)).toBe(true);
   });
 
-  test("collects lines outside any section into unparsed", () => {
-    const diff = `some preamble line
-another stray line`;
-    const parsed = parseDiff(diff);
-    expect(parsed.unparsed).toEqual(["some preamble line", "another stray line"]);
-    expect(isUnchanged(parsed)).toBe(true);
+  test("ignores lines outside any section", () => {
+    const view = viewFromText(`some preamble line
+another stray line`);
+    expect(isUnchanged(view)).toBe(true);
   });
 
   test("stops collecting section entries after a blank line", () => {
-    const diff = `ADDED
+    const view = viewFromText(`ADDED
 [A.] first   1.0
 
-stray-line`;
-    const parsed = parseDiff(diff);
-    expect(parsed.added).toEqual(["[A.] first   1.0"]);
-    // The blank line resets the section, so stray-line falls into unparsed
-    // rather than being misclassified as an ADDED entry.
-    expect(parsed.unparsed).toEqual(["stray-line"]);
+stray-line`);
+    expect(view.added).toEqual([{ name: "first", version: "1.0" }]);
   });
 
-  test("size line without arrow falls through to unparsed", () => {
-    const parsed = parseDiff("SIZE: 10.0 MiB");
-    expect(parsed.sizeBefore).toBeUndefined();
-    expect(parsed.unparsed).toEqual(["SIZE: 10.0 MiB"]);
-  });
-
-  test("isUnchanged is false when any section has entries", () => {
-    const parsed = parseDiff(`CHANGED
-[C.] pkg   1 -> 2`);
-    expect(isUnchanged(parsed)).toBe(false);
+  test("ignores a size line without an arrow", () => {
+    const view = viewFromText("SIZE: 10.0 MiB");
+    expect(view.size).toBeUndefined();
   });
 });
 
@@ -837,6 +834,11 @@ describe("stripPrefix", () => {
   test("strips standard 2-char dix marker", () => {
     expect(stripPrefix("[A.] pkg   1.0")).toBe("pkg   1.0");
     expect(stripPrefix("[C.] pkg   1 -> 2")).toBe("pkg   1 -> 2");
+  });
+
+  test("strips selection markers", () => {
+    expect(stripPrefix("[U*] pkg   1 -> 2")).toBe("pkg   1 -> 2");
+    expect(stripPrefix("[R-] pkg   1.0")).toBe("pkg   1.0");
   });
 
   test("accepts 1-4 char markers to tolerate dix format changes", () => {
@@ -847,6 +849,376 @@ describe("stripPrefix", () => {
 
   test("leaves lines without a bracket marker unchanged", () => {
     expect(stripPrefix("pkg   1.0")).toBe("pkg   1.0");
+  });
+});
+
+describe("selectDixCli", () => {
+  test("uses the diff subcommand with JSON for dix 3", () => {
+    const cli = selectDixCli("dix 3.0.0");
+    expect(cli.version).toBe("3.0.0");
+    expect(cli.json?.("/a", "/b")).toEqual(["diff", "--output", "json", "/a", "/b"]);
+    expect(cli.text("/a", "/b")).toEqual(["diff", "/a", "/b"]);
+  });
+
+  test("uses top-level --output json with --force-correctness for dix 2", () => {
+    const cli = selectDixCli("dix 2.2.0");
+    expect(cli.json?.("/a", "/b")).toEqual(["--force-correctness", "--output", "json", "/a", "/b"]);
+  });
+
+  test("has no JSON invocation for dix 1", () => {
+    const cli = selectDixCli("dix 1.4.2");
+    expect(cli.json).toBeUndefined();
+    expect(cli.text("/a", "/b")).toEqual(["--force-correctness", "/a", "/b"]);
+  });
+
+  test("omits --force-correctness before dix 1.4.2", () => {
+    expect(selectDixCli("dix 1.4.1").text("/a", "/b")).toEqual(["/a", "/b"]);
+  });
+
+  test("treats an unrecognized version as the newest CLI", () => {
+    const cli = selectDixCli("");
+    expect(cli.version).toBe("unknown");
+    expect(cli.json?.("/a", "/b")).toEqual(["diff", "--output", "json", "/a", "/b"]);
+  });
+});
+
+// Output of `dix diff --output json` from dix 3.0.0's own JSON test.
+const dix3Json = `{"diffs":[{"name":"nixos","versions":[{"kind":"changed","old":{"name":"25.11-system-path","amount":1},"new":{"name":"25.12-system-path","amount":1}},{"kind":"amount_changed","version":{"name":"25.12-system"},"old_amount":1,"new_amount":2}],"status":"Changed","kind":"version","selection":"Unselected","has_omitted_versions":false,"size_old":1000,"size_new":2500,"size_delta":1500}],"paths":{"old":7529,"new":7536,"added":5054,"removed":5047},"size_old":115001000,"size_new":115001000}`;
+
+describe("decodeDixReport", () => {
+  test("decodes dix 3 JSON output", () => {
+    const decoded = decodeDixReport(dix3Json);
+    expect(Either.isRight(decoded)).toBe(true);
+    if (Either.isRight(decoded)) {
+      expect(decoded.right.diffs[0].name).toBe("nixos");
+      expect(decoded.right.paths.added).toBe(5054);
+    }
+  });
+
+  test("decodes dix 2 JSON output, which lacks the kind field", () => {
+    const dix2 = JSON.parse(dix3Json);
+    delete dix2.diffs[0].kind;
+    expect(Either.isRight(decodeDixReport(JSON.stringify(dix2)))).toBe(true);
+  });
+
+  test("rejects output whose schema changed incompatibly", () => {
+    expect(Either.isLeft(decodeDixReport(`{"packages":[]}`))).toBe(true);
+    expect(Either.isLeft(decodeDixReport("not json"))).toBe(true);
+  });
+});
+
+const pkg = (overrides: Partial<DixPackageDiff>): DixPackageDiff => ({
+  name: "pkg",
+  versions: [],
+  status: "Changed",
+  selection: "Unselected",
+  has_omitted_versions: false,
+  size_old: 0,
+  size_new: 0,
+  size_delta: 0,
+  ...overrides,
+});
+
+const report = (diffs: DixPackageDiff[]): DixReport => ({
+  diffs,
+  paths: { old: 10, new: 11, added: 2, removed: 1 },
+  size_old: 10 * 1024 * 1024,
+  size_new: 12 * 1024 * 1024,
+});
+
+describe("viewFromReport", () => {
+  test("groups packages by status and describes their versions", () => {
+    const view = viewFromReport(
+      report([
+        pkg({
+          name: "curl",
+          status: "Upgraded",
+          versions: [
+            {
+              kind: "changed",
+              old: { name: "8.0", amount: 1 },
+              new: { name: "8.1", amount: 1 },
+            },
+          ],
+        }),
+        pkg({
+          name: "jq",
+          status: "Added",
+          versions: [{ kind: "added", version: { name: "1.7", amount: 1 } }],
+        }),
+        pkg({
+          name: "src",
+          status: "Removed",
+          versions: [{ kind: "removed", version: { name: null, amount: 1 } }],
+        }),
+      ]),
+    );
+
+    expect(view.changed).toEqual([{ name: "curl", version: "8.0 → 8.1", sizeDelta: undefined }]);
+    expect(view.added).toEqual([{ name: "jq", version: "1.7", sizeDelta: undefined }]);
+    expect(view.removed).toEqual([{ name: "src", version: "<none>", sizeDelta: undefined }]);
+    expect(view.size).toEqual({ before: "10.0 MiB", after: "12.0 MiB", delta: "+2.0 MiB" });
+    expect(view.paths).toEqual({ old: 10, new: 11, added: 2, removed: 1 });
+  });
+
+  test("shows amount changes with multiplicity when their size changed enough", () => {
+    const view = viewFromReport(
+      report([
+        pkg({
+          size_delta: 2 * 1024 * 1024,
+          versions: [
+            { kind: "amount_changed", version: { name: "1.0" }, old_amount: 1, new_amount: 2 },
+          ],
+        }),
+      ]),
+    );
+    expect(view.changed[0].version).toBe("1.0 → 1.0 ×2");
+  });
+
+  test("hides amount-only changes below 1 MiB like dix's human output", () => {
+    const view = viewFromReport(
+      report([
+        pkg({
+          size_delta: 1024,
+          versions: [
+            { kind: "amount_changed", version: { name: "1.0" }, old_amount: 1, new_amount: 2 },
+          ],
+        }),
+      ]),
+    );
+    expect(view.hiddenCount).toBe(1);
+    expect(view.changed).toEqual([]);
+  });
+
+  test("marks versions dix omitted because they stayed unchanged", () => {
+    const view = viewFromReport(
+      report([
+        pkg({
+          name: "python3",
+          status: "Upgraded",
+          has_omitted_versions: true,
+          versions: [
+            {
+              kind: "changed",
+              old: { name: "3.12.1", amount: 1 },
+              new: { name: "3.12.2", amount: 1 },
+            },
+          ],
+        }),
+      ]),
+    );
+    expect(view.changed[0].version).toBe("3.12.1, <unchanged> → 3.12.2, <unchanged>");
+  });
+
+  test("hides size-only changes below 1 MiB like dix's human output", () => {
+    const view = viewFromReport(
+      report([
+        pkg({ name: "small", size_delta: 1024 }),
+        pkg({ name: "large", size_delta: 2 * 1024 * 1024 }),
+      ]),
+    );
+    expect(view.hiddenCount).toBe(1);
+    expect(view.changed).toEqual([{ name: "large", version: "", sizeDelta: "+2.0 MiB" }]);
+  });
+});
+
+describe("formatBytes", () => {
+  test("uses binary units with one decimal", () => {
+    expect(formatBytes(512)).toBe("512 B");
+    expect(formatBytes(1536)).toBe("1.5 KiB");
+    expect(formatBytes(-19.3 * 1024 * 1024)).toBe("-19.3 MiB");
+  });
+
+  test("signs positive deltas", () => {
+    expect(formatSignedBytes(1024)).toBe("+1.0 KiB");
+    expect(formatSignedBytes(0)).toBe("0 B");
+  });
+});
+
+describe("formatAggregatedComment with JSON reports", () => {
+  const jsonResult = (r: DixReport) => ({
+    displayName: "host1",
+    attributePath: "nixosConfigurations.host1",
+    baseRef: "abc",
+    prRef: "def",
+    basePath: "/nix/store/aaa-base",
+    prPath: "/nix/store/bbb-pr",
+    diff: { format: "json" as const, report: r },
+  });
+
+  test("renders closure stats and per-status package tables", () => {
+    const comment = formatAggregatedComment(
+      [
+        jsonResult(
+          report([
+            pkg({
+              name: "curl",
+              status: "Upgraded",
+              size_delta: 4096,
+              versions: [
+                {
+                  kind: "changed",
+                  old: { name: "8.0", amount: 1 },
+                  new: { name: "8.1", amount: 1 },
+                },
+              ],
+            }),
+            pkg({
+              name: "jq",
+              status: "Added",
+              versions: [{ kind: "added", version: { name: "1.7", amount: 1 } }],
+            }),
+          ]),
+        ),
+      ],
+      "sha",
+    );
+
+    expect(comment).toContain("| Closure size | `10.0 MiB` | `12.0 MiB` | `+2.0 MiB` |");
+    expect(comment).toContain("| Store paths | 10 | 11 | +2 / −1 |");
+    expect(comment).toContain("<summary>Changed (1)</summary>");
+    expect(comment).toContain("| `curl` | `8.0 → 8.1` | +4.0 KiB |");
+    expect(comment).toContain("<summary>Added (1)</summary>");
+    expect(comment).not.toContain("<summary>Removed");
+    expect(comment).not.toContain("```");
+  });
+
+  test("escapes pipes so table cells stay intact", () => {
+    const comment = formatAggregatedComment(
+      [
+        jsonResult(
+          report([
+            pkg({
+              name: "a|b",
+              status: "Added",
+              versions: [{ kind: "added", version: { name: "1", amount: 1 } }],
+            }),
+          ]),
+        ),
+      ],
+      "sha",
+    );
+    expect(comment).toContain("| `a\\|b` | `1` |");
+  });
+
+  test("states that nothing changed when the report has no package diffs", () => {
+    const comment = formatAggregatedComment([jsonResult(report([]))], "sha");
+    expect(comment).toContain("No package additions, removals, or version changes.");
+    expect(comment).not.toContain("<details>");
+  });
+
+  test("drops whole rows to stay under the comment limit", () => {
+    const many = Array.from({ length: 3000 }, (_, i) =>
+      pkg({
+        name: `package-with-a-long-name-${i}`,
+        status: "Upgraded",
+        versions: [
+          {
+            kind: "changed",
+            old: { name: "1.0.0", amount: 1 },
+            new: { name: "1.0.1", amount: 1 },
+          },
+        ],
+      }),
+    );
+    const comment = formatAggregatedComment([jsonResult(report(many))], "sha");
+
+    expect(comment.length).toBeLessThan(65536);
+    expect(comment).toMatch(/\d+ more packages not shown/);
+    expect(comment).toContain("<summary>Changed (3000)</summary>");
+  });
+
+  test("gives every package group a share of the budget when one group is long", () => {
+    const upgraded = Array.from({ length: 3000 }, (_, i) =>
+      pkg({
+        name: `package-with-a-long-name-${i}`,
+        status: "Upgraded",
+        versions: [
+          {
+            kind: "changed",
+            old: { name: "1.0.0", amount: 1 },
+            new: { name: "1.0.1", amount: 1 },
+          },
+        ],
+      }),
+    );
+    const removed = Array.from({ length: 3000 }, (_, i) =>
+      pkg({
+        name: `gone-${i}`,
+        status: "Removed",
+        versions: [{ kind: "removed", version: { name: "1.0", amount: 1 } }],
+      }),
+    );
+    const comment = formatAggregatedComment([jsonResult(report([...upgraded, ...removed]))], "sha");
+
+    expect(comment.length).toBeLessThan(65536);
+    expect(comment).toContain("<summary>Removed (3000)</summary>");
+    expect(comment).toContain("| `gone-0` |");
+  });
+
+  test("caps the versions listed per side in the comment", () => {
+    const comment = formatAggregatedComment(
+      [
+        jsonResult(
+          report([
+            pkg({
+              name: "CVE",
+              status: "Changed",
+              versions: Array.from({ length: 8 }, (_, i) => ({
+                kind: "added" as const,
+                version: { name: `${i}.patch`, amount: 1 },
+              })),
+            }),
+          ]),
+        ),
+      ],
+      "sha",
+    );
+    expect(comment).toContain(
+      "| `CVE` | `∅ → 0.patch, 1.patch, 2.patch, 3.patch, 4.patch, +3 more` |",
+    );
+  });
+
+  test("drops whole trailing attributes when their markup alone exceeds the limit", () => {
+    const results = Array.from({ length: 400 }, (_, i) => ({
+      ...jsonResult(report([])),
+      displayName: `host${i}`,
+    }));
+    const comment = formatAggregatedComment(results, "sha");
+
+    expect(comment.length).toBeLessThan(65536);
+    expect(comment).toContain("### host0");
+    expect(comment).not.toContain("### host399");
+    expect(comment).toMatch(/\d+ more attributes not shown/);
+    expect(comment).toContain("<!-- nix-diff-action-footer sha=sha -->");
+  });
+
+  test("stays under the comment limit with many attributes each carrying markup", () => {
+    const rows = Array.from({ length: 200 }, (_, i) =>
+      pkg({
+        name: `package-${i}`,
+        status: "Upgraded",
+        versions: [
+          {
+            kind: "changed",
+            old: { name: "1.0.0", amount: 1 },
+            new: { name: "1.0.1", amount: 1 },
+          },
+        ],
+      }),
+    );
+    const results = Array.from({ length: 50 }, (_, i) => ({
+      ...jsonResult(report(rows)),
+      displayName: `host${i}`,
+    }));
+    const comment = formatAggregatedComment(results, "sha", {
+      repoUrl: "https://github.com/owner/repo",
+      runId: "12345",
+      htmlViewerAvailable: true,
+    });
+
+    expect(comment.length).toBeLessThan(65536);
+    expect(comment).toContain("### host49");
   });
 });
 
@@ -870,13 +1242,13 @@ describe("generateDiffHtml", () => {
     prRef: "def456",
     basePath: "/nix/store/aaa-base",
     prPath: "/nix/store/bbb-pr",
-    diff: `<<< /nix/store/abc-old.drv
+    diff: textOutput(`<<< /nix/store/abc-old.drv
 >>> /nix/store/def-new.drv
 
 ADDED
 [A.] pkg-new   1.0
 
-SIZE: 10.0 MiB -> 12.0 MiB`,
+SIZE: 10.0 MiB -> 12.0 MiB`),
   };
 
   test("renders a valid HTML document with core metadata", () => {
@@ -899,7 +1271,7 @@ SIZE: 10.0 MiB -> 12.0 MiB`,
         prRef: "<pr>",
         basePath: "/nix/store/aaa-base",
         prPath: "/nix/store/bbb-pr",
-        diff: "plain",
+        diff: textOutput("plain"),
       },
     ]);
     expect(html).not.toContain("<script>alert(1)</script>");

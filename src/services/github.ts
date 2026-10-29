@@ -4,6 +4,7 @@ import { NotPullRequestContextError, GitHubApiError } from "../errors.js";
 import type { GitHubContext, Octokit, PullRequestPayload, CommentOptions } from "../types.js";
 import type { DiffResult } from "../schemas.js";
 import { hasDixChanges } from "./utils.js";
+import { isUnchanged, pluralize, viewFromReport, type DiffView } from "./view.js";
 
 const NIX_DIFF_ACTION_MARKER_BASE = "<!-- nix-diff-action";
 
@@ -25,9 +26,6 @@ const getNixDiffActionMarker = (displayName?: string): string =>
 
 // GitHub comment size limit is ~65,536 characters. Use a conservative limit.
 const MAX_COMMENT_LENGTH = 60000;
-// Overhead for header, footer, and per-section markup
-const HEADER_FOOTER_OVERHEAD = 300;
-const PER_SECTION_OVERHEAD = 300;
 
 export type TruncateResult = {
   text: string;
@@ -47,18 +45,122 @@ export const truncateDiff = (diff: string, maxLength: number): TruncateResult =>
 export const sanitizeDisplayName = (text: string): string =>
   text.replace(/[\\`*_{}[\]()#+!|]/g, "");
 
-// Calculate max diff length per attribute based on total limit and count
-const calculateMaxDiffPerAttribute = (attributeCount: number): number => {
-  const availableForDiffs =
-    MAX_COMMENT_LENGTH - HEADER_FOOTER_OVERHEAD - PER_SECTION_OVERHEAD * attributeCount;
-  return Math.max(1000, Math.floor(availableForDiffs / attributeCount));
+// Inside a GFM table a pipe ends the cell even within a code span, and a
+// backtick would close the span early.
+const codeCell = (text: string): string =>
+  text ? `\`${text.replace(/`/g, "'").replace(/\|/g, "\\|")}\`` : "";
+
+const renderStatsTable = (view: DiffView): string => {
+  const rows: string[] = [];
+  if (view.size) {
+    rows.push(
+      `| Closure size | ${codeCell(view.size.before)} | ${codeCell(view.size.after)} | ${codeCell(view.size.delta ?? "")} |`,
+    );
+  }
+  if (view.paths) {
+    rows.push(
+      `| Store paths | ${view.paths.old} | ${view.paths.new} | +${view.paths.added} / −${view.paths.removed} |`,
+    );
+  }
+  if (rows.length === 0) return "";
+  return ["|  | Base | PR | Diff |", "| --- | ---: | ---: | ---: |", ...rows].join("\n");
 };
 
-// Check if any diff in results would be truncated
-export const checkIfAnyDiffTruncated = (results: readonly DiffResult[]): boolean => {
-  const maxLength = calculateMaxDiffPerAttribute(results.length);
-  return results.some((r) => r.diff.length > maxLength);
+type RenderedBody = { text: string; truncated: boolean };
+
+const COMMENT_MAX_VERSIONS = 5;
+
+const TABLE_HEADER = "| Package | Version | Size |\n| --- | --- | ---: |";
+
+// Each group gets an equal share of the budget, and what a group leaves
+// unused passes to the next one; filling groups in order would let a long
+// Changed list crowd out Added and Removed entirely.
+const renderPackageTables = (view: DiffView, budget: number): RenderedBody => {
+  const groups = [
+    { label: "Changed", rows: view.changed },
+    { label: "Added", rows: view.added },
+    { label: "Removed", rows: view.removed },
+  ].filter((g) => g.rows.length > 0);
+
+  const parts: string[] = [];
+  let remaining = budget;
+  let truncated = false;
+  groups.forEach((group, index) => {
+    const share = Math.floor(remaining / (groups.length - index));
+    const lines: string[] = [];
+    let used = TABLE_HEADER.length;
+    for (const row of group.rows) {
+      const line = `| ${codeCell(row.name)} | ${codeCell(row.version)} | ${row.sizeDelta ?? ""} |`;
+      if (used + line.length + 1 > share) break;
+      lines.push(line);
+      used += line.length + 1;
+    }
+    const omitted = group.rows.length - lines.length;
+    if (lines.length > 0) remaining -= used;
+    if (omitted > 0) truncated = true;
+    const table = lines.length > 0 ? `\n\n${TABLE_HEADER}\n${lines.join("\n")}` : "";
+    const note =
+      omitted > 0
+        ? `\n\n> **Note**: ${pluralize(omitted, "more package")} not shown. See the full output in the artifacts below.`
+        : "";
+    parts.push(`<details>
+<summary>${group.label} (${group.rows.length})</summary>${table}${note}
+
+</details>`);
+  });
+  return { text: parts.join("\n\n"), truncated };
 };
+
+const renderReportBody = (view: DiffView, budget: number): RenderedBody => {
+  const stats = renderStatsTable(view);
+  const hidden =
+    view.hiddenCount > 0
+      ? `\n\n<sub>${pluralize(view.hiddenCount, "package")} with only a minor size change hidden.</sub>`
+      : "";
+
+  if (isUnchanged(view)) {
+    return {
+      text:
+        [stats, "No package additions, removals, or version changes."]
+          .filter(Boolean)
+          .join("\n\n") + hidden,
+      truncated: false,
+    };
+  }
+
+  const tables = renderPackageTables(view, budget);
+  return {
+    text: `${stats ? `${stats}\n\n` : ""}${tables.text}${hidden}`,
+    truncated: tables.truncated,
+  };
+};
+
+// dix < 2.0 has no JSON output, so its text is shown verbatim.
+const renderTextBody = (text: string, budget: number): RenderedBody => {
+  const truncated = truncateDiff(text || "No differences found", budget);
+  const hint = truncated.truncated
+    ? "\n\n> **Note**: Diff was truncated. See the full output in the artifacts below."
+    : "";
+  return {
+    text: `<details>
+<summary>Diff Output</summary>
+
+\`\`\`
+${truncated.text}
+\`\`\`
+${hint}
+</details>`,
+    truncated: truncated.truncated,
+  };
+};
+
+const renderResultBody = (result: DiffResult, budget: number): RenderedBody =>
+  result.diff.format === "json"
+    ? renderReportBody(
+        viewFromReport(result.diff.report, { maxVersions: COMMENT_MAX_VERSIONS }),
+        budget,
+      )
+    : renderTextBody(result.diff.text, budget);
 
 export type FormatCommentOptions = {
   repoUrl: string;
@@ -68,43 +170,24 @@ export type FormatCommentOptions = {
   htmlViewerAvailable?: boolean;
 };
 
+const renderSection = (result: DiffResult, budget: number): string =>
+  `### ${sanitizeDisplayName(result.displayName)}
+
+**Attribute**: \`${result.attributePath}\`
+
+${renderResultBody(result, budget).text}`;
+
 export const formatAggregatedComment = (
   results: readonly DiffResult[],
   headSha: string,
   options?: FormatCommentOptions,
 ): string => {
-  const maxDiffLength = calculateMaxDiffPerAttribute(results.length);
   // Single attribute: displayName-specific marker for matrix + update strategy
   // Multiple attributes: generic marker (results order may vary in comment-only mode)
   const marker =
     results.length === 1
       ? getNixDiffActionMarker(results[0].displayName)
       : getNixDiffActionMarker();
-
-  const sections = results
-    .map((result) => {
-      const { truncated, text } = truncateDiff(
-        result.diff || "No differences found",
-        maxDiffLength,
-      );
-      const artifactHint = truncated
-        ? "\n\n> **Note**: Diff was truncated. See the full output in the artifacts below."
-        : "";
-
-      return `### ${sanitizeDisplayName(result.displayName)}
-
-**Attribute**: \`${result.attributePath}\`
-
-<details>
-<summary>Diff Output</summary>
-
-\`\`\`
-${text}
-\`\`\`
-${artifactHint}
-</details>`;
-    })
-    .join("\n\n");
 
   // Format compare link once for the entire comment
   const compareDisplay = options
@@ -122,7 +205,7 @@ ${artifactHint}
 <sub>Generated by [nix-diff-action](https://github.com/natsukium/nix-diff-action) using [dix](https://github.com/manic-systems/dix)</sub>
 <!-- nix-diff-action-footer sha=${headSha} -->`;
 
-  return `${marker}
+  const wrap = (sections: string) => `${marker}
 ## Nix Diff
 
 ${compareDisplay}
@@ -130,6 +213,33 @@ ${compareDisplay}
 ${sections}
 ${htmlViewerLink}
 ${footer}`;
+
+  // A fixed per-section allowance for markup can overflow the limit, so the
+  // markup is measured by rendering each section with a zero budget, and only
+  // the remainder is shared out to package rows. Trailing sections whose
+  // markup alone would overflow are dropped behind a notice.
+  const omittedNotice = (count: number) =>
+    `\n\n> **Note**: ${pluralize(count, "more attribute")} not shown. See the full output in the artifacts below.`;
+  let fixedLength = wrap("").length;
+  let shown = 0;
+  for (const result of results) {
+    const length = renderSection(result, 0).length + 2;
+    const remaining = results.length - shown - 1;
+    const notice = remaining > 0 ? omittedNotice(remaining).length : 0;
+    if (shown > 0 && fixedLength + length + notice > MAX_COMMENT_LENGTH) break;
+    fixedLength += length;
+    shown++;
+  }
+  const kept = results.slice(0, shown);
+  const omitted = results.length - shown;
+  if (omitted > 0) fixedLength += omittedNotice(omitted).length;
+
+  const budget = Math.max(0, Math.floor((MAX_COMMENT_LENGTH - fixedLength) / Math.max(1, shown)));
+
+  return wrap(
+    kept.map((result) => renderSection(result, budget)).join("\n\n") +
+      (omitted > 0 ? omittedNotice(omitted) : ""),
+  );
 };
 
 // Common: list all comments with nix-diff-action marker

@@ -327,6 +327,11 @@ a:hover {
   color: var(--fg-muted);
   overflow-wrap: anywhere;
 }
+.change-table .pkg-size {
+  color: var(--fg-muted);
+  text-align: right;
+  white-space: nowrap;
+}
 .change-table code {
   background: transparent;
   border: 0;

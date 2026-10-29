@@ -26,7 +26,6 @@ export { createArtifactName } from "./artifact.js";
 // GitHub utilities
 export {
   formatAggregatedComment,
-  checkIfAnyDiffTruncated,
   truncateDiff,
   sanitizeDisplayName,
   type TruncateResult,

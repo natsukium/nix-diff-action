@@ -49,7 +49,7 @@ const makeResult = (host: string): DiffResult => ({
   prRef: "def456",
   basePath: "/nix/store/aaa-base",
   prPath: "/nix/store/bbb-pr",
-  diff: `diff for ${host}`,
+  diff: { format: "text", text: `diff for ${host}` },
 });
 
 describe("downloadAllDiffResults", () => {

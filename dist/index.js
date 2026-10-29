@@ -1,5 +1,5 @@
 import { a as __toCommonJS, i as __require, n as __esmMin, o as __toESM, r as __exportAll, t as __commonJSMin } from "./assets/rolldown-runtime-C1I3wEg2.js";
-import { $ as sync, A as andThen, At as setSecret, B as gen, C as redacted, Ct as debug, D as Service, Dt as info, E as isConfigError, F as catchTag, Ft as HttpCodes, G as mapError, H as logInfo, I as catchTags, It as require_undici, J as promise, K as option, L as fail, Lt as require_tunnel, M as catchAll, Mt as exec, N as catchAllCause, Nt as BearerCredentialHandler, O as acquireRelease, Ot as setFailed$1, P as catchIf, Pt as HttpClient, Q as succeed, R as flatMap, S as option$1, St as pipe, T as value$1, Tt as getInput, U as logWarning, V as logError, W as map$2, X as runPromise, Y as provide, Z as scoped, _ as Struct, _t as getOrElse, a as GitHubApiError, at as mergeAll$1, b as pattern, bt as map$3, c as MissingAttributesError, ct as withConfigProviderScoped, d as NixPathInfoError, dt as set$1, et as tapError, f as NotPullRequestContextError, ft as fromEnv$1, g as NonEmptyString, gt as fromNullable, h as Literal, ht as flatMap$1, i as AttributeParseError, it as merge$2, j as as, jt as warning, k as all, kt as setOutput, l as NixBuildError, lt as get$1, m as Config, mt as orElse$1, nt as try_, o as InvalidCommentStrategyError, ot as scopedDiscard, p as Array$, pt as fromMap$1, q as orElseSucceed, r as ArtifactError, rt as TaggedError, s as InvalidDirectoryError, st as pretty, t as GitService, tt as tryPromise, u as NixDixError, ut as make$1, v as decodeUnknown, vt as getOrUndefined, w as string, wt as error, x as boolean, xt as match, y as filter$2, yt as isNone, z as forEach } from "./assets/git-CeiR8qNj.js";
+import { $ as provide, A as string, At as pipe, B as catchTags, Bt as exec, C as decodeUnknown, Ct as isNone, D as boolean, Dt as isRight, E as pattern, Et as flatMap, F as all, Ft as info, G as logError, Gt as require_tunnel, H as flatMap$1, Ht as HttpClient, I as as, It as setFailed$1, J as map$2, K as logInfo, L as catchAll, Lt as setOutput, M as isConfigError, Mt as error, N as Service, Nt as getInput, O as option$1, Ot as mapLeft, P as acquireRelease, Q as promise, R as catchAllCause, Rt as setSecret, S as Union, St as getOrUndefined, T as filter$2, Tt as match, U as forEach, Ut as HttpCodes, V as fail, Vt as BearerCredentialHandler, W as gen, Wt as require_undici, X as option, Y as mapError, Z as orElseSucceed, _ as NonEmptyString, _t as fromMap$1, a as GitHubApiError, at as tryPromise, b as String$, bt as fromNullable, c as MissingAttributesError, ct as mergeAll$1, d as NixPathInfoError, dt as withConfigProviderScoped, et as runPromise, f as NotPullRequestContextError, ft as get$1, g as Literal, gt as fromEnv$1, h as Config, ht as update$2, i as AttributeParseError, it as tapError, j as value$1, jt as debug, k as redacted, kt as try_, l as NixBuildError, lt as scopedDiscard, m as Boolean$, mt as set$1, nt as succeed, o as InvalidCommentStrategyError, ot as try_$1, p as Array$, pt as make$1, q as logWarning, r as ArtifactError, rt as sync, s as InvalidDirectoryError, st as merge$2, t as GitService, tt as scoped, u as NixDixError, ut as pretty, v as NullOr, vt as orElse$1, w as decodeUnknownEither, wt as map$3, x as Struct, xt as getOrElse, y as Number$, yt as flatMap$2, z as catchIf, zt as warning } from "./assets/git-uNXLhHWu.js";
 import * as os$2 from "os";
 import os, { EOL } from "os";
 import * as crypto from "crypto";
@@ -40,6 +40,11 @@ var get = get$1;
 * @category utils
 */
 var set = set$1;
+/**
+* @since 2.0.0
+* @category utils
+*/
+var update$1 = update$2;
 // node_modules/effect/dist/esm/internal/layer/circular.js
 /** @internal */
 var setConfigProvider$1 = (configProvider) => scopedDiscard(withConfigProviderScoped(configProvider));
@@ -114,13 +119,87 @@ var orElse = orElse$1;
 * @category getters
 */
 var value = value$1;
+// src/schemas.ts
+var nixIdentifierPattern = "[a-zA-Z_][a-zA-Z0-9_'-]*";
+var attributePathPattern = new RegExp(`^${nixIdentifierPattern}(\\.${nixIdentifierPattern})*$`);
+var AttributePath = NonEmptyString.pipe(filter$2((s) => !s.startsWith("#") && !s.startsWith(".#"), { message: () => "Attribute path must not start with '#' or '.#' - the reference prefix is added automatically" }), pattern(attributePathPattern, { message: () => "Invalid attribute path format. Expected format: 'packages.x86_64-linux.default' or 'nixosConfigurations.myhost.config.system.build.toplevel'" })).annotations({
+	identifier: "AttributePath",
+	description: "Nix attribute path (e.g., packages.x86_64-linux.default)",
+	examples: [
+		"packages.x86_64-linux.default",
+		"nixosConfigurations.myhost.config.system.build.toplevel",
+		"devShells.x86_64-linux.default"
+	]
+});
+var NixOutputConfig = Struct({
+	displayName: NonEmptyString.annotations({ description: "User-friendly name for this comparison" }),
+	attribute: AttributePath.annotations({ description: "Nix attribute path (e.g., packages.x86_64-linux.default)" })
+}).annotations({ identifier: "NixOutputConfig" });
+var NixOutputConfigArray = Array$(NixOutputConfig).annotations({ identifier: "NixOutputConfigArray" });
+var DixVersionAmount = Struct({
+	name: NullOr(String$),
+	amount: Number$
+});
+var DixVersionEvent = Union(Struct({
+	kind: Literal("added"),
+	version: DixVersionAmount
+}), Struct({
+	kind: Literal("removed"),
+	version: DixVersionAmount
+}), Struct({
+	kind: Literal("changed"),
+	old: DixVersionAmount,
+	new: DixVersionAmount
+}), Struct({
+	kind: Literal("amount_changed"),
+	version: Struct({ name: NullOr(String$) }),
+	old_amount: Number$,
+	new_amount: Number$
+}));
+var DixPackageDiff = Struct({
+	name: String$,
+	versions: Array$(DixVersionEvent),
+	status: Literal("Changed", "Mixed", "Upgraded", "Downgraded", "Added", "Removed"),
+	selection: String$,
+	has_omitted_versions: Boolean$,
+	size_old: Number$,
+	size_new: Number$,
+	size_delta: Number$
+});
+var DixReport = Struct({
+	diffs: Array$(DixPackageDiff),
+	paths: Struct({
+		old: Number$,
+		new: Number$,
+		added: Number$,
+		removed: Number$
+	}),
+	size_old: Number$,
+	size_new: Number$
+}).annotations({ identifier: "DixReport" });
+var DixOutput = Union(Struct({
+	format: Literal("json"),
+	report: DixReport
+}), Struct({
+	format: Literal("text"),
+	text: String$
+})).annotations({ identifier: "DixOutput" });
+var DiffResult = Struct({
+	displayName: NonEmptyString.annotations({ description: "User-friendly name from output config" }),
+	attributePath: NonEmptyString.annotations({ description: "Nix attribute path that was compared" }),
+	baseRef: NonEmptyString.annotations({ description: "Commit SHA of the base branch" }),
+	prRef: NonEmptyString.annotations({ description: "Commit SHA of the PR head" }),
+	basePath: NonEmptyString.annotations({ description: "Nix store path of the base branch output" }),
+	prPath: NonEmptyString.annotations({ description: "Nix store path of the PR head output" }),
+	diff: DixOutput.annotations({ description: "Diff output from dix: the JSON report, or human-readable text for dix < 2.0" })
+}).annotations({ identifier: "DiffResult" });
+var DiffResultArray = Array$(DiffResult).annotations({ identifier: "DiffResultArray" });
 // src/services/nix.ts
-var DixUnsupportedFlag = class extends TaggedError("DixUnsupportedFlag") {};
-var execNix = (args, ignoreReturnCode = true) => {
+var execCommand = (command, args, ignoreReturnCode = true) => {
 	const stdoutChunks = [];
 	const stderrChunks = [];
 	return tryPromise({
-		try: () => exec("nix", args, {
+		try: () => exec(command, args, {
 			listeners: {
 				stdout: (data) => {
 					stdoutChunks.push(data.toString());
@@ -132,12 +211,13 @@ var execNix = (args, ignoreReturnCode = true) => {
 			ignoreReturnCode
 		}),
 		catch: (error) => error
-	}).pipe(catchAll((error) => logWarning(`nix exec failed unexpectedly: ${error}`).pipe(as(-1))), map$2((exitCode) => ({
+	}).pipe(catchAll((error) => logWarning(`${command} exec failed unexpectedly: ${error}`).pipe(as(-1))), map$2((exitCode) => ({
 		exitCode,
 		stdout: stdoutChunks.join("").trim(),
 		stderr: stderrChunks.join("").trim()
 	})));
 };
+var execNix = (args, ignoreReturnCode = true) => execCommand("nix", args, ignoreReturnCode);
 var execPrefetch = (flakeRef) => tryPromise({
 	try: () => exec("nix", [
 		"flake",
@@ -149,8 +229,99 @@ var execPrefetch = (flakeRef) => tryPromise({
 	}),
 	catch: () => /* @__PURE__ */ new Error("prefetch failed")
 }).pipe(orElseSucceed(() => 1));
+var selectDixCli = (versionOutput) => {
+	const match = /(\d+)\.(\d+)\.(\d+)/.exec(versionOutput);
+	if (!match) return {
+		version: "unknown",
+		json: (o, n) => [
+			"diff",
+			"--output",
+			"json",
+			o,
+			n
+		],
+		text: (o, n) => [
+			"diff",
+			o,
+			n
+		]
+	};
+	const [major, minor, patch] = match.slice(1).map(Number);
+	const version = match[0];
+	if (major >= 3) return {
+		version,
+		json: (o, n) => [
+			"diff",
+			"--output",
+			"json",
+			o,
+			n
+		],
+		text: (o, n) => [
+			"diff",
+			o,
+			n
+		]
+	};
+	if (major === 2) return {
+		version,
+		json: (o, n) => [
+			"--force-correctness",
+			"--output",
+			"json",
+			o,
+			n
+		],
+		text: (o, n) => [
+			"--force-correctness",
+			o,
+			n
+		]
+	};
+	const forceCorrectness = minor > 4 || minor === 4 && patch >= 2 ? ["--force-correctness"] : [];
+	return {
+		version,
+		text: (o, n) => [
+			...forceCorrectness,
+			o,
+			n
+		]
+	};
+};
+var decodeDixReport = (stdout) => try_({
+	try: () => JSON.parse(stdout),
+	catch: (e) => `invalid JSON: ${e}`
+}).pipe(flatMap((json) => decodeUnknownEither(DixReport)(json).pipe(mapLeft((e) => e.message))));
 var NixService = class extends Service()("NixService", { effect: gen(function* () {
 	const prefetchLogged = yield* make(false);
+	const resolvedDix = yield* make(/* @__PURE__ */ new Map());
+	const resolveDix = (inputsFromRef, basePath, prPath) => gen(function* () {
+		const cached = (yield* get(resolvedDix)).get(inputsFromRef);
+		if (cached) return cached;
+		const build = yield* execNix([
+			"build",
+			"nixpkgs#dix",
+			"--inputs-from",
+			inputsFromRef,
+			"--no-link",
+			"--print-out-paths"
+		]);
+		const outPath = build.stdout.split("\n")[0];
+		if (build.exitCode !== 0 || !outPath) return yield* fail(new NixDixError({
+			basePath,
+			prPath,
+			message: `failed to build dix: ${build.stderr || "unknown error"}`
+		}));
+		const bin = `${outPath}/bin/dix`;
+		const cli = selectDixCli((yield* execCommand(bin, ["--version"])).stdout);
+		yield* logInfo(`Using dix ${cli.version} (${outPath})`);
+		const resolved = {
+			bin,
+			cli
+		};
+		yield* update$1(resolvedDix, (m) => new Map(m).set(inputsFromRef, resolved));
+		return resolved;
+	});
 	return {
 		prefetchFlakeInputs: (flakeRef) => gen(function* () {
 			if ((yield* execPrefetch(flakeRef)) !== 0) {
@@ -187,15 +358,9 @@ var NixService = class extends Service()("NixService", { effect: gen(function* (
 			}));
 			return stdout;
 		}),
-		getDixDiff: (basePath, prPath, inputsFromRef) => {
-			const baseArgs = [
-				"run",
-				"nixpkgs#dix",
-				"--inputs-from",
-				inputsFromRef,
-				"--"
-			];
-			const handleDixResult = (result) => {
+		getDixDiff: (basePath, prPath, inputsFromRef) => gen(function* () {
+			const { bin, cli } = yield* resolveDix(inputsFromRef, basePath, prPath);
+			const runDix = (args) => execCommand(bin, args).pipe(flatMap$1((result) => {
 				if (result.exitCode !== 0) return fail(new NixDixError({
 					basePath,
 					prPath,
@@ -203,18 +368,20 @@ var NixService = class extends Service()("NixService", { effect: gen(function* (
 				}));
 				if (result.stderr) return logInfo(`dix stderr: ${result.stderr}`).pipe(as(result.stdout));
 				return succeed(result.stdout);
+			}));
+			if (cli.json) {
+				const decoded = decodeDixReport(yield* runDix(cli.json(basePath, prPath)));
+				if (isRight(decoded)) return {
+					format: "json",
+					report: decoded.right
+				};
+				yield* logWarning(`dix ${cli.version} JSON output did not match the expected schema, falling back to human-readable output: ${decoded.left}`);
+			}
+			return {
+				format: "text",
+				text: yield* runDix(cli.text(basePath, prPath))
 			};
-			return execNix([
-				...baseArgs,
-				"--force-correctness",
-				basePath,
-				prPath
-			]).pipe(flatMap((result) => result.exitCode !== 0 && result.stderr.includes("unexpected argument '--force-correctness'") ? fail(new DixUnsupportedFlag()) : succeed(result)), catchTag("DixUnsupportedFlag", () => logInfo("dix does not support --force-correctness, retrying without it").pipe(andThen(execNix([
-				...baseArgs,
-				basePath,
-				prPath
-			])))), flatMap(handleDixResult));
-		}
+		})
 	};
 }) }) {};
 // node_modules/@actions/github/lib/context.js
@@ -77766,141 +77933,190 @@ If the error persists, please check whether Actions and API requests are operati
 	}
 };
 new DefaultArtifactClient();
-// src/schemas.ts
-var nixIdentifierPattern = "[a-zA-Z_][a-zA-Z0-9_'-]*";
-var attributePathPattern = new RegExp(`^${nixIdentifierPattern}(\\.${nixIdentifierPattern})*$`);
-var AttributePath = NonEmptyString.pipe(filter$2((s) => !s.startsWith("#") && !s.startsWith(".#"), { message: () => "Attribute path must not start with '#' or '.#' - the reference prefix is added automatically" }), pattern(attributePathPattern, { message: () => "Invalid attribute path format. Expected format: 'packages.x86_64-linux.default' or 'nixosConfigurations.myhost.config.system.build.toplevel'" })).annotations({
-	identifier: "AttributePath",
-	description: "Nix attribute path (e.g., packages.x86_64-linux.default)",
-	examples: [
-		"packages.x86_64-linux.default",
-		"nixosConfigurations.myhost.config.system.build.toplevel",
-		"devShells.x86_64-linux.default"
-	]
-});
-var NixOutputConfig = Struct({
-	displayName: NonEmptyString.annotations({ description: "User-friendly name for this comparison" }),
-	attribute: AttributePath.annotations({ description: "Nix attribute path (e.g., packages.x86_64-linux.default)" })
-}).annotations({ identifier: "NixOutputConfig" });
-var NixOutputConfigArray = Array$(NixOutputConfig).annotations({ identifier: "NixOutputConfigArray" });
-var DiffResult = Struct({
-	displayName: NonEmptyString.annotations({ description: "User-friendly name from output config" }),
-	attributePath: NonEmptyString.annotations({ description: "Nix attribute path that was compared" }),
-	baseRef: NonEmptyString.annotations({ description: "Commit SHA of the base branch" }),
-	prRef: NonEmptyString.annotations({ description: "Commit SHA of the PR head" }),
-	basePath: NonEmptyString.annotations({ description: "Nix store path of the base branch output" }),
-	prPath: NonEmptyString.annotations({ description: "Nix store path of the PR head output" }),
-	diff: NonEmptyString.annotations({ description: "Diff output from dix tool" })
-}).annotations({ identifier: "DiffResult" });
-var DiffResultArray = Array$(DiffResult).annotations({ identifier: "DiffResultArray" });
-// src/services/diff-html.css?raw
-var diff_html_default = ":root {\n  color-scheme: light dark;\n  --bg: #ffffff;\n  --bg-elevated: #ffffff;\n  --bg-muted: #f6f8fa;\n  --bg-header: #f0f3f6;\n  --fg: #1f2328;\n  --fg-muted: #59636e;\n  --border: #d1d9e0;\n  --border-muted: #d1d9e0b3;\n  --accent: #0969da;\n  --added-fg: #1a7f37;\n  --added-bg: #dafbe1;\n  --added-border: #1a7f3733;\n  --removed-fg: #cf222e;\n  --removed-bg: #ffebe9;\n  --removed-border: #cf222e33;\n  --changed-fg: #9a6700;\n  --changed-bg: #fff8c5;\n  --changed-border: #9a670033;\n}\n@media (prefers-color-scheme: dark) {\n  :root {\n    --bg: #0d1117;\n    --bg-elevated: #151b23;\n    --bg-muted: #151b23;\n    --bg-header: #151b23;\n    --fg: #f0f6fc;\n    --fg-muted: #9198a1;\n    --border: #3d444d;\n    --border-muted: #3d444d80;\n    --accent: #4493f8;\n    --added-fg: #3fb950;\n    --added-bg: #1f6feb1a;\n    --added-border: #3fb95033;\n    --removed-fg: #f85149;\n    --removed-bg: #f851491a;\n    --removed-border: #f8514933;\n    --changed-fg: #d29922;\n    --changed-bg: #d299221a;\n    --changed-border: #d2992233;\n  }\n}\n* {\n  box-sizing: border-box;\n}\nhtml,\nbody {\n  margin: 0;\n  padding: 0;\n}\nbody {\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif;\n  background: var(--bg);\n  color: var(--fg);\n  line-height: 1.5;\n  padding: 2rem 1.5rem 4rem;\n  max-width: 1100px;\n  margin: 0 auto;\n  font-size: 14px;\n}\nh1 {\n  margin: 0 0 0.25rem;\n  font-size: 1.6rem;\n  font-weight: 600;\n  letter-spacing: -0.01em;\n}\n.page-header {\n  padding-bottom: 1rem;\n  margin-bottom: 1.5rem;\n  border-bottom: 1px solid var(--border);\n}\n.page-header p {\n  margin: 0;\n  color: var(--fg-muted);\n  font-size: 0.9rem;\n}\nh2 {\n  font-size: 1.1rem;\n  font-weight: 600;\n  margin: 0;\n}\ncode {\n  font-family: ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, monospace;\n  font-size: 0.82em;\n  background: var(--bg-muted);\n  padding: 0.1em 0.4em;\n  border-radius: 4px;\n  border: 1px solid var(--border-muted);\n}\na {\n  color: var(--accent);\n  text-decoration: none;\n}\na:hover {\n  text-decoration: underline;\n}\n.muted {\n  color: var(--fg-muted);\n}\n.arrow {\n  color: var(--fg-muted);\n  margin: 0 0.15em;\n}\n\n/* Summary */\n.summary {\n  margin-bottom: 2rem;\n}\n.summary h2 {\n  margin-bottom: 0.75rem;\n}\n.summary-table {\n  width: 100%;\n  border-collapse: collapse;\n  background: var(--bg-elevated);\n  border: 1px solid var(--border);\n  border-radius: 6px;\n  overflow: hidden;\n}\n.summary-table th,\n.summary-table td {\n  padding: 0.55rem 0.9rem;\n  text-align: left;\n  border-bottom: 1px solid var(--border-muted);\n  vertical-align: middle;\n}\n.summary-table thead th {\n  background: var(--bg-header);\n  font-weight: 600;\n  font-size: 0.85rem;\n  color: var(--fg-muted);\n}\n.summary-table tbody tr:last-child td {\n  border-bottom: 0;\n}\n.summary-table .num {\n  text-align: right;\n  font-variant-numeric: tabular-nums;\n}\n\n/* Diff cards */\n.diff-card {\n  border: 1px solid var(--border);\n  border-radius: 6px;\n  background: var(--bg-elevated);\n  margin-bottom: 1.5rem;\n  overflow: hidden;\n}\n.diff-card-header {\n  padding: 1rem 1.25rem;\n  background: var(--bg-header);\n  border-bottom: 1px solid var(--border);\n}\n.diff-card-header h2 {\n  margin-bottom: 0.5rem;\n}\n.diff-card-body {\n  padding: 1rem 1.25rem;\n}\n\n.diff-meta {\n  display: grid;\n  grid-template-columns: auto 1fr;\n  gap: 0.15rem 0.85rem;\n  margin: 0;\n  font-size: 0.85rem;\n}\n.diff-meta dt {\n  color: var(--fg-muted);\n  font-weight: 500;\n}\n.diff-meta dd {\n  margin: 0;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n/* Stats strip */\n.stats {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 0.5rem;\n  margin-bottom: 1rem;\n}\n.stat {\n  flex: 1 1 auto;\n  min-width: 140px;\n  padding: 0.55rem 0.85rem;\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  display: flex;\n  flex-direction: column;\n  gap: 0.15rem;\n}\n.stat-label {\n  color: var(--fg-muted);\n  font-size: 0.75rem;\n  text-transform: uppercase;\n  letter-spacing: 0.04em;\n}\n.stat-value {\n  font-size: 1rem;\n  font-weight: 600;\n}\n.stat-added {\n  color: var(--added-fg);\n}\n.stat-removed {\n  color: var(--removed-fg);\n}\n.stat-changed {\n  color: var(--changed-fg);\n}\n\n/* Store paths */\n.store-paths {\n  display: grid;\n  grid-template-columns: auto 1fr;\n  gap: 0.2rem 0.85rem;\n  margin: 0 0 1rem;\n  font-size: 0.85rem;\n}\n.store-paths dt {\n  color: var(--fg-muted);\n  font-weight: 500;\n}\n.store-paths dd {\n  margin: 0;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n/* Change sections */\n.change-group {\n  margin-bottom: 1rem;\n  border-radius: 6px;\n  overflow: hidden;\n  border: 1px solid var(--border-muted);\n}\n.change-group:last-of-type {\n  margin-bottom: 0;\n}\n.change-heading {\n  display: flex;\n  align-items: center;\n  gap: 0.6rem;\n  margin: 0;\n  padding: 0.5rem 0.85rem;\n  font-size: 0.9rem;\n  cursor: pointer;\n  list-style: none;\n  user-select: none;\n}\n.change-heading::-webkit-details-marker {\n  display: none;\n}\n.change-heading::before {\n  content: \"\";\n  width: 0;\n  height: 0;\n  border-left: 5px solid currentColor;\n  border-top: 4px solid transparent;\n  border-bottom: 4px solid transparent;\n  transition: transform 0.15s ease;\n  flex-shrink: 0;\n}\n.change-group[open] > .change-heading::before {\n  transform: rotate(90deg);\n}\n.change-badge {\n  display: inline-block;\n  padding: 0.1rem 0.55rem;\n  font-size: 0.72rem;\n  font-weight: 600;\n  letter-spacing: 0.05em;\n  border-radius: 999px;\n  border: 1px solid currentColor;\n}\n.change-count {\n  color: var(--fg-muted);\n  font-size: 0.85rem;\n  font-weight: 500;\n}\n.change-added > .change-heading {\n  background: var(--added-bg);\n  color: var(--added-fg);\n}\n.change-removed > .change-heading {\n  background: var(--removed-bg);\n  color: var(--removed-fg);\n}\n.change-changed > .change-heading {\n  background: var(--changed-bg);\n  color: var(--changed-fg);\n}\n.change-added[open] > .change-heading {\n  border-bottom: 1px solid var(--added-border);\n}\n.change-removed[open] > .change-heading {\n  border-bottom: 1px solid var(--removed-border);\n}\n.change-changed[open] > .change-heading {\n  border-bottom: 1px solid var(--changed-border);\n}\n\n.change-table {\n  width: 100%;\n  border-collapse: collapse;\n  background: var(--bg-elevated);\n}\n.change-table td {\n  padding: 0.3rem 0.85rem;\n  border-top: 1px solid var(--border-muted);\n  vertical-align: top;\n}\n.change-table tr:first-child td {\n  border-top: 0;\n}\n.change-table .pkg-name {\n  width: 35%;\n  white-space: nowrap;\n  overflow-wrap: anywhere;\n}\n.change-table .pkg-ver {\n  color: var(--fg-muted);\n  overflow-wrap: anywhere;\n}\n.change-table code {\n  background: transparent;\n  border: 0;\n  padding: 0;\n  font-size: 0.85em;\n}\n\n.no-changes {\n  margin: 0 0 1rem;\n  padding: 0.8rem 1rem;\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  color: var(--fg-muted);\n  text-align: center;\n}\n\n.raw-block {\n  margin-top: 1rem;\n}\n.raw-block summary {\n  cursor: pointer;\n  color: var(--fg-muted);\n  font-size: 0.85rem;\n  padding: 0.35rem 0;\n}\n.raw-block summary:hover {\n  color: var(--accent);\n}\n.raw-block pre {\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  padding: 0.85rem 1rem;\n  overflow-x: auto;\n  white-space: pre;\n  font-size: 0.8rem;\n  margin: 0.35rem 0 0;\n}\n.raw-block pre code {\n  background: transparent;\n  border: 0;\n  padding: 0;\n  font-size: 1em;\n}\n\nfooter {\n  margin-top: 2.5rem;\n  padding-top: 1rem;\n  border-top: 1px solid var(--border);\n  color: var(--fg-muted);\n  font-size: 0.8rem;\n  text-align: center;\n}\n\n@media (max-width: 600px) {\n  body {\n    padding: 1rem 0.75rem 3rem;\n  }\n  .stat {\n    min-width: 45%;\n  }\n  .summary-table {\n    font-size: 0.85rem;\n  }\n  .summary-table th,\n  .summary-table td {\n    padding: 0.45rem 0.6rem;\n  }\n}\n";
-// src/services/html.ts
-var escapeHtml = (text) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-var parseDiff = (diff) => {
-	const result = {
+// src/services/view.ts
+var MIN_SIZE_DELTA = 1048576;
+var UNITS = [
+	"B",
+	"KiB",
+	"MiB",
+	"GiB",
+	"TiB"
+];
+var formatBytes = (bytes) => {
+	let value = Math.abs(bytes);
+	let unit = 0;
+	while (value >= 1024 && unit < UNITS.length - 1) {
+		value /= 1024;
+		unit++;
+	}
+	const sign = bytes < 0 ? "-" : "";
+	return unit === 0 ? `${sign}${value} B` : `${sign}${value.toFixed(1)} ${UNITS[unit]}`;
+};
+var pluralize = (count, word) => `${count} ${word}${count === 1 ? "" : "s"}`;
+var formatSignedBytes = (bytes) => bytes > 0 ? `+${formatBytes(bytes)}` : formatBytes(bytes);
+var formatVersion = (name, amount = 1) => `${name ?? "<none>"}${amount > 1 ? ` ×${amount}` : ""}`;
+var capVersions = (items, max) => items.length > max ? [...items.slice(0, max), `+${items.length - max} more`] : items;
+var describeVersions = (diff, maxVersions) => {
+	let before = [];
+	let after = [];
+	for (const event of diff.versions) switch (event.kind) {
+		case "added":
+			after.push(formatVersion(event.version.name, event.version.amount));
+			break;
+		case "removed":
+			before.push(formatVersion(event.version.name, event.version.amount));
+			break;
+		case "changed":
+			before.push(formatVersion(event.old.name, event.old.amount));
+			after.push(formatVersion(event.new.name, event.new.amount));
+			break;
+		case "amount_changed":
+			before.push(formatVersion(event.version.name, event.old_amount));
+			after.push(formatVersion(event.version.name, event.new_amount));
+	}
+	before = capVersions(before, maxVersions);
+	after = capVersions(after, maxVersions);
+	if (diff.has_omitted_versions) {
+		before.push("<unchanged>");
+		after.push("<unchanged>");
+	}
+	if (diff.status === "Added") return after.join(", ");
+	if (diff.status === "Removed") return before.join(", ");
+	if (before.length === 0 && after.length === 0) return "";
+	return `${before.join(", ") || "∅"} → ${after.join(", ") || "∅"}`;
+};
+var viewFromReport = (report, { maxVersions = Infinity } = {}) => {
+	const view = {
+		changed: [],
 		added: [],
 		removed: [],
-		changed: [],
-		unparsed: []
+		hiddenCount: 0,
+		size: {
+			before: formatBytes(report.size_old),
+			after: formatBytes(report.size_new),
+			delta: formatSignedBytes(report.size_new - report.size_old)
+		},
+		paths: report.paths
 	};
-	const lines = diff.split("\n");
+	for (const diff of report.diffs) {
+		if (!diff.versions.some((event) => event.kind !== "amount_changed") && Math.abs(diff.size_delta) < MIN_SIZE_DELTA) {
+			view.hiddenCount++;
+			continue;
+		}
+		const row = {
+			name: diff.name,
+			version: describeVersions(diff, maxVersions),
+			sizeDelta: diff.size_delta !== 0 ? formatSignedBytes(diff.size_delta) : void 0
+		};
+		if (diff.status === "Added") view.added.push(row);
+		else if (diff.status === "Removed") view.removed.push(row);
+		else view.changed.push(row);
+	}
+	return view;
+};
+var stripPrefix = (line) => line.replace(/^\[[A-Za-z.*+-]{1,4}\]\s*/, "");
+var rowFromLine = (line) => {
+	const stripped = stripPrefix(line);
+	const match = /^(\S+)\s{2,}(.+)$/.exec(stripped);
+	return match ? {
+		name: match[1],
+		version: match[2]
+	} : {
+		name: stripped,
+		version: ""
+	};
+};
+var viewFromText = (text) => {
+	const view = {
+		changed: [],
+		added: [],
+		removed: [],
+		hiddenCount: 0
+	};
 	let section = null;
-	for (const rawLine of lines) {
+	let sizeBefore;
+	let sizeAfter;
+	let diffSize;
+	for (const rawLine of text.split("\n")) {
 		const line = rawLine.replace(/\s+$/, "");
 		if (!line) {
 			section = null;
 			continue;
 		}
-		const oldPath = /^<<<\s+(.+)$/.exec(line);
-		if (oldPath) {
-			result.oldPath = oldPath[1];
+		const heading = /^(ADDED|REMOVED|CHANGED)(\s+\(\d+\))?$/.exec(line);
+		if (heading) {
+			section = heading[1].toLowerCase();
 			continue;
 		}
-		const newPath = /^>>>\s+(.+)$/.exec(line);
-		if (newPath) {
-			result.newPath = newPath[1];
-			continue;
-		}
-		if (line === "ADDED") {
-			section = "added";
-			continue;
-		}
-		if (line === "REMOVED") {
-			section = "removed";
-			continue;
-		}
-		if (line === "CHANGED") {
-			section = "changed";
-			continue;
-		}
-		const size = /^SIZE:\s*(.+?)\s*->\s*(.+)$/.exec(line);
+		const size = /^SIZE:\s*(.+?)\s*(?:->|→)\s*(.+)$/.exec(line);
 		if (size) {
-			result.sizeBefore = size[1];
-			result.sizeAfter = size[2];
+			sizeBefore = size[1];
+			sizeAfter = size[2];
 			section = null;
 			continue;
 		}
-		const diffSize = /^DIFF:\s*(.+)$/.exec(line);
-		if (diffSize) {
-			result.diffSize = diffSize[1];
+		const delta = /^DIFF:\s*(.+)$/.exec(line);
+		if (delta) {
+			diffSize = delta[1];
 			section = null;
 			continue;
 		}
-		if (section) result[section].push(line);
-		else result.unparsed.push(line);
+		if (section) view[section].push(rowFromLine(line));
 	}
-	return result;
+	if (sizeBefore && sizeAfter) view.size = {
+		before: sizeBefore,
+		after: sizeAfter,
+		delta: diffSize
+	};
+	return view;
 };
-var stripPrefix = (line) => line.replace(/^\[[A-Za-z.]{1,4}\]\s*/, "");
-var isUnchanged = (parsed) => parsed.added.length === 0 && parsed.removed.length === 0 && parsed.changed.length === 0;
+var toView = (output) => output.format === "json" ? viewFromReport(output.report) : viewFromText(output.text);
+var isUnchanged = (view) => view.added.length === 0 && view.removed.length === 0 && view.changed.length === 0;
+// src/services/diff-html.css?raw
+var diff_html_default = ":root {\n  color-scheme: light dark;\n  --bg: #ffffff;\n  --bg-elevated: #ffffff;\n  --bg-muted: #f6f8fa;\n  --bg-header: #f0f3f6;\n  --fg: #1f2328;\n  --fg-muted: #59636e;\n  --border: #d1d9e0;\n  --border-muted: #d1d9e0b3;\n  --accent: #0969da;\n  --added-fg: #1a7f37;\n  --added-bg: #dafbe1;\n  --added-border: #1a7f3733;\n  --removed-fg: #cf222e;\n  --removed-bg: #ffebe9;\n  --removed-border: #cf222e33;\n  --changed-fg: #9a6700;\n  --changed-bg: #fff8c5;\n  --changed-border: #9a670033;\n}\n@media (prefers-color-scheme: dark) {\n  :root {\n    --bg: #0d1117;\n    --bg-elevated: #151b23;\n    --bg-muted: #151b23;\n    --bg-header: #151b23;\n    --fg: #f0f6fc;\n    --fg-muted: #9198a1;\n    --border: #3d444d;\n    --border-muted: #3d444d80;\n    --accent: #4493f8;\n    --added-fg: #3fb950;\n    --added-bg: #1f6feb1a;\n    --added-border: #3fb95033;\n    --removed-fg: #f85149;\n    --removed-bg: #f851491a;\n    --removed-border: #f8514933;\n    --changed-fg: #d29922;\n    --changed-bg: #d299221a;\n    --changed-border: #d2992233;\n  }\n}\n* {\n  box-sizing: border-box;\n}\nhtml,\nbody {\n  margin: 0;\n  padding: 0;\n}\nbody {\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif;\n  background: var(--bg);\n  color: var(--fg);\n  line-height: 1.5;\n  padding: 2rem 1.5rem 4rem;\n  max-width: 1100px;\n  margin: 0 auto;\n  font-size: 14px;\n}\nh1 {\n  margin: 0 0 0.25rem;\n  font-size: 1.6rem;\n  font-weight: 600;\n  letter-spacing: -0.01em;\n}\n.page-header {\n  padding-bottom: 1rem;\n  margin-bottom: 1.5rem;\n  border-bottom: 1px solid var(--border);\n}\n.page-header p {\n  margin: 0;\n  color: var(--fg-muted);\n  font-size: 0.9rem;\n}\nh2 {\n  font-size: 1.1rem;\n  font-weight: 600;\n  margin: 0;\n}\ncode {\n  font-family: ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, monospace;\n  font-size: 0.82em;\n  background: var(--bg-muted);\n  padding: 0.1em 0.4em;\n  border-radius: 4px;\n  border: 1px solid var(--border-muted);\n}\na {\n  color: var(--accent);\n  text-decoration: none;\n}\na:hover {\n  text-decoration: underline;\n}\n.muted {\n  color: var(--fg-muted);\n}\n.arrow {\n  color: var(--fg-muted);\n  margin: 0 0.15em;\n}\n\n/* Summary */\n.summary {\n  margin-bottom: 2rem;\n}\n.summary h2 {\n  margin-bottom: 0.75rem;\n}\n.summary-table {\n  width: 100%;\n  border-collapse: collapse;\n  background: var(--bg-elevated);\n  border: 1px solid var(--border);\n  border-radius: 6px;\n  overflow: hidden;\n}\n.summary-table th,\n.summary-table td {\n  padding: 0.55rem 0.9rem;\n  text-align: left;\n  border-bottom: 1px solid var(--border-muted);\n  vertical-align: middle;\n}\n.summary-table thead th {\n  background: var(--bg-header);\n  font-weight: 600;\n  font-size: 0.85rem;\n  color: var(--fg-muted);\n}\n.summary-table tbody tr:last-child td {\n  border-bottom: 0;\n}\n.summary-table .num {\n  text-align: right;\n  font-variant-numeric: tabular-nums;\n}\n\n/* Diff cards */\n.diff-card {\n  border: 1px solid var(--border);\n  border-radius: 6px;\n  background: var(--bg-elevated);\n  margin-bottom: 1.5rem;\n  overflow: hidden;\n}\n.diff-card-header {\n  padding: 1rem 1.25rem;\n  background: var(--bg-header);\n  border-bottom: 1px solid var(--border);\n}\n.diff-card-header h2 {\n  margin-bottom: 0.5rem;\n}\n.diff-card-body {\n  padding: 1rem 1.25rem;\n}\n\n.diff-meta {\n  display: grid;\n  grid-template-columns: auto 1fr;\n  gap: 0.15rem 0.85rem;\n  margin: 0;\n  font-size: 0.85rem;\n}\n.diff-meta dt {\n  color: var(--fg-muted);\n  font-weight: 500;\n}\n.diff-meta dd {\n  margin: 0;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n/* Stats strip */\n.stats {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 0.5rem;\n  margin-bottom: 1rem;\n}\n.stat {\n  flex: 1 1 auto;\n  min-width: 140px;\n  padding: 0.55rem 0.85rem;\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  display: flex;\n  flex-direction: column;\n  gap: 0.15rem;\n}\n.stat-label {\n  color: var(--fg-muted);\n  font-size: 0.75rem;\n  text-transform: uppercase;\n  letter-spacing: 0.04em;\n}\n.stat-value {\n  font-size: 1rem;\n  font-weight: 600;\n}\n.stat-added {\n  color: var(--added-fg);\n}\n.stat-removed {\n  color: var(--removed-fg);\n}\n.stat-changed {\n  color: var(--changed-fg);\n}\n\n/* Store paths */\n.store-paths {\n  display: grid;\n  grid-template-columns: auto 1fr;\n  gap: 0.2rem 0.85rem;\n  margin: 0 0 1rem;\n  font-size: 0.85rem;\n}\n.store-paths dt {\n  color: var(--fg-muted);\n  font-weight: 500;\n}\n.store-paths dd {\n  margin: 0;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n/* Change sections */\n.change-group {\n  margin-bottom: 1rem;\n  border-radius: 6px;\n  overflow: hidden;\n  border: 1px solid var(--border-muted);\n}\n.change-group:last-of-type {\n  margin-bottom: 0;\n}\n.change-heading {\n  display: flex;\n  align-items: center;\n  gap: 0.6rem;\n  margin: 0;\n  padding: 0.5rem 0.85rem;\n  font-size: 0.9rem;\n  cursor: pointer;\n  list-style: none;\n  user-select: none;\n}\n.change-heading::-webkit-details-marker {\n  display: none;\n}\n.change-heading::before {\n  content: \"\";\n  width: 0;\n  height: 0;\n  border-left: 5px solid currentColor;\n  border-top: 4px solid transparent;\n  border-bottom: 4px solid transparent;\n  transition: transform 0.15s ease;\n  flex-shrink: 0;\n}\n.change-group[open] > .change-heading::before {\n  transform: rotate(90deg);\n}\n.change-badge {\n  display: inline-block;\n  padding: 0.1rem 0.55rem;\n  font-size: 0.72rem;\n  font-weight: 600;\n  letter-spacing: 0.05em;\n  border-radius: 999px;\n  border: 1px solid currentColor;\n}\n.change-count {\n  color: var(--fg-muted);\n  font-size: 0.85rem;\n  font-weight: 500;\n}\n.change-added > .change-heading {\n  background: var(--added-bg);\n  color: var(--added-fg);\n}\n.change-removed > .change-heading {\n  background: var(--removed-bg);\n  color: var(--removed-fg);\n}\n.change-changed > .change-heading {\n  background: var(--changed-bg);\n  color: var(--changed-fg);\n}\n.change-added[open] > .change-heading {\n  border-bottom: 1px solid var(--added-border);\n}\n.change-removed[open] > .change-heading {\n  border-bottom: 1px solid var(--removed-border);\n}\n.change-changed[open] > .change-heading {\n  border-bottom: 1px solid var(--changed-border);\n}\n\n.change-table {\n  width: 100%;\n  border-collapse: collapse;\n  background: var(--bg-elevated);\n}\n.change-table td {\n  padding: 0.3rem 0.85rem;\n  border-top: 1px solid var(--border-muted);\n  vertical-align: top;\n}\n.change-table tr:first-child td {\n  border-top: 0;\n}\n.change-table .pkg-name {\n  width: 35%;\n  white-space: nowrap;\n  overflow-wrap: anywhere;\n}\n.change-table .pkg-ver {\n  color: var(--fg-muted);\n  overflow-wrap: anywhere;\n}\n.change-table .pkg-size {\n  color: var(--fg-muted);\n  text-align: right;\n  white-space: nowrap;\n}\n.change-table code {\n  background: transparent;\n  border: 0;\n  padding: 0;\n  font-size: 0.85em;\n}\n\n.no-changes {\n  margin: 0 0 1rem;\n  padding: 0.8rem 1rem;\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  color: var(--fg-muted);\n  text-align: center;\n}\n\n.raw-block {\n  margin-top: 1rem;\n}\n.raw-block summary {\n  cursor: pointer;\n  color: var(--fg-muted);\n  font-size: 0.85rem;\n  padding: 0.35rem 0;\n}\n.raw-block summary:hover {\n  color: var(--accent);\n}\n.raw-block pre {\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  padding: 0.85rem 1rem;\n  overflow-x: auto;\n  white-space: pre;\n  font-size: 0.8rem;\n  margin: 0.35rem 0 0;\n}\n.raw-block pre code {\n  background: transparent;\n  border: 0;\n  padding: 0;\n  font-size: 1em;\n}\n\nfooter {\n  margin-top: 2.5rem;\n  padding-top: 1rem;\n  border-top: 1px solid var(--border);\n  color: var(--fg-muted);\n  font-size: 0.8rem;\n  text-align: center;\n}\n\n@media (max-width: 600px) {\n  body {\n    padding: 1rem 0.75rem 3rem;\n  }\n  .stat {\n    min-width: 45%;\n  }\n  .summary-table {\n    font-size: 0.85rem;\n  }\n  .summary-table th,\n  .summary-table td {\n    padding: 0.45rem 0.6rem;\n  }\n}\n";
+// src/services/html.ts
+var escapeHtml = (text) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 var slugify = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "diff";
-var renderEntryRows = (lines) => lines.map((line) => {
-	const stripped = stripPrefix(line);
-	const match = /^(\S+)\s{2,}(.+)$/.exec(stripped);
-	if (match) return `<tr><td class="pkg-name"><code>${escapeHtml(match[1])}</code></td><td class="pkg-ver"><code>${escapeHtml(match[2])}</code></td></tr>`;
-	return `<tr><td class="pkg-name" colspan="2"><code>${escapeHtml(stripped)}</code></td></tr>`;
-}).join("");
-var renderChangeSection = (kind, label, lines) => {
-	if (lines.length === 0) return "";
+var renderEntryRows = (rows) => rows.map((row) => `<tr><td class="pkg-name"><code>${escapeHtml(row.name)}</code></td><td class="pkg-ver"><code>${escapeHtml(row.version)}</code></td><td class="pkg-size">${row.sizeDelta ? `<code>${escapeHtml(row.sizeDelta)}</code>` : ""}</td></tr>`).join("");
+var renderChangeSection = (kind, label, rows) => {
+	if (rows.length === 0) return "";
 	return `
       <details open class="change-group change-${kind}">
         <summary class="change-heading">
           <span class="change-badge">${label}</span>
-          <span class="change-count">${lines.length}</span>
+          <span class="change-count">${rows.length}</span>
         </summary>
         <table class="change-table">
-          <tbody>${renderEntryRows(lines)}</tbody>
+          <tbody>${renderEntryRows(rows)}</tbody>
         </table>
       </details>`;
 };
-var renderNoChanges = (parsed) => isUnchanged(parsed) ? `<p class="no-changes">No package additions, removals, or version changes.</p>` : "";
-var renderStats = (parsed) => {
+var renderNoChanges = (view) => isUnchanged(view) ? `<p class="no-changes">No package additions, removals, or version changes.</p>` : "";
+var renderHidden = (view) => view.hiddenCount > 0 ? `<p class="muted">${pluralize(view.hiddenCount, "package")} with only a minor size change hidden.</p>` : "";
+var renderStats = (view) => {
 	const stats = [];
-	if (parsed.sizeBefore && parsed.sizeAfter) stats.push(`<div class="stat"><span class="stat-label">Closure size</span><span class="stat-value"><code>${escapeHtml(parsed.sizeBefore)}</code> <span class="arrow">→</span> <code>${escapeHtml(parsed.sizeAfter)}</code></span></div>`);
-	if (parsed.diffSize) stats.push(`<div class="stat"><span class="stat-label">Diff size</span><span class="stat-value"><code>${escapeHtml(parsed.diffSize)}</code></span></div>`);
-	if (!isUnchanged(parsed)) {
-		stats.push(`<div class="stat"><span class="stat-label">Added</span><span class="stat-value stat-added">${parsed.added.length}</span></div>`);
-		stats.push(`<div class="stat"><span class="stat-label">Removed</span><span class="stat-value stat-removed">${parsed.removed.length}</span></div>`);
-		stats.push(`<div class="stat"><span class="stat-label">Changed</span><span class="stat-value stat-changed">${parsed.changed.length}</span></div>`);
+	if (view.size) {
+		stats.push(`<div class="stat"><span class="stat-label">Closure size</span><span class="stat-value"><code>${escapeHtml(view.size.before)}</code> <span class="arrow">→</span> <code>${escapeHtml(view.size.after)}</code></span></div>`);
+		if (view.size.delta) stats.push(`<div class="stat"><span class="stat-label">Diff size</span><span class="stat-value"><code>${escapeHtml(view.size.delta)}</code></span></div>`);
+	}
+	if (view.paths) stats.push(`<div class="stat"><span class="stat-label">Store paths</span><span class="stat-value"><code>${view.paths.old}</code> <span class="arrow">→</span> <code>${view.paths.new}</code></span></div>`);
+	if (!isUnchanged(view)) {
+		stats.push(`<div class="stat"><span class="stat-label">Added</span><span class="stat-value stat-added">${view.added.length}</span></div>`);
+		stats.push(`<div class="stat"><span class="stat-label">Removed</span><span class="stat-value stat-removed">${view.removed.length}</span></div>`);
+		stats.push(`<div class="stat"><span class="stat-label">Changed</span><span class="stat-value stat-changed">${view.changed.length}</span></div>`);
 	}
 	if (stats.length === 0) return "";
 	return `<div class="stats">${stats.join("")}</div>`;
 };
-var renderStorePaths = (parsed) => {
-	if (!parsed.oldPath && !parsed.newPath) return "";
-	const rows = [];
-	if (parsed.oldPath) rows.push(`<dt>Base store path</dt><dd><code>${escapeHtml(parsed.oldPath)}</code></dd>`);
-	if (parsed.newPath) rows.push(`<dt>PR store path</dt><dd><code>${escapeHtml(parsed.newPath)}</code></dd>`);
-	return `<dl class="store-paths">${rows.join("")}</dl>`;
-};
+var renderStorePaths = (result) => `<dl class="store-paths"><dt>Base store path</dt><dd><code>${escapeHtml(result.basePath)}</code></dd><dt>PR store path</dt><dd><code>${escapeHtml(result.prPath)}</code></dd></dl>`;
+var rawOutput = (result) => result.diff.format === "json" ? JSON.stringify(result.diff.report, null, 2) : result.diff.text;
 var prepare = (results) => results.map((result, index) => ({
 	result,
-	parsed: parseDiff(result.diff),
+	view: toView(result.diff),
 	anchor: `diff-${index}-${slugify(result.displayName)}`
 }));
-var renderSection = ({ result, parsed, anchor }) => {
-	const rawBlock = `<details class="raw-block"><summary>Raw dix output</summary><pre><code>${escapeHtml(result.diff)}</code></pre></details>`;
+var renderSection$1 = ({ result, view, anchor }) => {
+	const rawBlock = `<details class="raw-block"><summary>Raw dix output</summary><pre><code>${escapeHtml(rawOutput(result))}</code></pre></details>`;
 	return `
     <article class="diff-card" id="${escapeHtml(anchor)}">
       <header class="diff-card-header">
@@ -77915,12 +78131,13 @@ var renderSection = ({ result, parsed, anchor }) => {
         </dl>
       </header>
       <div class="diff-card-body">
-        ${renderStats(parsed)}
-        ${renderStorePaths(parsed)}
-        ${renderNoChanges(parsed)}
-        ${renderChangeSection("changed", "CHANGED", parsed.changed)}
-        ${renderChangeSection("added", "ADDED", parsed.added)}
-        ${renderChangeSection("removed", "REMOVED", parsed.removed)}
+        ${renderStats(view)}
+        ${renderStorePaths(result)}
+        ${renderNoChanges(view)}
+        ${renderChangeSection("changed", "CHANGED", view.changed)}
+        ${renderChangeSection("added", "ADDED", view.added)}
+        ${renderChangeSection("removed", "REMOVED", view.removed)}
+        ${renderHidden(view)}
         ${rawBlock}
       </div>
     </article>`;
@@ -77941,15 +78158,15 @@ var renderSummary = (prepared) => {
             <th>Closure size</th>
           </tr>
         </thead>
-        <tbody>${prepared.map(({ result, parsed, anchor }) => {
-		const sizeCell = parsed.sizeBefore && parsed.sizeAfter ? `<code>${escapeHtml(parsed.sizeBefore)}</code> <span class="arrow">→</span> <code>${escapeHtml(parsed.sizeAfter)}</code>` : `<span class="muted">—</span>`;
+        <tbody>${prepared.map(({ result, view, anchor }) => {
+		const sizeCell = view.size ? `<code>${escapeHtml(view.size.before)}</code> <span class="arrow">→</span> <code>${escapeHtml(view.size.after)}</code>` : `<span class="muted">—</span>`;
 		return `
         <tr>
           <td><a href="#${escapeHtml(anchor)}">${escapeHtml(result.displayName)}</a></td>
           <td><code>${escapeHtml(result.attributePath)}</code></td>
-          <td class="num stat-added">${parsed.added.length}</td>
-          <td class="num stat-removed">${parsed.removed.length}</td>
-          <td class="num stat-changed">${parsed.changed.length}</td>
+          <td class="num stat-added">${view.added.length}</td>
+          <td class="num stat-removed">${view.removed.length}</td>
+          <td class="num stat-changed">${view.changed.length}</td>
           <td>${sizeCell}</td>
         </tr>`;
 	}).join("")}</tbody>
@@ -77972,7 +78189,7 @@ var generateDiffHtml = (results) => {
     <p>${prepared.length} ${prepared.length === 1 ? "comparison" : "comparisons"}</p>
   </div>
 ${renderSummary(prepared)}
-${prepared.map(renderSection).join("\n")}
+${prepared.map(renderSection$1).join("\n")}
   <footer>Generated by <a href="https://github.com/natsukium/nix-diff-action">nix-diff-action</a> · diff engine: <a href="https://github.com/manic-systems/dix">dix</a></footer>
 </body>
 </html>`;
@@ -77997,7 +78214,7 @@ var readResultFile = (downloadPath, artName) => tryPromise({
 		message: `Failed to read result file: ${e}`
 	})
 });
-var parseJson = (content, artName) => try_({
+var parseJson = (content, artName) => try_$1({
 	try: () => JSON.parse(content),
 	catch: (e) => new ArtifactError({
 		name: artName,
@@ -78009,7 +78226,7 @@ var decodeResults = (parsed, artName) => decodeUnknown(DiffResultArray)(parsed).
 	message: `Invalid format: ${error}`
 })));
 var downloadAndParseArtifact = (art, downloadPath, findBy) => gen(function* () {
-	const artifactDownloadPath = (yield* withWarningOption(downloadArtifact(art.id, art.name, downloadPath, findBy), `Download artifact ${art.name}`)).pipe(flatMap$1((r) => fromNullable(r.downloadPath)));
+	const artifactDownloadPath = (yield* withWarningOption(downloadArtifact(art.id, art.name, downloadPath, findBy), `Download artifact ${art.name}`)).pipe(flatMap$2((r) => fromNullable(r.downloadPath)));
 	if (isNone(artifactDownloadPath)) {
 		yield* logWarning(`Artifact ${art.name} has no download path`);
 		return [];
@@ -78113,7 +78330,7 @@ var hasDixChanges = (result) => result.basePath !== result.prPath;
 // src/services/github.ts
 var NIX_DIFF_ACTION_MARKER_BASE = "<!-- nix-diff-action";
 var getNixDiffActionMarker = (displayName) => displayName ? `${NIX_DIFF_ACTION_MARKER_BASE}:${displayName} -->` : `${NIX_DIFF_ACTION_MARKER_BASE} -->`;
-var PER_SECTION_OVERHEAD = 300;
+var MAX_COMMENT_LENGTH = 6e4;
 var truncateDiff = (diff, maxLength) => {
 	if (diff.length <= maxLength) return {
 		text: diff,
@@ -78125,39 +78342,128 @@ var truncateDiff = (diff, maxLength) => {
 	};
 };
 var sanitizeDisplayName = (text) => text.replace(/[\\`*_{}[\]()#+!|]/g, "");
-var calculateMaxDiffPerAttribute = (attributeCount) => {
-	const availableForDiffs = 59700 - PER_SECTION_OVERHEAD * attributeCount;
-	return Math.max(1e3, Math.floor(availableForDiffs / attributeCount));
+var codeCell = (text) => text ? `\`${text.replace(/`/g, "'").replace(/\|/g, "\\|")}\`` : "";
+var renderStatsTable = (view) => {
+	const rows = [];
+	if (view.size) rows.push(`| Closure size | ${codeCell(view.size.before)} | ${codeCell(view.size.after)} | ${codeCell(view.size.delta ?? "")} |`);
+	if (view.paths) rows.push(`| Store paths | ${view.paths.old} | ${view.paths.new} | +${view.paths.added} / −${view.paths.removed} |`);
+	if (rows.length === 0) return "";
+	return [
+		"|  | Base | PR | Diff |",
+		"| --- | ---: | ---: | ---: |",
+		...rows
+	].join("\n");
 };
-var formatAggregatedComment = (results, headSha, options) => {
-	const maxDiffLength = calculateMaxDiffPerAttribute(results.length);
-	const marker = results.length === 1 ? getNixDiffActionMarker(results[0].displayName) : getNixDiffActionMarker();
-	const sections = results.map((result) => {
-		const { truncated, text } = truncateDiff(result.diff || "No differences found", maxDiffLength);
-		const artifactHint = truncated ? "\n\n> **Note**: Diff was truncated. See the full output in the artifacts below." : "";
-		return `### ${sanitizeDisplayName(result.displayName)}
+var COMMENT_MAX_VERSIONS = 5;
+var TABLE_HEADER = "| Package | Version | Size |\n| --- | --- | ---: |";
+var renderPackageTables = (view, budget) => {
+	const groups = [
+		{
+			label: "Changed",
+			rows: view.changed
+		},
+		{
+			label: "Added",
+			rows: view.added
+		},
+		{
+			label: "Removed",
+			rows: view.removed
+		}
+	].filter((g) => g.rows.length > 0);
+	const parts = [];
+	let remaining = budget;
+	let truncated = false;
+	groups.forEach((group, index) => {
+		const share = Math.floor(remaining / (groups.length - index));
+		const lines = [];
+		let used = 49;
+		for (const row of group.rows) {
+			const line = `| ${codeCell(row.name)} | ${codeCell(row.version)} | ${row.sizeDelta ?? ""} |`;
+			if (used + line.length + 1 > share) break;
+			lines.push(line);
+			used += line.length + 1;
+		}
+		const omitted = group.rows.length - lines.length;
+		if (lines.length > 0) remaining -= used;
+		if (omitted > 0) truncated = true;
+		const table = lines.length > 0 ? `\n\n${TABLE_HEADER}\n${lines.join("\n")}` : "";
+		const note = omitted > 0 ? `\n\n> **Note**: ${pluralize(omitted, "more package")} not shown. See the full output in the artifacts below.` : "";
+		parts.push(`<details>
+<summary>${group.label} (${group.rows.length})</summary>${table}${note}
 
-**Attribute**: \`${result.attributePath}\`
-
-<details>
+</details>`);
+	});
+	return {
+		text: parts.join("\n\n"),
+		truncated
+	};
+};
+var renderReportBody = (view, budget) => {
+	const stats = renderStatsTable(view);
+	const hidden = view.hiddenCount > 0 ? `\n\n<sub>${pluralize(view.hiddenCount, "package")} with only a minor size change hidden.</sub>` : "";
+	if (isUnchanged(view)) return {
+		text: [stats, "No package additions, removals, or version changes."].filter(Boolean).join("\n\n") + hidden,
+		truncated: false
+	};
+	const tables = renderPackageTables(view, budget);
+	return {
+		text: `${stats ? `${stats}\n\n` : ""}${tables.text}${hidden}`,
+		truncated: tables.truncated
+	};
+};
+var renderTextBody = (text, budget) => {
+	const truncated = truncateDiff(text || "No differences found", budget);
+	const hint = truncated.truncated ? "\n\n> **Note**: Diff was truncated. See the full output in the artifacts below." : "";
+	return {
+		text: `<details>
 <summary>Diff Output</summary>
 
 \`\`\`
-${text}
+${truncated.text}
 \`\`\`
-${artifactHint}
-</details>`;
-	}).join("\n\n");
-	return `${marker}
+${hint}
+</details>`,
+		truncated: truncated.truncated
+	};
+};
+var renderResultBody = (result, budget) => result.diff.format === "json" ? renderReportBody(viewFromReport(result.diff.report, { maxVersions: COMMENT_MAX_VERSIONS }), budget) : renderTextBody(result.diff.text, budget);
+var renderSection = (result, budget) => `### ${sanitizeDisplayName(result.displayName)}
+
+**Attribute**: \`${result.attributePath}\`
+
+${renderResultBody(result, budget).text}`;
+var formatAggregatedComment = (results, headSha, options) => {
+	const marker = results.length === 1 ? getNixDiffActionMarker(results[0].displayName) : getNixDiffActionMarker();
+	const compareDisplay = options ? `[Compare changes](${options.repoUrl}/compare/${results[0].baseRef}...${results[0].prRef})` : `\`${results[0].baseRef}...${results[0].prRef}\``;
+	const htmlViewerLink = options?.runId && results.length > 0 && options.htmlViewerAvailable ? `\n> :page_facing_up: [View diff as HTML](${options.repoUrl}/actions/runs/${options.runId}) in the Artifacts section\n` : "";
+	const footer = `---
+<sub>Generated by [nix-diff-action](https://github.com/natsukium/nix-diff-action) using [dix](https://github.com/manic-systems/dix)</sub>
+<!-- nix-diff-action-footer sha=${headSha} -->`;
+	const wrap = (sections) => `${marker}
 ## Nix Diff
 
-${options ? `[Compare changes](${options.repoUrl}/compare/${results[0].baseRef}...${results[0].prRef})` : `\`${results[0].baseRef}...${results[0].prRef}\``}
+${compareDisplay}
 
 ${sections}
-${options?.runId && results.length > 0 && options.htmlViewerAvailable ? `\n> :page_facing_up: [View diff as HTML](${options.repoUrl}/actions/runs/${options.runId}) in the Artifacts section\n` : ""}
-${`---
-<sub>Generated by [nix-diff-action](https://github.com/natsukium/nix-diff-action) using [dix](https://github.com/manic-systems/dix)</sub>
-<!-- nix-diff-action-footer sha=${headSha} -->`}`;
+${htmlViewerLink}
+${footer}`;
+	const omittedNotice = (count) => `\n\n> **Note**: ${pluralize(count, "more attribute")} not shown. See the full output in the artifacts below.`;
+	let fixedLength = wrap("").length;
+	let shown = 0;
+	for (const result of results) {
+		const length = renderSection(result, 0).length + 2;
+		const remaining = results.length - shown - 1;
+		const notice = remaining > 0 ? omittedNotice(remaining).length : 0;
+		if (shown > 0 && fixedLength + length + notice > MAX_COMMENT_LENGTH) break;
+		fixedLength += length;
+		shown++;
+	}
+	const kept = results.slice(0, shown);
+	const omitted = results.length - shown;
+	if (omitted > 0) fixedLength += omittedNotice(omitted).length;
+	const budget = Math.max(0, Math.floor((MAX_COMMENT_LENGTH - fixedLength) / Math.max(1, shown)));
+	return wrap(kept.map((result) => renderSection(result, budget)).join("\n\n") + (omitted > 0 ? omittedNotice(omitted) : ""));
 };
 var listNixDiffComments = (octokit, context, prNumber, displayName) => tryPromise({
 	try: () => octokit.paginate(octokit.rest.issues.listComments, {
@@ -78177,7 +78483,7 @@ var findOldNixDiffComments = (octokit, context, prNumber, currentHeadSha, displa
 	id: c.id,
 	node_id: c.node_id
 }))));
-var minimizeOldComments = (octokit, context, prNumber, currentHeadSha, displayName) => findOldNixDiffComments(octokit, context, prNumber, currentHeadSha, displayName).pipe(flatMap((oldComments) => forEach(oldComments, (comment) => tryPromise({
+var minimizeOldComments = (octokit, context, prNumber, currentHeadSha, displayName) => findOldNixDiffComments(octokit, context, prNumber, currentHeadSha, displayName).pipe(flatMap$1((oldComments) => forEach(oldComments, (comment) => tryPromise({
 	try: () => octokit.graphql(`
                 mutation($input: MinimizeCommentInput!) {
                   minimizeComment(input: $input) {
@@ -78194,7 +78500,7 @@ var minimizeOldComments = (octokit, context, prNumber, currentHeadSha, displayNa
 		operation: "minimizeComment",
 		message: `Failed to minimize comment ${comment.id}: ${e}`
 	})
-}).pipe(flatMap(() => logInfo(`Minimized outdated comment (ID: ${comment.id})`)), catchAll((error) => logWarning(`Failed to minimize comment ${comment.id}: ${error.message}`))), { concurrency: "unbounded" })));
+}).pipe(flatMap$1(() => logInfo(`Minimized outdated comment (ID: ${comment.id})`)), catchAll((error) => logWarning(`Failed to minimize comment ${comment.id}: ${error.message}`))), { concurrency: "unbounded" })));
 var updateComment = (octokit, context, commentId, body) => tryPromise({
 	try: () => octokit.rest.issues.updateComment({
 		...context.repo,
@@ -84876,7 +85182,11 @@ var setDiffOutput = (results) => {
 	if (results.length > 0) {
 		const diffOutputs = results.map((r) => ({
 			displayName: r.displayName,
-			diff: r.diff
+			attributePath: r.attributePath,
+			basePath: r.basePath,
+			prPath: r.prPath,
+			hasChanges: hasDixChanges(r),
+			...r.diff
 		}));
 		setOutput("diff", JSON.stringify(diffOutputs));
 	}
@@ -85025,7 +85335,7 @@ var runComment = gen(function* () {
 });
 // src/programs/index.ts
 var parseAttributes = (input) => gen(function* () {
-	const parsed = yield* try_({
+	const parsed = yield* try_$1({
 		try: () => (0, import_dist.parse)(input),
 		catch: (e) => new AttributeParseError({ message: `YAML parse error: ${e instanceof Error ? e.message : String(e)}` })
 	});
