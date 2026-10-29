@@ -116,17 +116,15 @@ export class NixService extends Effect.Service<NixService>()("NixService", {
           return stdout;
         }),
 
-      // Security: inputsFromPath must reference the base branch worktree, not the PR branch.
+      // Security: inputsFromRef must reference the base branch worktree, not the PR branch.
       // Using the PR branch's flake.lock would allow attackers to inject a malicious nixpkgs
       // fork that replaces dix with arbitrary code, which would then execute in the CI environment
       // with access to GITHUB_TOKEN and other secrets.
       getDixDiff: (
         basePath: string,
         prPath: string,
-        inputsFromPath: string,
+        inputsFromRef: string,
       ): Effect.Effect<string, NixDixError> => {
-        // Use path: to avoid git history requirements
-        const inputsFromRef = `path:${inputsFromPath}`;
         const baseArgs = ["run", "nixpkgs#dix", "--inputs-from", inputsFromRef, "--"];
 
         const handleDixResult = (result: ExecResult) => {

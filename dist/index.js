@@ -187,12 +187,12 @@ var NixService = class extends Service()("NixService", { effect: gen(function* (
 			}));
 			return stdout;
 		}),
-		getDixDiff: (basePath, prPath, inputsFromPath) => {
+		getDixDiff: (basePath, prPath, inputsFromRef) => {
 			const baseArgs = [
 				"run",
 				"nixpkgs#dix",
 				"--inputs-from",
-				`path:${inputsFromPath}`,
+				inputsFromRef,
 				"--"
 			];
 			const handleDixResult = (result) => {
@@ -84951,7 +84951,7 @@ var loadCommentConfig = gen(function* () {
 	};
 });
 // src/programs/full.ts
-var processNixOutput = (config, baseFlakeRef, prFlakeRef, baseSha, headSha, build, worktreePath) => gen(function* () {
+var processNixOutput = (config, baseFlakeRef, prFlakeRef, baseSha, headSha, build) => gen(function* () {
 	const nix = yield* NixService;
 	yield* logInfo(`Processing ${config.displayName}: ${baseFlakeRef}#${config.attribute} vs ${prFlakeRef}#${config.attribute}`);
 	const { basePath, prPath } = yield* all({
@@ -84960,7 +84960,7 @@ var processNixOutput = (config, baseFlakeRef, prFlakeRef, baseSha, headSha, buil
 	});
 	yield* logInfo(`Base path: ${basePath}`);
 	yield* logInfo(`PR path: ${prPath}`);
-	const diff = yield* nix.getDixDiff(basePath, prPath, worktreePath);
+	const diff = yield* nix.getDixDiff(basePath, prPath, baseFlakeRef);
 	return {
 		displayName: config.displayName,
 		attributePath: config.attribute,
@@ -84979,7 +84979,7 @@ var processDiffResults = (options) => gen(function* () {
 	const baseFlakeRef = relativePath === "" || relativePath === "." ? `path:${worktree.path}` : `path:${worktree.path}?dir=${relativePath}`;
 	const prFlakeRef = options.directory;
 	yield* all([nix.prefetchFlakeInputs(baseFlakeRef), nix.prefetchFlakeInputs(prFlakeRef)], { concurrency: 2 });
-	return yield* forEach(options.attributes, (config) => processNixOutput(config, baseFlakeRef, prFlakeRef, options.baseSha, options.headSha, options.build, worktree.path));
+	return yield* forEach(options.attributes, (config) => processNixOutput(config, baseFlakeRef, prFlakeRef, options.baseSha, options.headSha, options.build));
 });
 var runFull = gen(function* () {
 	const artifactService = yield* ArtifactService;
