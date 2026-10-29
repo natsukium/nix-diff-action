@@ -84976,7 +84976,7 @@ var processDiffResults = (options) => gen(function* () {
 	const nix = yield* NixService;
 	const worktree = yield* git.createWorktree(options.baseRef, options.runId);
 	const relativePath = path.relative(options.cwd, options.directory);
-	const baseFlakeRef = relativePath === "" || relativePath === "." ? `path:${worktree.path}` : `path:${worktree.path}?dir=${relativePath}`;
+	const baseFlakeRef = relativePath === "" || relativePath === "." ? `path:${worktree.path}` : `path:${worktree.path}?dir=${relativePath.split(path.sep).map(encodeURIComponent).join("/")}`;
 	const prFlakeRef = options.directory;
 	yield* all([nix.prefetchFlakeInputs(baseFlakeRef), nix.prefetchFlakeInputs(prFlakeRef)], { concurrency: 2 });
 	return yield* forEach(options.attributes, (config) => processNixOutput(config, baseFlakeRef, prFlakeRef, options.baseSha, options.headSha, options.build));
