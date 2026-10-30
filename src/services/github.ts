@@ -4,7 +4,15 @@ import { NotPullRequestContextError, GitHubApiError } from "../errors.js";
 import type { GitHubContext, Octokit, PullRequestPayload, CommentOptions } from "../types.js";
 import type { DiffResult } from "../schemas.js";
 import { hasDixChanges } from "./utils.js";
-import { isUnchanged, pluralize, viewFromReport, type DiffView } from "./view.js";
+import {
+  countExplicit,
+  isUnchanged,
+  pluralize,
+  selectionNote,
+  viewFromReport,
+  type DiffView,
+  type PackageRow,
+} from "./view.js";
 
 const NIX_DIFF_ACTION_MARKER_BASE = "<!-- nix-diff-action";
 
@@ -66,6 +74,15 @@ const renderStatsTable = (view: DiffView): string => {
   return ["|  | Base | PR | Diff |", "| --- | ---: | ---: | ---: |", ...rows].join("\n");
 };
 
+const nameCell = (row: PackageRow, withNote: boolean): string => {
+  if (!row.selection) return codeCell(row.name);
+  const note = withNote ? selectionNote(row) : undefined;
+  return `**${codeCell(row.name)}**${note ? ` <sub>${note}</sub>` : ""}`;
+};
+
+const SELECTION_LEGEND =
+  "<sub>**Bold**: packages listed explicitly in `environment.systemPackages` of the base or the PR.</sub>";
+
 type RenderedBody = { text: string; truncated: boolean };
 
 const COMMENT_MAX_VERSIONS = 5;
@@ -77,9 +94,9 @@ const TABLE_HEADER = "| Package | Version | Size |\n| --- | --- | ---: |";
 // Changed list crowd out Added and Removed entirely.
 const renderPackageTables = (view: DiffView, budget: number): RenderedBody => {
   const groups = [
-    { label: "Changed", rows: view.changed },
-    { label: "Added", rows: view.added },
-    { label: "Removed", rows: view.removed },
+    { label: "Changed", rows: view.changed, notes: true },
+    { label: "Added", rows: view.added, notes: false },
+    { label: "Removed", rows: view.removed, notes: false },
   ].filter((g) => g.rows.length > 0);
 
   const parts: string[] = [];
@@ -90,7 +107,7 @@ const renderPackageTables = (view: DiffView, budget: number): RenderedBody => {
     const lines: string[] = [];
     let used = TABLE_HEADER.length;
     for (const row of group.rows) {
-      const line = `| ${codeCell(row.name)} | ${codeCell(row.version)} | ${row.sizeDelta ?? ""} |`;
+      const line = `| ${nameCell(row, group.notes)} | ${codeCell(row.version)} | ${row.sizeDelta ?? ""} |`;
       if (used + line.length + 1 > share) break;
       lines.push(line);
       used += line.length + 1;
@@ -103,8 +120,13 @@ const renderPackageTables = (view: DiffView, budget: number): RenderedBody => {
       omitted > 0
         ? `\n\n> **Note**: ${pluralize(omitted, "more package")} not shown. See the full output in the artifacts below.`
         : "";
+    const explicitCount = countExplicit(group.rows);
+    const count =
+      explicitCount > 0
+        ? `${group.rows.length}, ${explicitCount} explicit`
+        : `${group.rows.length}`;
     parts.push(`<details>
-<summary>${group.label} (${group.rows.length})</summary>${table}${note}
+<summary>${group.label} (${count})</summary>${table}${note}
 
 </details>`);
   });
@@ -130,7 +152,7 @@ const renderReportBody = (view: DiffView, budget: number): RenderedBody => {
 
   const tables = renderPackageTables(view, budget);
   return {
-    text: `${stats ? `${stats}\n\n` : ""}${tables.text}${hidden}`,
+    text: `${stats ? `${stats}\n\n` : ""}${view.hasSelection ? `${SELECTION_LEGEND}\n\n` : ""}${tables.text}${hidden}`,
     truncated: tables.truncated,
   };
 };

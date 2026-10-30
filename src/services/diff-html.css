@@ -338,6 +338,13 @@ a:hover {
   padding: 0;
   font-size: 0.85em;
 }
+.change-table .pkg-selected .pkg-name code {
+  font-weight: 700;
+}
+.selection-note {
+  color: var(--fg-muted);
+  font-size: 0.8em;
+}
 
 .no-changes {
   margin: 0 0 1rem;

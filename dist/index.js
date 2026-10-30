@@ -77985,12 +77985,21 @@ var describeVersions = (diff, maxVersions) => {
 	if (before.length === 0 && after.length === 0) return "";
 	return `${before.join(", ") || "∅"} → ${after.join(", ") || "∅"}`;
 };
+var SELECTIONS = /* @__PURE__ */ new Map([
+	["Selected", "selected"],
+	["NewlySelected", "newly-selected"],
+	["NewlyUnselected", "newly-unselected"]
+]);
+var selectionNote = (row) => row.selection === "newly-selected" ? "now explicit" : row.selection === "newly-unselected" ? "now a dependency only" : void 0;
+var countExplicit = (rows) => rows.filter((row) => row.selection).length;
+var explicitFirst = (rows) => [...rows.filter((row) => row.selection), ...rows.filter((row) => !row.selection)];
 var viewFromReport = (report, { maxVersions = Infinity } = {}) => {
 	const view = {
 		changed: [],
 		added: [],
 		removed: [],
 		hiddenCount: 0,
+		hasSelection: false,
 		size: {
 			before: formatBytes(report.size_old),
 			after: formatBytes(report.size_new),
@@ -78008,10 +78017,18 @@ var viewFromReport = (report, { maxVersions = Infinity } = {}) => {
 			version: describeVersions(diff, maxVersions),
 			sizeDelta: diff.size_delta !== 0 ? formatSignedBytes(diff.size_delta) : void 0
 		};
+		const selection = SELECTIONS.get(diff.selection);
+		if (selection) {
+			row.selection = selection;
+			view.hasSelection = true;
+		}
 		if (diff.status === "Added") view.added.push(row);
 		else if (diff.status === "Removed") view.removed.push(row);
 		else view.changed.push(row);
 	}
+	view.changed = explicitFirst(view.changed);
+	view.added = explicitFirst(view.added);
+	view.removed = explicitFirst(view.removed);
 	return view;
 };
 var stripPrefix = (line) => line.replace(/^\[[A-Za-z.*+-]{1,4}\]\s*/, "");
@@ -78031,7 +78048,8 @@ var viewFromText = (text) => {
 		changed: [],
 		added: [],
 		removed: [],
-		hiddenCount: 0
+		hiddenCount: 0,
+		hasSelection: false
 	};
 	let section = null;
 	let sizeBefore;
@@ -78073,24 +78091,30 @@ var viewFromText = (text) => {
 var toView = (output) => output.format === "json" ? viewFromReport(output.report) : viewFromText(output.text);
 var isUnchanged = (view) => view.added.length === 0 && view.removed.length === 0 && view.changed.length === 0;
 // src/services/diff-html.css?raw
-var diff_html_default = ":root {\n  color-scheme: light dark;\n  --bg: #ffffff;\n  --bg-elevated: #ffffff;\n  --bg-muted: #f6f8fa;\n  --bg-header: #f0f3f6;\n  --fg: #1f2328;\n  --fg-muted: #59636e;\n  --border: #d1d9e0;\n  --border-muted: #d1d9e0b3;\n  --accent: #0969da;\n  --added-fg: #1a7f37;\n  --added-bg: #dafbe1;\n  --added-border: #1a7f3733;\n  --removed-fg: #cf222e;\n  --removed-bg: #ffebe9;\n  --removed-border: #cf222e33;\n  --changed-fg: #9a6700;\n  --changed-bg: #fff8c5;\n  --changed-border: #9a670033;\n}\n@media (prefers-color-scheme: dark) {\n  :root {\n    --bg: #0d1117;\n    --bg-elevated: #151b23;\n    --bg-muted: #151b23;\n    --bg-header: #151b23;\n    --fg: #f0f6fc;\n    --fg-muted: #9198a1;\n    --border: #3d444d;\n    --border-muted: #3d444d80;\n    --accent: #4493f8;\n    --added-fg: #3fb950;\n    --added-bg: #1f6feb1a;\n    --added-border: #3fb95033;\n    --removed-fg: #f85149;\n    --removed-bg: #f851491a;\n    --removed-border: #f8514933;\n    --changed-fg: #d29922;\n    --changed-bg: #d299221a;\n    --changed-border: #d2992233;\n  }\n}\n* {\n  box-sizing: border-box;\n}\nhtml,\nbody {\n  margin: 0;\n  padding: 0;\n}\nbody {\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif;\n  background: var(--bg);\n  color: var(--fg);\n  line-height: 1.5;\n  padding: 2rem 1.5rem 4rem;\n  max-width: 1100px;\n  margin: 0 auto;\n  font-size: 14px;\n}\nh1 {\n  margin: 0 0 0.25rem;\n  font-size: 1.6rem;\n  font-weight: 600;\n  letter-spacing: -0.01em;\n}\n.page-header {\n  padding-bottom: 1rem;\n  margin-bottom: 1.5rem;\n  border-bottom: 1px solid var(--border);\n}\n.page-header p {\n  margin: 0;\n  color: var(--fg-muted);\n  font-size: 0.9rem;\n}\nh2 {\n  font-size: 1.1rem;\n  font-weight: 600;\n  margin: 0;\n}\ncode {\n  font-family: ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, monospace;\n  font-size: 0.82em;\n  background: var(--bg-muted);\n  padding: 0.1em 0.4em;\n  border-radius: 4px;\n  border: 1px solid var(--border-muted);\n}\na {\n  color: var(--accent);\n  text-decoration: none;\n}\na:hover {\n  text-decoration: underline;\n}\n.muted {\n  color: var(--fg-muted);\n}\n.arrow {\n  color: var(--fg-muted);\n  margin: 0 0.15em;\n}\n\n/* Summary */\n.summary {\n  margin-bottom: 2rem;\n}\n.summary h2 {\n  margin-bottom: 0.75rem;\n}\n.summary-table {\n  width: 100%;\n  border-collapse: collapse;\n  background: var(--bg-elevated);\n  border: 1px solid var(--border);\n  border-radius: 6px;\n  overflow: hidden;\n}\n.summary-table th,\n.summary-table td {\n  padding: 0.55rem 0.9rem;\n  text-align: left;\n  border-bottom: 1px solid var(--border-muted);\n  vertical-align: middle;\n}\n.summary-table thead th {\n  background: var(--bg-header);\n  font-weight: 600;\n  font-size: 0.85rem;\n  color: var(--fg-muted);\n}\n.summary-table tbody tr:last-child td {\n  border-bottom: 0;\n}\n.summary-table .num {\n  text-align: right;\n  font-variant-numeric: tabular-nums;\n}\n\n/* Diff cards */\n.diff-card {\n  border: 1px solid var(--border);\n  border-radius: 6px;\n  background: var(--bg-elevated);\n  margin-bottom: 1.5rem;\n  overflow: hidden;\n}\n.diff-card-header {\n  padding: 1rem 1.25rem;\n  background: var(--bg-header);\n  border-bottom: 1px solid var(--border);\n}\n.diff-card-header h2 {\n  margin-bottom: 0.5rem;\n}\n.diff-card-body {\n  padding: 1rem 1.25rem;\n}\n\n.diff-meta {\n  display: grid;\n  grid-template-columns: auto 1fr;\n  gap: 0.15rem 0.85rem;\n  margin: 0;\n  font-size: 0.85rem;\n}\n.diff-meta dt {\n  color: var(--fg-muted);\n  font-weight: 500;\n}\n.diff-meta dd {\n  margin: 0;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n/* Stats strip */\n.stats {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 0.5rem;\n  margin-bottom: 1rem;\n}\n.stat {\n  flex: 1 1 auto;\n  min-width: 140px;\n  padding: 0.55rem 0.85rem;\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  display: flex;\n  flex-direction: column;\n  gap: 0.15rem;\n}\n.stat-label {\n  color: var(--fg-muted);\n  font-size: 0.75rem;\n  text-transform: uppercase;\n  letter-spacing: 0.04em;\n}\n.stat-value {\n  font-size: 1rem;\n  font-weight: 600;\n}\n.stat-added {\n  color: var(--added-fg);\n}\n.stat-removed {\n  color: var(--removed-fg);\n}\n.stat-changed {\n  color: var(--changed-fg);\n}\n\n/* Store paths */\n.store-paths {\n  display: grid;\n  grid-template-columns: auto 1fr;\n  gap: 0.2rem 0.85rem;\n  margin: 0 0 1rem;\n  font-size: 0.85rem;\n}\n.store-paths dt {\n  color: var(--fg-muted);\n  font-weight: 500;\n}\n.store-paths dd {\n  margin: 0;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n/* Change sections */\n.change-group {\n  margin-bottom: 1rem;\n  border-radius: 6px;\n  overflow: hidden;\n  border: 1px solid var(--border-muted);\n}\n.change-group:last-of-type {\n  margin-bottom: 0;\n}\n.change-heading {\n  display: flex;\n  align-items: center;\n  gap: 0.6rem;\n  margin: 0;\n  padding: 0.5rem 0.85rem;\n  font-size: 0.9rem;\n  cursor: pointer;\n  list-style: none;\n  user-select: none;\n}\n.change-heading::-webkit-details-marker {\n  display: none;\n}\n.change-heading::before {\n  content: \"\";\n  width: 0;\n  height: 0;\n  border-left: 5px solid currentColor;\n  border-top: 4px solid transparent;\n  border-bottom: 4px solid transparent;\n  transition: transform 0.15s ease;\n  flex-shrink: 0;\n}\n.change-group[open] > .change-heading::before {\n  transform: rotate(90deg);\n}\n.change-badge {\n  display: inline-block;\n  padding: 0.1rem 0.55rem;\n  font-size: 0.72rem;\n  font-weight: 600;\n  letter-spacing: 0.05em;\n  border-radius: 999px;\n  border: 1px solid currentColor;\n}\n.change-count {\n  color: var(--fg-muted);\n  font-size: 0.85rem;\n  font-weight: 500;\n}\n.change-added > .change-heading {\n  background: var(--added-bg);\n  color: var(--added-fg);\n}\n.change-removed > .change-heading {\n  background: var(--removed-bg);\n  color: var(--removed-fg);\n}\n.change-changed > .change-heading {\n  background: var(--changed-bg);\n  color: var(--changed-fg);\n}\n.change-added[open] > .change-heading {\n  border-bottom: 1px solid var(--added-border);\n}\n.change-removed[open] > .change-heading {\n  border-bottom: 1px solid var(--removed-border);\n}\n.change-changed[open] > .change-heading {\n  border-bottom: 1px solid var(--changed-border);\n}\n\n.change-table {\n  width: 100%;\n  border-collapse: collapse;\n  background: var(--bg-elevated);\n}\n.change-table td {\n  padding: 0.3rem 0.85rem;\n  border-top: 1px solid var(--border-muted);\n  vertical-align: top;\n}\n.change-table tr:first-child td {\n  border-top: 0;\n}\n.change-table .pkg-name {\n  width: 35%;\n  white-space: nowrap;\n  overflow-wrap: anywhere;\n}\n.change-table .pkg-ver {\n  color: var(--fg-muted);\n  overflow-wrap: anywhere;\n}\n.change-table .pkg-size {\n  color: var(--fg-muted);\n  text-align: right;\n  white-space: nowrap;\n}\n.change-table code {\n  background: transparent;\n  border: 0;\n  padding: 0;\n  font-size: 0.85em;\n}\n\n.no-changes {\n  margin: 0 0 1rem;\n  padding: 0.8rem 1rem;\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  color: var(--fg-muted);\n  text-align: center;\n}\n\n.raw-block {\n  margin-top: 1rem;\n}\n.raw-block summary {\n  cursor: pointer;\n  color: var(--fg-muted);\n  font-size: 0.85rem;\n  padding: 0.35rem 0;\n}\n.raw-block summary:hover {\n  color: var(--accent);\n}\n.raw-block pre {\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  padding: 0.85rem 1rem;\n  overflow-x: auto;\n  white-space: pre;\n  font-size: 0.8rem;\n  margin: 0.35rem 0 0;\n}\n.raw-block pre code {\n  background: transparent;\n  border: 0;\n  padding: 0;\n  font-size: 1em;\n}\n\nfooter {\n  margin-top: 2.5rem;\n  padding-top: 1rem;\n  border-top: 1px solid var(--border);\n  color: var(--fg-muted);\n  font-size: 0.8rem;\n  text-align: center;\n}\n\n@media (max-width: 600px) {\n  body {\n    padding: 1rem 0.75rem 3rem;\n  }\n  .stat {\n    min-width: 45%;\n  }\n  .summary-table {\n    font-size: 0.85rem;\n  }\n  .summary-table th,\n  .summary-table td {\n    padding: 0.45rem 0.6rem;\n  }\n}\n";
+var diff_html_default = ":root {\n  color-scheme: light dark;\n  --bg: #ffffff;\n  --bg-elevated: #ffffff;\n  --bg-muted: #f6f8fa;\n  --bg-header: #f0f3f6;\n  --fg: #1f2328;\n  --fg-muted: #59636e;\n  --border: #d1d9e0;\n  --border-muted: #d1d9e0b3;\n  --accent: #0969da;\n  --added-fg: #1a7f37;\n  --added-bg: #dafbe1;\n  --added-border: #1a7f3733;\n  --removed-fg: #cf222e;\n  --removed-bg: #ffebe9;\n  --removed-border: #cf222e33;\n  --changed-fg: #9a6700;\n  --changed-bg: #fff8c5;\n  --changed-border: #9a670033;\n}\n@media (prefers-color-scheme: dark) {\n  :root {\n    --bg: #0d1117;\n    --bg-elevated: #151b23;\n    --bg-muted: #151b23;\n    --bg-header: #151b23;\n    --fg: #f0f6fc;\n    --fg-muted: #9198a1;\n    --border: #3d444d;\n    --border-muted: #3d444d80;\n    --accent: #4493f8;\n    --added-fg: #3fb950;\n    --added-bg: #1f6feb1a;\n    --added-border: #3fb95033;\n    --removed-fg: #f85149;\n    --removed-bg: #f851491a;\n    --removed-border: #f8514933;\n    --changed-fg: #d29922;\n    --changed-bg: #d299221a;\n    --changed-border: #d2992233;\n  }\n}\n* {\n  box-sizing: border-box;\n}\nhtml,\nbody {\n  margin: 0;\n  padding: 0;\n}\nbody {\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif;\n  background: var(--bg);\n  color: var(--fg);\n  line-height: 1.5;\n  padding: 2rem 1.5rem 4rem;\n  max-width: 1100px;\n  margin: 0 auto;\n  font-size: 14px;\n}\nh1 {\n  margin: 0 0 0.25rem;\n  font-size: 1.6rem;\n  font-weight: 600;\n  letter-spacing: -0.01em;\n}\n.page-header {\n  padding-bottom: 1rem;\n  margin-bottom: 1.5rem;\n  border-bottom: 1px solid var(--border);\n}\n.page-header p {\n  margin: 0;\n  color: var(--fg-muted);\n  font-size: 0.9rem;\n}\nh2 {\n  font-size: 1.1rem;\n  font-weight: 600;\n  margin: 0;\n}\ncode {\n  font-family: ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, monospace;\n  font-size: 0.82em;\n  background: var(--bg-muted);\n  padding: 0.1em 0.4em;\n  border-radius: 4px;\n  border: 1px solid var(--border-muted);\n}\na {\n  color: var(--accent);\n  text-decoration: none;\n}\na:hover {\n  text-decoration: underline;\n}\n.muted {\n  color: var(--fg-muted);\n}\n.arrow {\n  color: var(--fg-muted);\n  margin: 0 0.15em;\n}\n\n/* Summary */\n.summary {\n  margin-bottom: 2rem;\n}\n.summary h2 {\n  margin-bottom: 0.75rem;\n}\n.summary-table {\n  width: 100%;\n  border-collapse: collapse;\n  background: var(--bg-elevated);\n  border: 1px solid var(--border);\n  border-radius: 6px;\n  overflow: hidden;\n}\n.summary-table th,\n.summary-table td {\n  padding: 0.55rem 0.9rem;\n  text-align: left;\n  border-bottom: 1px solid var(--border-muted);\n  vertical-align: middle;\n}\n.summary-table thead th {\n  background: var(--bg-header);\n  font-weight: 600;\n  font-size: 0.85rem;\n  color: var(--fg-muted);\n}\n.summary-table tbody tr:last-child td {\n  border-bottom: 0;\n}\n.summary-table .num {\n  text-align: right;\n  font-variant-numeric: tabular-nums;\n}\n\n/* Diff cards */\n.diff-card {\n  border: 1px solid var(--border);\n  border-radius: 6px;\n  background: var(--bg-elevated);\n  margin-bottom: 1.5rem;\n  overflow: hidden;\n}\n.diff-card-header {\n  padding: 1rem 1.25rem;\n  background: var(--bg-header);\n  border-bottom: 1px solid var(--border);\n}\n.diff-card-header h2 {\n  margin-bottom: 0.5rem;\n}\n.diff-card-body {\n  padding: 1rem 1.25rem;\n}\n\n.diff-meta {\n  display: grid;\n  grid-template-columns: auto 1fr;\n  gap: 0.15rem 0.85rem;\n  margin: 0;\n  font-size: 0.85rem;\n}\n.diff-meta dt {\n  color: var(--fg-muted);\n  font-weight: 500;\n}\n.diff-meta dd {\n  margin: 0;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n/* Stats strip */\n.stats {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 0.5rem;\n  margin-bottom: 1rem;\n}\n.stat {\n  flex: 1 1 auto;\n  min-width: 140px;\n  padding: 0.55rem 0.85rem;\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  display: flex;\n  flex-direction: column;\n  gap: 0.15rem;\n}\n.stat-label {\n  color: var(--fg-muted);\n  font-size: 0.75rem;\n  text-transform: uppercase;\n  letter-spacing: 0.04em;\n}\n.stat-value {\n  font-size: 1rem;\n  font-weight: 600;\n}\n.stat-added {\n  color: var(--added-fg);\n}\n.stat-removed {\n  color: var(--removed-fg);\n}\n.stat-changed {\n  color: var(--changed-fg);\n}\n\n/* Store paths */\n.store-paths {\n  display: grid;\n  grid-template-columns: auto 1fr;\n  gap: 0.2rem 0.85rem;\n  margin: 0 0 1rem;\n  font-size: 0.85rem;\n}\n.store-paths dt {\n  color: var(--fg-muted);\n  font-weight: 500;\n}\n.store-paths dd {\n  margin: 0;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n/* Change sections */\n.change-group {\n  margin-bottom: 1rem;\n  border-radius: 6px;\n  overflow: hidden;\n  border: 1px solid var(--border-muted);\n}\n.change-group:last-of-type {\n  margin-bottom: 0;\n}\n.change-heading {\n  display: flex;\n  align-items: center;\n  gap: 0.6rem;\n  margin: 0;\n  padding: 0.5rem 0.85rem;\n  font-size: 0.9rem;\n  cursor: pointer;\n  list-style: none;\n  user-select: none;\n}\n.change-heading::-webkit-details-marker {\n  display: none;\n}\n.change-heading::before {\n  content: \"\";\n  width: 0;\n  height: 0;\n  border-left: 5px solid currentColor;\n  border-top: 4px solid transparent;\n  border-bottom: 4px solid transparent;\n  transition: transform 0.15s ease;\n  flex-shrink: 0;\n}\n.change-group[open] > .change-heading::before {\n  transform: rotate(90deg);\n}\n.change-badge {\n  display: inline-block;\n  padding: 0.1rem 0.55rem;\n  font-size: 0.72rem;\n  font-weight: 600;\n  letter-spacing: 0.05em;\n  border-radius: 999px;\n  border: 1px solid currentColor;\n}\n.change-count {\n  color: var(--fg-muted);\n  font-size: 0.85rem;\n  font-weight: 500;\n}\n.change-added > .change-heading {\n  background: var(--added-bg);\n  color: var(--added-fg);\n}\n.change-removed > .change-heading {\n  background: var(--removed-bg);\n  color: var(--removed-fg);\n}\n.change-changed > .change-heading {\n  background: var(--changed-bg);\n  color: var(--changed-fg);\n}\n.change-added[open] > .change-heading {\n  border-bottom: 1px solid var(--added-border);\n}\n.change-removed[open] > .change-heading {\n  border-bottom: 1px solid var(--removed-border);\n}\n.change-changed[open] > .change-heading {\n  border-bottom: 1px solid var(--changed-border);\n}\n\n.change-table {\n  width: 100%;\n  border-collapse: collapse;\n  background: var(--bg-elevated);\n}\n.change-table td {\n  padding: 0.3rem 0.85rem;\n  border-top: 1px solid var(--border-muted);\n  vertical-align: top;\n}\n.change-table tr:first-child td {\n  border-top: 0;\n}\n.change-table .pkg-name {\n  width: 35%;\n  white-space: nowrap;\n  overflow-wrap: anywhere;\n}\n.change-table .pkg-ver {\n  color: var(--fg-muted);\n  overflow-wrap: anywhere;\n}\n.change-table .pkg-size {\n  color: var(--fg-muted);\n  text-align: right;\n  white-space: nowrap;\n}\n.change-table code {\n  background: transparent;\n  border: 0;\n  padding: 0;\n  font-size: 0.85em;\n}\n.change-table .pkg-selected .pkg-name code {\n  font-weight: 700;\n}\n.selection-note {\n  color: var(--fg-muted);\n  font-size: 0.8em;\n}\n\n.no-changes {\n  margin: 0 0 1rem;\n  padding: 0.8rem 1rem;\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  color: var(--fg-muted);\n  text-align: center;\n}\n\n.raw-block {\n  margin-top: 1rem;\n}\n.raw-block summary {\n  cursor: pointer;\n  color: var(--fg-muted);\n  font-size: 0.85rem;\n  padding: 0.35rem 0;\n}\n.raw-block summary:hover {\n  color: var(--accent);\n}\n.raw-block pre {\n  background: var(--bg-muted);\n  border: 1px solid var(--border-muted);\n  border-radius: 6px;\n  padding: 0.85rem 1rem;\n  overflow-x: auto;\n  white-space: pre;\n  font-size: 0.8rem;\n  margin: 0.35rem 0 0;\n}\n.raw-block pre code {\n  background: transparent;\n  border: 0;\n  padding: 0;\n  font-size: 1em;\n}\n\nfooter {\n  margin-top: 2.5rem;\n  padding-top: 1rem;\n  border-top: 1px solid var(--border);\n  color: var(--fg-muted);\n  font-size: 0.8rem;\n  text-align: center;\n}\n\n@media (max-width: 600px) {\n  body {\n    padding: 1rem 0.75rem 3rem;\n  }\n  .stat {\n    min-width: 45%;\n  }\n  .summary-table {\n    font-size: 0.85rem;\n  }\n  .summary-table th,\n  .summary-table td {\n    padding: 0.45rem 0.6rem;\n  }\n}\n";
 // src/services/html.ts
 var escapeHtml = (text) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 var slugify = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "diff";
-var renderEntryRows = (rows) => rows.map((row) => `<tr><td class="pkg-name"><code>${escapeHtml(row.name)}</code></td><td class="pkg-ver"><code>${escapeHtml(row.version)}</code></td><td class="pkg-size">${row.sizeDelta ? `<code>${escapeHtml(row.sizeDelta)}</code>` : ""}</td></tr>`).join("");
+var renderEntryRows = (rows, withNotes) => rows.map((row) => {
+	const note = withNotes ? selectionNote(row) : void 0;
+	const noteHtml = note ? ` <span class="selection-note">${note}</span>` : "";
+	return `<tr${row.selection ? ` class="pkg-selected"` : ""}><td class="pkg-name"><code>${escapeHtml(row.name)}</code>${noteHtml}</td><td class="pkg-ver"><code>${escapeHtml(row.version)}</code></td><td class="pkg-size">${row.sizeDelta ? `<code>${escapeHtml(row.sizeDelta)}</code>` : ""}</td></tr>`;
+}).join("");
 var renderChangeSection = (kind, label, rows) => {
 	if (rows.length === 0) return "";
+	const explicitCount = countExplicit(rows);
 	return `
       <details open class="change-group change-${kind}">
         <summary class="change-heading">
           <span class="change-badge">${label}</span>
-          <span class="change-count">${rows.length}</span>
+          <span class="change-count">${explicitCount > 0 ? `${rows.length} · ${explicitCount} explicit` : `${rows.length}`}</span>
         </summary>
         <table class="change-table">
-          <tbody>${renderEntryRows(rows)}</tbody>
+          <tbody>${renderEntryRows(rows, kind === "changed")}</tbody>
         </table>
       </details>`;
 };
+var renderSelectionLegend = (view) => view.hasSelection ? `<p class="muted"><strong>Bold</strong>: packages listed explicitly in <code>environment.systemPackages</code> of the base or the PR.</p>` : "";
 var renderNoChanges = (view) => isUnchanged(view) ? `<p class="no-changes">No package additions, removals, or version changes.</p>` : "";
 var renderHidden = (view) => view.hiddenCount > 0 ? `<p class="muted">${pluralize(view.hiddenCount, "package")} with only a minor size change hidden.</p>` : "";
 var renderStats = (view) => {
@@ -78134,6 +78158,7 @@ var renderSection$1 = ({ result, view, anchor }) => {
         ${renderStats(view)}
         ${renderStorePaths(result)}
         ${renderNoChanges(view)}
+        ${renderSelectionLegend(view)}
         ${renderChangeSection("changed", "CHANGED", view.changed)}
         ${renderChangeSection("added", "ADDED", view.added)}
         ${renderChangeSection("removed", "REMOVED", view.removed)}
@@ -78354,21 +78379,30 @@ var renderStatsTable = (view) => {
 		...rows
 	].join("\n");
 };
+var nameCell = (row, withNote) => {
+	if (!row.selection) return codeCell(row.name);
+	const note = withNote ? selectionNote(row) : void 0;
+	return `**${codeCell(row.name)}**${note ? ` <sub>${note}</sub>` : ""}`;
+};
+var SELECTION_LEGEND = "<sub>**Bold**: packages listed explicitly in `environment.systemPackages` of the base or the PR.</sub>";
 var COMMENT_MAX_VERSIONS = 5;
 var TABLE_HEADER = "| Package | Version | Size |\n| --- | --- | ---: |";
 var renderPackageTables = (view, budget) => {
 	const groups = [
 		{
 			label: "Changed",
-			rows: view.changed
+			rows: view.changed,
+			notes: true
 		},
 		{
 			label: "Added",
-			rows: view.added
+			rows: view.added,
+			notes: false
 		},
 		{
 			label: "Removed",
-			rows: view.removed
+			rows: view.removed,
+			notes: false
 		}
 	].filter((g) => g.rows.length > 0);
 	const parts = [];
@@ -78379,7 +78413,7 @@ var renderPackageTables = (view, budget) => {
 		const lines = [];
 		let used = 49;
 		for (const row of group.rows) {
-			const line = `| ${codeCell(row.name)} | ${codeCell(row.version)} | ${row.sizeDelta ?? ""} |`;
+			const line = `| ${nameCell(row, group.notes)} | ${codeCell(row.version)} | ${row.sizeDelta ?? ""} |`;
 			if (used + line.length + 1 > share) break;
 			lines.push(line);
 			used += line.length + 1;
@@ -78389,8 +78423,10 @@ var renderPackageTables = (view, budget) => {
 		if (omitted > 0) truncated = true;
 		const table = lines.length > 0 ? `\n\n${TABLE_HEADER}\n${lines.join("\n")}` : "";
 		const note = omitted > 0 ? `\n\n> **Note**: ${pluralize(omitted, "more package")} not shown. See the full output in the artifacts below.` : "";
+		const explicitCount = countExplicit(group.rows);
+		const count = explicitCount > 0 ? `${group.rows.length}, ${explicitCount} explicit` : `${group.rows.length}`;
 		parts.push(`<details>
-<summary>${group.label} (${group.rows.length})</summary>${table}${note}
+<summary>${group.label} (${count})</summary>${table}${note}
 
 </details>`);
 	});
@@ -78408,7 +78444,7 @@ var renderReportBody = (view, budget) => {
 	};
 	const tables = renderPackageTables(view, budget);
 	return {
-		text: `${stats ? `${stats}\n\n` : ""}${tables.text}${hidden}`,
+		text: `${stats ? `${stats}\n\n` : ""}${view.hasSelection ? `${SELECTION_LEGEND}\n\n` : ""}${tables.text}${hidden}`,
 		truncated: tables.truncated
 	};
 };

@@ -198,6 +198,8 @@ The action posts a comment like this to your PR:
 >
 > <sub>12 packages with only a minor size change hidden.</sub>
 
+For a NixOS or nix-darwin system compared with `build: true`, packages listed explicitly in `environment.systemPackages` of either side are shown first in each group and in bold, and a Changed package notes whether it became explicit or is now a dependency only. dix cannot find them without a build, so other diffs are unaffected.
+
 Like dix's own output, packages whose version did not change and whose size changed by less than 1 MiB are hidden from the comment. The full report is available in the `diff` output and the workflow artifacts.
 
 Each package group is collapsed by default. Version lists longer than five entries per side are shortened with "+N more". If the comment would exceed GitHub's size limit, the space is shared between the groups and the remaining package rows (and, with many attributes, whole attributes) are omitted with a note pointing to the full results in the workflow artifacts.
