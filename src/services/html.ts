@@ -1,5 +1,13 @@
 import type { DiffResult } from "../schemas.js";
-import { isUnchanged, pluralize, toView, type DiffView, type PackageRow } from "./view.js";
+import {
+  countExplicit,
+  isUnchanged,
+  pluralize,
+  selectionNote,
+  toView,
+  type DiffView,
+  type PackageRow,
+} from "./view.js";
 // Vite inlines the stylesheet as a string at build time via the `?raw` query,
 // so the generated HTML stays a single self-contained artifact while the CSS
 // source lives in a dedicated file for readability.
@@ -19,12 +27,14 @@ export const slugify = (text: string): string =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "") || "diff";
 
-const renderEntryRows = (rows: readonly PackageRow[]): string =>
+const renderEntryRows = (rows: readonly PackageRow[], withNotes: boolean): string =>
   rows
-    .map(
-      (row) =>
-        `<tr><td class="pkg-name"><code>${escapeHtml(row.name)}</code></td><td class="pkg-ver"><code>${escapeHtml(row.version)}</code></td><td class="pkg-size">${row.sizeDelta ? `<code>${escapeHtml(row.sizeDelta)}</code>` : ""}</td></tr>`,
-    )
+    .map((row) => {
+      const note = withNotes ? selectionNote(row) : undefined;
+      const noteHtml = note ? ` <span class="selection-note">${note}</span>` : "";
+      const rowClass = row.selection ? ` class="pkg-selected"` : "";
+      return `<tr${rowClass}><td class="pkg-name"><code>${escapeHtml(row.name)}</code>${noteHtml}</td><td class="pkg-ver"><code>${escapeHtml(row.version)}</code></td><td class="pkg-size">${row.sizeDelta ? `<code>${escapeHtml(row.sizeDelta)}</code>` : ""}</td></tr>`;
+    })
     .join("");
 
 const renderChangeSection = (
@@ -33,17 +43,24 @@ const renderChangeSection = (
   rows: readonly PackageRow[],
 ): string => {
   if (rows.length === 0) return "";
+  const explicitCount = countExplicit(rows);
+  const count = explicitCount > 0 ? `${rows.length} · ${explicitCount} explicit` : `${rows.length}`;
   return `
       <details open class="change-group change-${kind}">
         <summary class="change-heading">
           <span class="change-badge">${label}</span>
-          <span class="change-count">${rows.length}</span>
+          <span class="change-count">${count}</span>
         </summary>
         <table class="change-table">
-          <tbody>${renderEntryRows(rows)}</tbody>
+          <tbody>${renderEntryRows(rows, kind === "changed")}</tbody>
         </table>
       </details>`;
 };
+
+const renderSelectionLegend = (view: DiffView): string =>
+  view.hasSelection
+    ? `<p class="muted"><strong>Bold</strong>: packages listed explicitly in <code>environment.systemPackages</code> of the base or the PR.</p>`
+    : "";
 
 const renderNoChanges = (view: DiffView): string =>
   isUnchanged(view)
@@ -128,6 +145,7 @@ const renderSection = ({ result, view, anchor }: PreparedResult): string => {
         ${renderStats(view)}
         ${renderStorePaths(result)}
         ${renderNoChanges(view)}
+        ${renderSelectionLegend(view)}
         ${renderChangeSection("changed", "CHANGED", view.changed)}
         ${renderChangeSection("added", "ADDED", view.added)}
         ${renderChangeSection("removed", "REMOVED", view.removed)}

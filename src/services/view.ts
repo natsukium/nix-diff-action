@@ -1,9 +1,14 @@
 import type { DixOutput, DixPackageDiff, DixReport } from "../schemas.js";
 
+// Whether a package is listed explicitly, as dix reports for `system-path`.
+// Absent when it is a dependency on both sides.
+export type Selection = "selected" | "newly-selected" | "newly-unselected";
+
 export type PackageRow = {
   name: string;
   version: string;
   sizeDelta?: string;
+  selection?: Selection;
 };
 
 export type DiffView = {
@@ -13,6 +18,9 @@ export type DiffView = {
   // Packages whose versions did not change and whose size changed by less
   // than MIN_SIZE_DELTA.
   hiddenCount: number;
+  // dix only finds explicit packages in a built system profile, so this is
+  // false for every other diff.
+  hasSelection: boolean;
   size?: { before: string; after: string; delta?: string };
   paths?: DixReport["paths"];
 };
@@ -81,6 +89,33 @@ const describeVersions = (diff: DixPackageDiff, maxVersions: number): string => 
   return `${before.join(", ") || "∅"} → ${after.join(", ") || "∅"}`;
 };
 
+// `selection` stays a plain string in the schema so that a variant added by
+// dix is shown as a dependency instead of failing the JSON decode.
+const SELECTIONS = new Map<string, Selection>([
+  ["Selected", "selected"],
+  ["NewlySelected", "newly-selected"],
+  ["NewlyUnselected", "newly-unselected"],
+]);
+
+// Added and Removed already imply the direction, so only a Changed row needs
+// to say how its selection moved.
+export const selectionNote = (row: PackageRow): string | undefined =>
+  row.selection === "newly-selected"
+    ? "now explicit"
+    : row.selection === "newly-unselected"
+      ? "now a dependency only"
+      : undefined;
+
+export const countExplicit = (rows: readonly PackageRow[]): number =>
+  rows.filter((row) => row.selection).length;
+
+// Comment truncation drops rows from the end of each group, so listing
+// explicit packages first keeps them visible in large diffs.
+const explicitFirst = (rows: PackageRow[]): PackageRow[] => [
+  ...rows.filter((row) => row.selection),
+  ...rows.filter((row) => !row.selection),
+];
+
 // maxVersions caps the versions listed per side, for packages such as patch
 // collections whose version lists would otherwise fill the PR comment.
 export const viewFromReport = (
@@ -92,6 +127,7 @@ export const viewFromReport = (
     added: [],
     removed: [],
     hiddenCount: 0,
+    hasSelection: false,
     size: {
       before: formatBytes(report.size_old),
       after: formatBytes(report.size_new),
@@ -111,10 +147,18 @@ export const viewFromReport = (
       version: describeVersions(diff, maxVersions),
       sizeDelta: diff.size_delta !== 0 ? formatSignedBytes(diff.size_delta) : undefined,
     };
+    const selection = SELECTIONS.get(diff.selection);
+    if (selection) {
+      row.selection = selection;
+      view.hasSelection = true;
+    }
     if (diff.status === "Added") view.added.push(row);
     else if (diff.status === "Removed") view.removed.push(row);
     else view.changed.push(row);
   }
+  view.changed = explicitFirst(view.changed);
+  view.added = explicitFirst(view.added);
+  view.removed = explicitFirst(view.removed);
   return view;
 };
 
@@ -135,7 +179,13 @@ const rowFromLine = (line: string): PackageRow => {
 // JSON mode. Lines outside a section are ignored; the raw output is still
 // shown verbatim alongside the parsed view.
 export const viewFromText = (text: string): DiffView => {
-  const view: DiffView = { changed: [], added: [], removed: [], hiddenCount: 0 };
+  const view: DiffView = {
+    changed: [],
+    added: [],
+    removed: [],
+    hiddenCount: 0,
+    hasSelection: false,
+  };
   let section: "added" | "removed" | "changed" | null = null;
   let sizeBefore: string | undefined;
   let sizeAfter: string | undefined;
