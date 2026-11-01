@@ -1,5 +1,5 @@
 import * as github from "@actions/github";
-import { Effect, Option } from "effect";
+import { Context, Effect, Layer, Option } from "effect";
 import { NotPullRequestContextError, GitHubApiError } from "../errors.js";
 import type { GitHubContext, Octokit, PullRequestPayload, CommentOptions } from "../types.js";
 import type { DiffResult } from "../schemas.js";
@@ -297,7 +297,7 @@ const findExistingNixDiffComment = (
   displayName?: string,
 ): Effect.Effect<Option.Option<{ id: number }>, GitHubApiError> =>
   listNixDiffComments(octokit, context, prNumber, displayName).pipe(
-    Effect.map((comments) => Option.fromNullable(comments[0])),
+    Effect.map((comments) => Option.fromNullishOr(comments[0])),
     Effect.map(Option.map((c) => ({ id: c.id }))),
   );
 
@@ -354,7 +354,7 @@ const minimizeOldComments = (
               }),
           }).pipe(
             Effect.flatMap(() => Effect.logInfo(`Minimized outdated comment (ID: ${comment.id})`)),
-            Effect.catchAll((error) =>
+            Effect.catch((error) =>
               Effect.logWarning(`Failed to minimize comment ${comment.id}: ${error.message}`),
             ),
           ),
@@ -393,8 +393,8 @@ const createComment = (octokit: Octokit, context: GitHubContext, prNumber: numbe
       }),
   });
 
-export class GitHubService extends Effect.Service<GitHubService>()("GitHubService", {
-  succeed: {
+export class GitHubService extends Context.Service<GitHubService>()("GitHubService", {
+  make: Effect.succeed({
     getContext: (): GitHubContext => github.context,
 
     getPullRequest: (): Effect.Effect<PullRequestPayload, NotPullRequestContextError> =>
@@ -459,5 +459,7 @@ export class GitHubService extends Effect.Service<GitHubService>()("GitHubServic
         yield* createComment(octokit, context, pr.number, commentBody);
         yield* Effect.logInfo("Posted new aggregated diff comment to PR");
       }),
-  },
-}) {}
+  }),
+}) {
+  static readonly layer = Layer.effect(this, this.make);
+}

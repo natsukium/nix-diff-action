@@ -7,16 +7,16 @@ import { Schema } from "effect";
 const nixIdentifierPattern = "[a-zA-Z_][a-zA-Z0-9_'-]*";
 const attributePathPattern = new RegExp(`^${nixIdentifierPattern}(\\.${nixIdentifierPattern})*$`);
 
-const AttributePath = Schema.NonEmptyString.pipe(
-  Schema.filter((s) => !s.startsWith("#") && !s.startsWith(".#"), {
-    message: () =>
+const AttributePath = Schema.NonEmptyString.check(
+  Schema.makeFilter((s) => !s.startsWith("#") && !s.startsWith(".#"), {
+    message:
       "Attribute path must not start with '#' or '.#' - the reference prefix is added automatically",
   }),
-  Schema.pattern(attributePathPattern, {
-    message: () =>
+  Schema.isPattern(attributePathPattern, {
+    message:
       "Invalid attribute path format. Expected format: 'packages.x86_64-linux.default' or 'nixosConfigurations.myhost.config.system.build.toplevel'",
   }),
-).annotations({
+).annotate({
   identifier: "AttributePath",
   description: "Nix attribute path (e.g., packages.x86_64-linux.default)",
   examples: [
@@ -27,16 +27,16 @@ const AttributePath = Schema.NonEmptyString.pipe(
 });
 
 export const NixOutputConfig = Schema.Struct({
-  displayName: Schema.NonEmptyString.annotations({
+  displayName: Schema.NonEmptyString.annotate({
     description: "User-friendly name for this comparison",
   }),
-  attribute: AttributePath.annotations({
+  attribute: AttributePath.annotate({
     description: "Nix attribute path (e.g., packages.x86_64-linux.default)",
   }),
-}).annotations({ identifier: "NixOutputConfig" });
+}).annotate({ identifier: "NixOutputConfig" });
 export type NixOutputConfig = typeof NixOutputConfig.Type;
 
-export const NixOutputConfigArray = Schema.Array(NixOutputConfig).annotations({
+export const NixOutputConfigArray = Schema.Array(NixOutputConfig).annotate({
   identifier: "NixOutputConfigArray",
 });
 
@@ -49,7 +49,7 @@ const DixVersionAmount = Schema.Struct({
   amount: Schema.Number,
 });
 
-const DixVersionEvent = Schema.Union(
+const DixVersionEvent = Schema.Union([
   Schema.Struct({ kind: Schema.Literal("added"), version: DixVersionAmount }),
   Schema.Struct({ kind: Schema.Literal("removed"), version: DixVersionAmount }),
   Schema.Struct({
@@ -63,13 +63,13 @@ const DixVersionEvent = Schema.Union(
     old_amount: Schema.Number,
     new_amount: Schema.Number,
   }),
-);
+]);
 export type DixVersionEvent = typeof DixVersionEvent.Type;
 
 export const DixPackageDiff = Schema.Struct({
   name: Schema.String,
   versions: Schema.Array(DixVersionEvent),
-  status: Schema.Literal("Changed", "Mixed", "Upgraded", "Downgraded", "Added", "Removed"),
+  status: Schema.Literals(["Changed", "Mixed", "Upgraded", "Downgraded", "Added", "Removed"]),
   selection: Schema.String,
   has_omitted_versions: Schema.Boolean,
   size_old: Schema.Number,
@@ -88,40 +88,40 @@ export const DixReport = Schema.Struct({
   }),
   size_old: Schema.Number,
   size_new: Schema.Number,
-}).annotations({ identifier: "DixReport" });
+}).annotate({ identifier: "DixReport" });
 export type DixReport = typeof DixReport.Type;
 
-export const DixOutput = Schema.Union(
+export const DixOutput = Schema.Union([
   Schema.Struct({ format: Schema.Literal("json"), report: DixReport }),
   Schema.Struct({ format: Schema.Literal("text"), text: Schema.String }),
-).annotations({ identifier: "DixOutput" });
+]).annotate({ identifier: "DixOutput" });
 export type DixOutput = typeof DixOutput.Type;
 
 export const DiffResult = Schema.Struct({
-  displayName: Schema.NonEmptyString.annotations({
+  displayName: Schema.NonEmptyString.annotate({
     description: "User-friendly name from output config",
   }),
-  attributePath: Schema.NonEmptyString.annotations({
+  attributePath: Schema.NonEmptyString.annotate({
     description: "Nix attribute path that was compared",
   }),
-  baseRef: Schema.NonEmptyString.annotations({
+  baseRef: Schema.NonEmptyString.annotate({
     description: "Commit SHA of the base branch",
   }),
-  prRef: Schema.NonEmptyString.annotations({
+  prRef: Schema.NonEmptyString.annotate({
     description: "Commit SHA of the PR head",
   }),
-  basePath: Schema.NonEmptyString.annotations({
+  basePath: Schema.NonEmptyString.annotate({
     description: "Nix store path of the base branch output",
   }),
-  prPath: Schema.NonEmptyString.annotations({
+  prPath: Schema.NonEmptyString.annotate({
     description: "Nix store path of the PR head output",
   }),
-  diff: DixOutput.annotations({
+  diff: DixOutput.annotate({
     description: "Diff output from dix: the JSON report, or human-readable text for dix < 2.0",
   }),
-}).annotations({ identifier: "DiffResult" });
+}).annotate({ identifier: "DiffResult" });
 export type DiffResult = typeof DiffResult.Type;
 
-export const DiffResultArray = Schema.Array(DiffResult).annotations({
+export const DiffResultArray = Schema.Array(DiffResult).annotate({
   identifier: "DiffResultArray",
 });

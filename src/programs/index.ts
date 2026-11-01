@@ -31,7 +31,7 @@ export const parseAttributes = (
       );
     }
 
-    return yield* Schema.decodeUnknown(NixOutputConfigArray)(parsed).pipe(
+    return yield* Schema.decodeUnknownEffect(NixOutputConfigArray)(parsed).pipe(
       Effect.mapError(
         (e) =>
           new AttributeParseError({
@@ -41,12 +41,12 @@ export const parseAttributes = (
     );
   });
 
-const CommentStrategySchema = Schema.Literal("create", "update");
+const CommentStrategySchema = Schema.Literals(["create", "update"]);
 
 export const parseCommentStrategy = (
   input: string,
 ): Effect.Effect<CommentStrategy, InvalidCommentStrategyError> =>
-  Schema.decodeUnknown(CommentStrategySchema)(input).pipe(
+  Schema.decodeUnknownEffect(CommentStrategySchema)(input).pipe(
     Effect.mapError(() => new InvalidCommentStrategyError({ value: input })),
   );
 

@@ -1,6 +1,6 @@
 import * as nodePath from "path";
 import { Effect, Option, Scope } from "effect";
-import type { ConfigError } from "effect/ConfigError";
+import type { ConfigError } from "effect/Config";
 import { GitService, NixService, GitHubService, ArtifactService } from "../services/index.js";
 import { NixOutputConfig, DiffResult } from "../schemas.js";
 import {
@@ -144,7 +144,7 @@ export const runFull: Effect.Effect<
   const htmlViewerAvailable = yield* artifactService
     .uploadAggregatedHtml(results)
     .pipe(
-      Effect.catchAll((error) =>
+      Effect.catch((error) =>
         Effect.logWarning(`HTML viewer artifact upload failed: ${error.message}`).pipe(
           Effect.as(false),
         ),

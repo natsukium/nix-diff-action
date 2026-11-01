@@ -48,7 +48,7 @@ const getDixDiff = (basePath = "/nix/store/old", prPath = "/nix/store/new") =>
   Effect.gen(function* () {
     const nix = yield* NixService;
     return yield* nix.getDixDiff(basePath, prPath, INPUTS_FROM);
-  }).pipe(Effect.provide(NixService.Default));
+  }).pipe(Effect.provide(NixService.layer));
 
 const dixCalls = () =>
   mockState.calls.filter((c) => c.command === DIX_BIN && c.args[0] !== "--version");
@@ -155,7 +155,7 @@ describe("NixService.getDixDiff", () => {
         const nix = yield* NixService;
         yield* nix.getDixDiff("/nix/store/a", "/nix/store/b", INPUTS_FROM);
         yield* nix.getDixDiff("/nix/store/c", "/nix/store/d", INPUTS_FROM);
-      }).pipe(Effect.provide(NixService.Default)),
+      }).pipe(Effect.provide(NixService.layer)),
     );
 
     expect(mockState.calls.filter((c) => c.command === "nix")).toHaveLength(1);

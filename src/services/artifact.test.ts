@@ -77,7 +77,7 @@ describe("downloadAllDiffResults", () => {
       Effect.gen(function* () {
         const svc = yield* ArtifactService;
         return yield* svc.downloadAllDiffResults("token", 123, "owner", "repo");
-      }).pipe(Effect.provide(ArtifactService.Default)),
+      }).pipe(Effect.provide(ArtifactService.layer)),
     );
 
     const got = results.map((r) => r.displayName).sort();

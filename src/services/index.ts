@@ -11,8 +11,8 @@ export { GitHubService } from "./github.js";
 export { ArtifactService } from "./artifact.js";
 
 export const MainLayer = Layer.mergeAll(
-  GitService.Default,
-  NixService.Default,
-  GitHubService.Default,
-  ArtifactService.Default,
+  GitService.layer,
+  NixService.layer,
+  GitHubService.layer,
+  ArtifactService.layer,
 );

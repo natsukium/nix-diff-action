@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { Effect, Either, Exit, Layer } from "effect";
+import { Cause, Effect, Exit, Layer, Option, Result } from "effect";
 import { formatAggregatedComment, truncateDiff, sanitizeDisplayName } from "./services/github.js";
 import { parseCommentStrategy, parseAttributes, validateDirectory } from "./programs/index.js";
 import { processDiffResults } from "./programs/full.js";
@@ -41,11 +41,11 @@ describe("parseAttributes", () => {
     const exit = await Effect.runPromiseExit(parseAttributes(input));
     expect(Exit.isFailure(exit)).toBe(true);
     if (Exit.isFailure(exit)) {
-      const error = exit.cause;
-      expect(error._tag).toBe("Fail");
-      if (error._tag === "Fail") {
-        expect(error.error._tag).toBe("AttributeParseError");
-        expect(error.error.message).toBe("attributes must be a YAML array");
+      const error = Cause.findErrorOption(exit.cause);
+      expect(Option.isSome(error)).toBe(true);
+      if (Option.isSome(error)) {
+        expect(error.value._tag).toBe("AttributeParseError");
+        expect(error.value.message).toBe("attributes must be a YAML array");
       }
     }
   });
@@ -57,11 +57,11 @@ describe("parseAttributes", () => {
     const exit = await Effect.runPromiseExit(parseAttributes(input));
     expect(Exit.isFailure(exit)).toBe(true);
     if (Exit.isFailure(exit)) {
-      const error = exit.cause;
-      expect(error._tag).toBe("Fail");
-      if (error._tag === "Fail") {
-        expect(error.error._tag).toBe("AttributeParseError");
-        expect(error.error.message).toContain("Invalid attributes format");
+      const error = Cause.findErrorOption(exit.cause);
+      expect(Option.isSome(error)).toBe(true);
+      if (Option.isSome(error)) {
+        expect(error.value._tag).toBe("AttributeParseError");
+        expect(error.value.message).toContain("Invalid attributes format");
       }
     }
   });
@@ -73,11 +73,11 @@ describe("parseAttributes", () => {
     const exit = await Effect.runPromiseExit(parseAttributes(input));
     expect(Exit.isFailure(exit)).toBe(true);
     if (Exit.isFailure(exit)) {
-      const error = exit.cause;
-      expect(error._tag).toBe("Fail");
-      if (error._tag === "Fail") {
-        expect(error.error._tag).toBe("AttributeParseError");
-        expect(error.error.message).toContain("Invalid attributes format");
+      const error = Cause.findErrorOption(exit.cause);
+      expect(Option.isSome(error)).toBe(true);
+      if (Option.isSome(error)) {
+        expect(error.value._tag).toBe("AttributeParseError");
+        expect(error.value.message).toContain("Invalid attributes format");
       }
     }
   });
@@ -101,10 +101,10 @@ describe("parseCommentStrategy", () => {
     const exit = await Effect.runPromiseExit(parseCommentStrategy(""));
     expect(Exit.isFailure(exit)).toBe(true);
     if (Exit.isFailure(exit)) {
-      const error = exit.cause;
-      expect(error._tag).toBe("Fail");
-      if (error._tag === "Fail") {
-        expect(error.error._tag).toBe("InvalidCommentStrategyError");
+      const error = Cause.findErrorOption(exit.cause);
+      expect(Option.isSome(error)).toBe(true);
+      if (Option.isSome(error)) {
+        expect(error.value._tag).toBe("InvalidCommentStrategyError");
       }
     }
   });
@@ -123,11 +123,11 @@ describe("parseCommentStrategy", () => {
     const exit = await Effect.runPromiseExit(parseCommentStrategy("invalid"));
     expect(Exit.isFailure(exit)).toBe(true);
     if (Exit.isFailure(exit)) {
-      const error = exit.cause;
-      expect(error._tag).toBe("Fail");
-      if (error._tag === "Fail") {
-        expect(error.error._tag).toBe("InvalidCommentStrategyError");
-        expect(error.error.value).toBe("invalid");
+      const error = Cause.findErrorOption(exit.cause);
+      expect(Option.isSome(error)).toBe(true);
+      if (Option.isSome(error)) {
+        expect(error.value._tag).toBe("InvalidCommentStrategyError");
+        expect(error.value.value).toBe("invalid");
       }
     }
   });
@@ -431,11 +431,11 @@ describe("validateDirectory", () => {
     const exit = await Effect.runPromiseExit(validateDirectory("../", workspaceRoot));
     expect(Exit.isFailure(exit)).toBe(true);
     if (Exit.isFailure(exit)) {
-      const error = exit.cause;
-      expect(error._tag).toBe("Fail");
-      if (error._tag === "Fail") {
-        expect(error.error._tag).toBe("InvalidDirectoryError");
-        expect(error.error.message).toContain("must be within the workspace");
+      const error = Cause.findErrorOption(exit.cause);
+      expect(Option.isSome(error)).toBe(true);
+      if (Option.isSome(error)) {
+        expect(error.value._tag).toBe("InvalidDirectoryError");
+        expect(error.value.message).toContain("must be within the workspace");
       }
     }
   });
@@ -444,10 +444,10 @@ describe("validateDirectory", () => {
     const exit = await Effect.runPromiseExit(validateDirectory("../sibling", workspaceRoot));
     expect(Exit.isFailure(exit)).toBe(true);
     if (Exit.isFailure(exit)) {
-      const error = exit.cause;
-      expect(error._tag).toBe("Fail");
-      if (error._tag === "Fail") {
-        expect(error.error._tag).toBe("InvalidDirectoryError");
+      const error = Cause.findErrorOption(exit.cause);
+      expect(Option.isSome(error)).toBe(true);
+      if (Option.isSome(error)) {
+        expect(error.value._tag).toBe("InvalidDirectoryError");
       }
     }
   });
@@ -456,10 +456,10 @@ describe("validateDirectory", () => {
     const exit = await Effect.runPromiseExit(validateDirectory("/etc", workspaceRoot));
     expect(Exit.isFailure(exit)).toBe(true);
     if (Exit.isFailure(exit)) {
-      const error = exit.cause;
-      expect(error._tag).toBe("Fail");
-      if (error._tag === "Fail") {
-        expect(error.error._tag).toBe("InvalidDirectoryError");
+      const error = Cause.findErrorOption(exit.cause);
+      expect(Option.isSome(error)).toBe(true);
+      if (Option.isSome(error)) {
+        expect(error.value._tag).toBe("InvalidDirectoryError");
       }
     }
   });
@@ -468,10 +468,10 @@ describe("validateDirectory", () => {
     const exit = await Effect.runPromiseExit(validateDirectory("/workspace-evil", workspaceRoot));
     expect(Exit.isFailure(exit)).toBe(true);
     if (Exit.isFailure(exit)) {
-      const error = exit.cause;
-      expect(error._tag).toBe("Fail");
-      if (error._tag === "Fail") {
-        expect(error.error._tag).toBe("InvalidDirectoryError");
+      const error = Cause.findErrorOption(exit.cause);
+      expect(Option.isSome(error)).toBe(true);
+      if (Option.isSome(error)) {
+        expect(error.value._tag).toBe("InvalidDirectoryError");
       }
     }
   });
@@ -480,10 +480,10 @@ describe("validateDirectory", () => {
     const exit = await Effect.runPromiseExit(validateDirectory("a/../../b", workspaceRoot));
     expect(Exit.isFailure(exit)).toBe(true);
     if (Exit.isFailure(exit)) {
-      const error = exit.cause;
-      expect(error._tag).toBe("Fail");
-      if (error._tag === "Fail") {
-        expect(error.error._tag).toBe("InvalidDirectoryError");
+      const error = Cause.findErrorOption(exit.cause);
+      expect(Option.isSome(error)).toBe(true);
+      if (Option.isSome(error)) {
+        expect(error.value._tag).toBe("InvalidDirectoryError");
       }
     }
   });
@@ -493,7 +493,7 @@ describe("processDiffResults", () => {
   const createMockGitService = (worktreePath: string) =>
     Layer.succeed(
       GitService,
-      new GitService({
+      GitService.of({
         createWorktree: (_baseRef: string, _runId: string) =>
           Effect.acquireRelease(Effect.succeed({ path: worktreePath }), () => Effect.void),
       }),
@@ -502,7 +502,7 @@ describe("processDiffResults", () => {
   const createMockNixService = (capturedFlakeRefs: string[], capturedInputsFromRefs?: string[]) =>
     Layer.succeed(
       NixService,
-      new NixService({
+      NixService.of({
         prefetchFlakeInputs: () => Effect.void,
         getNixPath: (flakeRef: string) => {
           capturedFlakeRefs.push(flakeRef);
@@ -888,22 +888,22 @@ const dix3Json = `{"diffs":[{"name":"nixos","versions":[{"kind":"changed","old":
 describe("decodeDixReport", () => {
   test("decodes dix 3 JSON output", () => {
     const decoded = decodeDixReport(dix3Json);
-    expect(Either.isRight(decoded)).toBe(true);
-    if (Either.isRight(decoded)) {
-      expect(decoded.right.diffs[0].name).toBe("nixos");
-      expect(decoded.right.paths.added).toBe(5054);
+    expect(Result.isSuccess(decoded)).toBe(true);
+    if (Result.isSuccess(decoded)) {
+      expect(decoded.success.diffs[0].name).toBe("nixos");
+      expect(decoded.success.paths.added).toBe(5054);
     }
   });
 
   test("decodes dix 2 JSON output, which lacks the kind field", () => {
     const dix2 = JSON.parse(dix3Json);
     delete dix2.diffs[0].kind;
-    expect(Either.isRight(decodeDixReport(JSON.stringify(dix2)))).toBe(true);
+    expect(Result.isSuccess(decodeDixReport(JSON.stringify(dix2)))).toBe(true);
   });
 
   test("rejects output whose schema changed incompatibly", () => {
-    expect(Either.isLeft(decodeDixReport(`{"packages":[]}`))).toBe(true);
-    expect(Either.isLeft(decodeDixReport("not json"))).toBe(true);
+    expect(Result.isFailure(decodeDixReport(`{"packages":[]}`))).toBe(true);
+    expect(Result.isFailure(decodeDixReport("not json"))).toBe(true);
   });
 });
 
