@@ -32,7 +32,7 @@
     "local-action": "local-action . src/main.ts .env",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test",
     "all": "npm run format && npm run lint && npm run typecheck && npm run test && npm run build"
   },
@@ -48,9 +48,9 @@
   "devDependencies": {
     "@github/local-action": "7.0.1",
     "@types/node": "25.9.9",
-    "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "oxfmt": "0.74.0",
     "oxlint": "1.89.0",
+    "typescript": "7.0.2",
     "vite": "8.3.5",
     "vitest": "5.0.5"
   }
