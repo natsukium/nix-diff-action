@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import { Effect, Layer } from "effect";
-import * as ConfigError from "effect/ConfigError";
+import type { ConfigError } from "effect/Config";
 import {
   MainLayer,
   GitService,
@@ -28,12 +28,7 @@ import type { RunFullError } from "./programs/full.js";
 import type { RunDiffError } from "./programs/diff.js";
 import type { RunCommentError } from "./programs/comment.js";
 
-type ProgramError =
-  | RunFullError
-  | RunDiffError
-  | RunCommentError
-  | InvalidModeError
-  | ConfigError.ConfigError;
+type ProgramError = RunFullError | RunDiffError | RunCommentError | InvalidModeError | ConfigError;
 
 type ProgramRequirements = GitService | NixService | GitHubService | ArtifactService;
 
@@ -79,11 +74,10 @@ export const run = (): Promise<void> =>
       GitHubApiError: (e: GitHubApiError) =>
         setFailed(`GitHub ${e.operation} failed: ${e.message}`),
       ArtifactError: (e: ArtifactError) => setFailed(`Artifact ${e.name} failed: ${e.message}`),
+      ConfigError: (e: ConfigError) => setFailed(`Configuration error: ${e}`),
     }),
-    // ConfigError uses _op instead of _tag, so handle it separately with catchIf
-    Effect.catchIf(ConfigError.isConfigError, (e) => setFailed(`Configuration error: ${e}`)),
     // Catch any unexpected errors that slip through
-    Effect.catchAll((error) => setFailed(`Unexpected error: ${error}`)),
+    Effect.catch((error) => setFailed(`Unexpected error: ${error}`)),
     Effect.scoped,
     Effect.provide(Layer.merge(MainLayer, ConfigProviderLayer)),
     Effect.runPromise,

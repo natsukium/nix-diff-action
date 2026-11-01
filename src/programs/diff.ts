@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { ConfigError } from "effect/ConfigError";
+import type { ConfigError } from "effect/Config";
 import { GitService, NixService, GitHubService, ArtifactService } from "../services/index.js";
 import {
   NotPullRequestContextError,

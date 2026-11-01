@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { ConfigError } from "effect/ConfigError";
+import type { ConfigError } from "effect/Config";
 import { GitHubService, ArtifactService } from "../services/index.js";
 import {
   NotPullRequestContextError,
@@ -42,7 +42,7 @@ export const runComment: Effect.Effect<void, RunCommentError, GitHubService | Ar
     const htmlViewerAvailable = yield* artifactService
       .uploadAggregatedHtml(results)
       .pipe(
-        Effect.catchAll((error) =>
+        Effect.catch((error) =>
           Effect.logWarning(`HTML viewer artifact upload failed: ${error.message}`).pipe(
             Effect.as(false),
           ),

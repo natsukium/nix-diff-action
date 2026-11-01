@@ -3,7 +3,7 @@ import * as crypto from "crypto";
 import * as fs from "fs/promises";
 import * as nodePath from "path";
 import * as os from "os";
-import { Cause, Effect, Option, Schema, Scope } from "effect";
+import { Cause, Context, Effect, Layer, Option, Schema, Scope } from "effect";
 import { ArtifactError } from "../errors.js";
 import { DiffResult, DiffResultArray } from "../schemas.js";
 import { generateDiffHtml } from "./html.js";
@@ -64,7 +64,7 @@ const parseJson = (content: string, artName: string) =>
   });
 
 const decodeResults = (parsed: unknown, artName: string) =>
-  Schema.decodeUnknown(DiffResultArray)(parsed).pipe(
+  Schema.decodeUnknownEffect(DiffResultArray)(parsed).pipe(
     Effect.mapError(
       (error) =>
         new ArtifactError({
@@ -86,7 +86,7 @@ const downloadAndParseArtifact = (
     );
 
     const artifactDownloadPath = resultOption.pipe(
-      Option.flatMap((r) => Option.fromNullable(r.downloadPath)),
+      Option.flatMap((r) => Option.fromNullishOr(r.downloadPath)),
     );
 
     if (Option.isNone(artifactDownloadPath)) {
@@ -113,7 +113,7 @@ const downloadAndParseArtifact = (
     }
 
     return yield* decodeResults(parsedOption.value, art.name).pipe(
-      Effect.catchAll((error) =>
+      Effect.catch((error) =>
         Effect.logWarning(`Decode artifact ${art.name}: ${String(error)}`).pipe(
           Effect.as([] as readonly DiffResult[]),
         ),
@@ -152,14 +152,14 @@ const withTempDir = (
     }),
     (dir) =>
       Effect.promise(() => fs.rm(dir, { recursive: true, force: true })).pipe(
-        Effect.catchAllCause((cause) =>
+        Effect.catchCause((cause) =>
           Effect.logWarning(`Failed to clean up temp directory ${dir}: ${Cause.pretty(cause)}`),
         ),
       ),
   );
 
-export class ArtifactService extends Effect.Service<ArtifactService>()("ArtifactService", {
-  succeed: {
+export class ArtifactService extends Context.Service<ArtifactService>()("ArtifactService", {
+  make: Effect.succeed({
     uploadJsonResult: (
       results: readonly DiffResult[],
       displayName: string,
@@ -284,5 +284,7 @@ export class ArtifactService extends Effect.Service<ArtifactService>()("Artifact
         return nestedResults.flat();
       });
     },
-  },
-}) {}
+  }),
+}) {
+  static readonly layer = Layer.effect(this, this.make);
+}

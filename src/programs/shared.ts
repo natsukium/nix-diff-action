@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import * as crypto from "crypto";
 import { Effect, Option, Redacted } from "effect";
-import type { ConfigError } from "effect/ConfigError";
+import type { ConfigError } from "effect/Config";
 import { GitService, NixService, GitHubService } from "../services/index.js";
 import { hasDixChanges } from "../services/utils.js";
 import type { NixOutputConfig, DiffResult } from "../schemas.js";

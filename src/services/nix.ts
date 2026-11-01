@@ -1,5 +1,5 @@
 import * as exec from "@actions/exec";
-import { Effect, Either, Ref, Schema } from "effect";
+import { Context, Effect, Layer, Ref, Result, Schema } from "effect";
 import { NixPathInfoError, NixDixError, NixBuildError } from "../errors.js";
 import { DixReport, type DixOutput } from "../schemas.js";
 
@@ -36,7 +36,7 @@ const execCommand = (
       }),
     catch: (error) => error,
   }).pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.logWarning(`${command} exec failed unexpectedly: ${error}`).pipe(Effect.as(-1)),
     ),
     Effect.map((exitCode) => ({
@@ -101,20 +101,20 @@ export const selectDixCli = (versionOutput: string): DixCli => {
   return { version, text: (o, n) => [...forceCorrectness, o, n] };
 };
 
-export const decodeDixReport = (stdout: string): Either.Either<DixReport, string> =>
-  Either.try({
+export const decodeDixReport = (stdout: string): Result.Result<DixReport, string> =>
+  Result.try({
     try: () => JSON.parse(stdout) as unknown,
     catch: (e) => `invalid JSON: ${e}`,
   }).pipe(
-    Either.flatMap((json) =>
-      Schema.decodeUnknownEither(DixReport)(json).pipe(Either.mapLeft((e) => e.message)),
+    Result.flatMap((json) =>
+      Schema.decodeUnknownResult(DixReport)(json).pipe(Result.mapError((e) => e.message)),
     ),
   );
 
 type ResolvedDix = { bin: string; cli: DixCli };
 
-export class NixService extends Effect.Service<NixService>()("NixService", {
-  effect: Effect.gen(function* () {
+export class NixService extends Context.Service<NixService>()("NixService", {
+  make: Effect.gen(function* () {
     const prefetchLogged = yield* Ref.make(false);
     const resolvedDix = yield* Ref.make(new Map<string, ResolvedDix>());
 
@@ -253,11 +253,11 @@ export class NixService extends Effect.Service<NixService>()("NixService", {
           if (cli.json) {
             const stdout = yield* runDix(cli.json(basePath, prPath));
             const decoded = decodeDixReport(stdout);
-            if (Either.isRight(decoded)) {
-              return { format: "json" as const, report: decoded.right };
+            if (Result.isSuccess(decoded)) {
+              return { format: "json" as const, report: decoded.success };
             }
             yield* Effect.logWarning(
-              `dix ${cli.version} JSON output did not match the expected schema, falling back to human-readable output: ${decoded.left}`,
+              `dix ${cli.version} JSON output did not match the expected schema, falling back to human-readable output: ${decoded.failure}`,
             );
           }
 
@@ -266,4 +266,6 @@ export class NixService extends Effect.Service<NixService>()("NixService", {
         }),
     };
   }),
-}) {}
+}) {
+  static readonly layer = Layer.effect(this, this.make);
+}

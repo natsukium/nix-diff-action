@@ -1,4 +1,4 @@
-import { K as logInfo, L as catchAll, Pt as getState, W as gen, et as runPromise, n as removeWorktree, rt as sync, zt as warning } from "./assets/git-uNXLhHWu.js";
+import { Y as catch_, gn as getState, ht as runPromise, n as removeWorktree, ot as logInfo, rt as gen, vt as sync, xn as warning } from "./assets/git-BcNbCVsO.js";
 // src/cleanup.ts
 var cleanup = gen(function* () {
 	const worktreePath = yield* sync(() => getState("worktreePath"));
@@ -9,7 +9,7 @@ var cleanup = gen(function* () {
 	yield* removeWorktree(worktreePath);
 	yield* logInfo(`Cleaned up worktree at ${worktreePath}`);
 });
-var run = () => cleanup.pipe(catchAll((error) => sync(() => warning(`Cleanup failed: ${error}`))), runPromise);
+var run = () => cleanup.pipe(catch_((error) => sync(() => warning(`Cleanup failed: ${error}`))), runPromise);
 run();
 export { run };
 

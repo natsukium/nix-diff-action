@@ -17,7 +17,7 @@ const cleanup = Effect.gen(function* () {
 // Export for testability - allows mocking and unit testing
 export const run = (): Promise<void> =>
   cleanup.pipe(
-    Effect.catchAll((error) => Effect.sync(() => core.warning(`Cleanup failed: ${error}`))),
+    Effect.catch((error) => Effect.sync(() => core.warning(`Cleanup failed: ${error}`))),
     Effect.runPromise,
   );
 

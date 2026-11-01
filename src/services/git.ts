@@ -3,7 +3,7 @@ import * as exec from "@actions/exec";
 import * as fs from "fs";
 import * as nodePath from "path";
 import * as os from "os";
-import { Effect, Scope } from "effect";
+import { Context, Effect, Layer, Scope } from "effect";
 import { GitWorktreeError } from "../errors.js";
 import type { WorktreeInfo } from "../types.js";
 
@@ -34,7 +34,7 @@ const worktreeExists = (path: string): Effect.Effect<boolean, never> =>
     },
     catch: (error) => error,
   }).pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.logWarning(`Failed to check worktree existence: ${error}`).pipe(Effect.as(false)),
     ),
   );
@@ -74,8 +74,8 @@ const addWorktree = (worktreePath: string, baseRef: string) =>
       }),
   });
 
-export class GitService extends Effect.Service<GitService>()("GitService", {
-  succeed: {
+export class GitService extends Context.Service<GitService>()("GitService", {
+  make: Effect.succeed({
     createWorktree: (
       baseRef: string,
       runId: string,
@@ -104,5 +104,7 @@ export class GitService extends Effect.Service<GitService>()("GitService", {
           }),
       );
     },
-  },
-}) {}
+  }),
+}) {
+  static readonly layer = Layer.effect(this, this.make);
+}
