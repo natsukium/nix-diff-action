@@ -13,6 +13,7 @@ import {
   type DiffView,
   type PackageRow,
 } from "./view.js";
+import { defaultMaxCommentLength } from "./hosting.js";
 
 const NIX_DIFF_ACTION_MARKER_BASE = "<!-- nix-diff-action";
 
@@ -31,9 +32,6 @@ const getNixDiffActionMarker = (displayName?: string): string =>
   displayName
     ? `${NIX_DIFF_ACTION_MARKER_BASE}:${displayName} -->`
     : `${NIX_DIFF_ACTION_MARKER_BASE} -->`;
-
-// GitHub comment size limit is ~65,536 characters. Use a conservative limit.
-const MAX_COMMENT_LENGTH = 60000;
 
 export type TruncateResult = {
   text: string;
@@ -85,6 +83,8 @@ const SELECTION_LEGEND =
 
 type RenderedBody = { text: string; truncated: boolean };
 
+type Truncation = { hint: string; maxVersions: number };
+
 const COMMENT_MAX_VERSIONS = 5;
 
 const TABLE_HEADER = "| Package | Version | Size |\n| --- | --- | ---: |";
@@ -92,7 +92,11 @@ const TABLE_HEADER = "| Package | Version | Size |\n| --- | --- | ---: |";
 // Each group gets an equal share of the budget, and what a group leaves
 // unused passes to the next one; filling groups in order would let a long
 // Changed list crowd out Added and Removed entirely.
-const renderPackageTables = (view: DiffView, budget: number): RenderedBody => {
+const renderPackageTables = (
+  view: DiffView,
+  budget: number,
+  { hint }: Truncation,
+): RenderedBody => {
   const groups = [
     { label: "Changed", rows: view.changed, notes: true },
     { label: "Added", rows: view.added, notes: false },
@@ -119,9 +123,7 @@ const renderPackageTables = (view: DiffView, budget: number): RenderedBody => {
     if (omitted > 0) truncated = true;
     const table = lines.length > 0 ? `\n\n${TABLE_HEADER}\n${lines.join("\n")}` : "";
     const note =
-      omitted > 0
-        ? `\n\n> **Note**: ${pluralize(omitted, "more package")} not shown. See the full output in the artifacts below.`
-        : "";
+      omitted > 0 ? `\n\n> **Note**: ${pluralize(omitted, "more package")} not shown. ${hint}` : "";
     const explicitCount = countExplicit(group.rows);
     const count =
       explicitCount > 0
@@ -135,7 +137,7 @@ const renderPackageTables = (view: DiffView, budget: number): RenderedBody => {
   return { text: parts.join("\n\n"), truncated };
 };
 
-const renderReportBody = (view: DiffView, budget: number): RenderedBody => {
+const renderReportBody = (view: DiffView, budget: number, truncation: Truncation): RenderedBody => {
   const stats = renderStatsTable(view);
   const hidden =
     view.hiddenCount > 0
@@ -152,7 +154,7 @@ const renderReportBody = (view: DiffView, budget: number): RenderedBody => {
     };
   }
 
-  const tables = renderPackageTables(view, budget);
+  const tables = renderPackageTables(view, budget, truncation);
   return {
     text: `${stats ? `${stats}\n\n` : ""}${view.hasSelection ? `${SELECTION_LEGEND}\n\n` : ""}${tables.text}${hidden}`,
     truncated: tables.truncated,
@@ -160,11 +162,9 @@ const renderReportBody = (view: DiffView, budget: number): RenderedBody => {
 };
 
 // dix < 2.0 has no JSON output, so its text is shown verbatim.
-const renderTextBody = (text: string, budget: number): RenderedBody => {
+const renderTextBody = (text: string, budget: number, { hint }: Truncation): RenderedBody => {
   const truncated = truncateDiff(text || "No differences found", budget);
-  const hint = truncated.truncated
-    ? "\n\n> **Note**: Diff was truncated. See the full output in the artifacts below."
-    : "";
+  const note = truncated.truncated ? `\n\n> **Note**: Diff was truncated. ${hint}` : "";
   return {
     text: `<details>
 <summary>Diff Output</summary>
@@ -172,19 +172,24 @@ const renderTextBody = (text: string, budget: number): RenderedBody => {
 \`\`\`
 ${truncated.text}
 \`\`\`
-${hint}
+${note}
 </details>`,
     truncated: truncated.truncated,
   };
 };
 
-const renderResultBody = (result: DiffResult, budget: number): RenderedBody =>
+const renderResultBody = (
+  result: DiffResult,
+  budget: number,
+  truncation: Truncation,
+): RenderedBody =>
   result.diff.format === "json"
     ? renderReportBody(
-        viewFromReport(result.diff.report, { maxVersions: COMMENT_MAX_VERSIONS }),
+        viewFromReport(result.diff.report, { maxVersions: truncation.maxVersions }),
         budget,
+        truncation,
       )
-    : renderTextBody(result.diff.text, budget);
+    : renderTextBody(result.diff.text, budget, truncation);
 
 export type FormatCommentOptions = {
   repoUrl: string;
@@ -192,20 +197,35 @@ export type FormatCommentOptions = {
   // Whether the HTML viewer artifact was uploaded successfully. When false,
   // the "View diff as HTML" link is omitted to avoid linking to a 404.
   htmlViewerAvailable?: boolean;
+  maxCommentLength?: number;
+  // False when the run has no artifact holding the full results, so truncation
+  // notes must not send readers to one.
+  resultsArtifactAvailable?: boolean;
 };
 
-const renderSection = (result: DiffResult, budget: number): string =>
+const renderSection = (result: DiffResult, budget: number, truncation: Truncation): string =>
   `### ${sanitizeDisplayName(result.displayName)}
 
 **Attribute**: \`${result.attributePath}\`
 
-${renderResultBody(result, budget).text}`;
+${renderResultBody(result, budget, truncation).text}`;
 
 export const formatAggregatedComment = (
   results: readonly DiffResult[],
   headSha: string,
   options?: FormatCommentOptions,
 ): string => {
+  const maxLength = options?.maxCommentLength ?? defaultMaxCommentLength("github");
+  const hint =
+    options?.resultsArtifactAvailable === false
+      ? "Raise `max-comment-length` to include it."
+      : "See the full output in the artifacts below.";
+  // Without an artifact the comment is the only copy of the diff, so versions
+  // are listed in full rather than capped.
+  const truncation: Truncation = {
+    hint,
+    maxVersions: options?.resultsArtifactAvailable === false ? Infinity : COMMENT_MAX_VERSIONS,
+  };
   // Single attribute: displayName-specific marker for matrix + update strategy
   // Multiple attributes: generic marker (results order may vary in comment-only mode)
   const marker =
@@ -243,14 +263,14 @@ ${footer}`;
   // the remainder is shared out to package rows. Trailing sections whose
   // markup alone would overflow are dropped behind a notice.
   const omittedNotice = (count: number) =>
-    `\n\n> **Note**: ${pluralize(count, "more attribute")} not shown. See the full output in the artifacts below.`;
+    `\n\n> **Note**: ${pluralize(count, "more attribute")} not shown. ${hint}`;
   let fixedLength = wrap("").length;
   let shown = 0;
   for (const result of results) {
-    const length = renderSection(result, 0).length + 2;
+    const length = renderSection(result, 0, truncation).length + 2;
     const remaining = results.length - shown - 1;
     const notice = remaining > 0 ? omittedNotice(remaining).length : 0;
-    if (shown > 0 && fixedLength + length + notice > MAX_COMMENT_LENGTH) break;
+    if (shown > 0 && fixedLength + length + notice > maxLength) break;
     fixedLength += length;
     shown++;
   }
@@ -258,10 +278,10 @@ ${footer}`;
   const omitted = results.length - shown;
   if (omitted > 0) fixedLength += omittedNotice(omitted).length;
 
-  const budget = Math.max(0, Math.floor((MAX_COMMENT_LENGTH - fixedLength) / Math.max(1, shown)));
+  const budget = Math.max(0, Math.floor((maxLength - fixedLength) / Math.max(1, shown)));
 
   return wrap(
-    kept.map((result) => renderSection(result, budget)).join("\n\n") +
+    kept.map((result) => renderSection(result, budget, truncation)).join("\n\n") +
       (omitted > 0 ? omittedNotice(omitted) : ""),
   );
 };

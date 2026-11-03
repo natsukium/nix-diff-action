@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildRunUrl, detectHostingPlatform } from "./hosting.js";
+import { buildRunUrl, defaultMaxCommentLength, detectHostingPlatform } from "./hosting.js";
 
 describe("detectHostingPlatform", () => {
   test("detects Forgejo from the native Forgejo environment", () => {
@@ -47,5 +47,15 @@ describe("buildRunUrl", () => {
     expect(
       buildRunUrl("forgejo", "https://forge.example.com/owner/repo", "12345", undefined),
     ).toBeUndefined();
+  });
+});
+
+describe("defaultMaxCommentLength", () => {
+  test("stays under GitHub's 65,536-character comment limit", () => {
+    expect(defaultMaxCommentLength("github")).toBeLessThan(65536);
+  });
+
+  test("allows much longer comments on Forgejo, which has no comment limit", () => {
+    expect(defaultMaxCommentLength("forgejo")).toBeGreaterThan(65536);
   });
 });

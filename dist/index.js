@@ -1,4 +1,4 @@
-import { $ as flatMap, $t as some$2, A as makeFilter, An as __esmMin, At as makeDieReason, B as transformEffect, Bt as mapError, C as String$2, Cn as exec, Ct as effect, D as decodeUnknownResult, Dn as require_undici, Dt as fromReasons, E as decodeUnknownEffect$1, En as HttpCodes, Et as succeed$1, F as getIndexSignatureKeys, Ft as fail$1, G as as, Gt as flatMap$2, H as value, Ht as try_, I as toEncoded, It as flatMap$1, J as catchTag, Jt as getOrUndefined, K as catchCause, Kt as fromNullishOr, L as unknown, Lt as isFailure, M as decodeUnknownEffect, Mn as __require, Mt as pretty, N as applyToSelfOrLastLinkEncoding, Nn as __toCommonJS, Nt as reasonAnnotations, O as isPattern, On as require_tunnel, Ot as isDieReason, P as decodeTo, Pn as __toESM, Pt as isCanonicalArrayIndex, Q as failCause, Qt as none, R as Transformation, Rt as isSuccess, S as SchemaError, Sn as warning, St as try_$1, T as Union, Tn as HttpClient, Tt as mergeAll, U as acquireRelease, Ut as Reference, V as Pointer, Vt as succeed$2, W as all, Wt as Service, X as catch_, Xt as map$5, Y as catchTags, Yt as isNone, Z as fail, Zt as match, _ as Literals$1, _t as scoped, a as GitHubApiError, an as symbol, at as isEffect, b as Number$1, bn as setOutput, bt as tapError, c as MissingAttributesError, cn as isObject$2, ct as logWarning, d as NixPathInfoError, dn as identity, dt as mapError$1, en as Prototype, et as flatMapEager, f as NotPullRequestContextError, fn as memoize$1, ft as option$1, g as Literal, gn as getInput, gt as runPromise, h as BooleanLiterals, hn as error, ht as provide, i as AttributeParseError, in as format, it as gen, j as toCodecStringTree, jn as __exportAll, jt as makeFailReason, k as make$4, kn as __commonJSMin, kt as isFailReason, l as NixBuildError, ln as isTagged, lt as map$3, m as Boolean$2, mn as debug, mt as promise, nn as assignProperty, nt as forEach, o as InvalidCommentStrategyError, on as random, ot as logError, p as ArraySchema, pn as pipe, pt as orElseSucceed, q as catchEager, qt as getOrElse, r as ArtifactError, rn as toJson, rt as fromResult, s as InvalidDirectoryError, sn as symbol$1, st as logInfo, t as GitService, tn as PipeInspectableProto, tt as fnUntraced, u as NixDixError, un as dual, ut as mapEager, v as NonEmptyString, vn as info, vt as succeed, w as Struct, wn as BearerCredentialHandler, wt as merge$1, x as Redacted$1, xn as setSecret, xt as tryPromise, y as NullOr, yn as setFailed$1, yt as sync, z as passthrough, zt as map$4 } from "./assets/git-CK-MHdh0.js";
+import { $ as failCause, $t as none, A as make$4, An as __commonJSMin, At as isFailReason, B as passthrough, Bt as map$4, C as SchemaError, Cn as warning, Ct as try_$1, D as decodeUnknownEffect$1, Dn as HttpCodes, Dt as succeed$1, E as Union, En as HttpClient, Et as mergeAll, F as decodeTo, Fn as __toESM, Ft as isCanonicalArrayIndex, G as all, Gt as Service, H as Pointer, Ht as succeed$2, I as getIndexSignatureKeys, It as fail$1, J as catchEager, Jt as getOrElse, K as as, Kt as flatMap$2, L as toEncoded, Lt as flatMap$1, M as toCodecStringTree, Mn as __exportAll, Mt as makeFailReason, N as decodeUnknownEffect, Nn as __require, Nt as pretty, O as decodeUnknownResult, On as require_undici, Ot as fromReasons, P as applyToSelfOrLastLinkEncoding, Pn as __toCommonJS, Pt as reasonAnnotations, Q as fail, Qt as match, R as unknown, Rt as isFailure, S as Redacted$1, Sn as setSecret, St as tryPromise, T as Struct, Tn as BearerCredentialHandler, Tt as merge$1, U as value, Ut as try_, V as transformEffect, Vt as mapError, W as acquireRelease, Wt as Reference, X as catchTags, Xt as isNone, Y as catchTag, Yt as getOrUndefined, Z as catch_, Zt as map$5, _ as Literal, _n as getInput, _t as runPromise, a as GitHubApiError, an as format, at as gen, b as NullOr, bn as setFailed$1, bt as sync, c as InvalidMaxCommentLengthError, cn as symbol$1, ct as logInfo, d as NixDixError, dn as dual, dt as mapEager, en as some$2, et as flatMap, f as NixPathInfoError, fn as identity, ft as mapError$1, g as BooleanLiterals, gn as error, gt as provide, h as Boolean$2, hn as debug, ht as promise, i as AttributeParseError, in as toJson, it as fromResult, j as makeFilter, jn as __esmMin, jt as makeDieReason, k as isPattern, kn as require_tunnel, kt as isDieReason, l as MissingAttributesError, ln as isObject$2, lt as logWarning, m as ArraySchema, mn as pipe, mt as orElseSucceed, nn as PipeInspectableProto, nt as fnUntraced, o as InvalidCommentStrategyError, on as symbol, ot as isEffect, p as NotPullRequestContextError, pn as memoize$1, pt as option$1, q as catchCause, qt as fromNullishOr, r as ArtifactError, rn as assignProperty, rt as forEach, s as InvalidDirectoryError, sn as random, st as logError, t as GitService, tn as Prototype, tt as flatMapEager, u as NixBuildError, un as isTagged, ut as map$3, v as Literals$1, vt as scoped, w as String$2, wn as exec, wt as effect, x as Number$1, xn as setOutput, xt as tapError, y as NonEmptyString, yn as info, yt as succeed, z as Transformation, zt as isSuccess } from "./assets/git-GR0gyZGt.js";
 import * as os$2 from "os";
 import os, { EOL } from "os";
 import * as crypto from "crypto";
@@ -79598,10 +79598,23 @@ var ArtifactService = class extends Service()("ArtifactService", { make: succeed
 };
 // src/services/utils.ts
 var hasDixChanges = (result) => result.basePath !== result.prPath;
+// src/services/hosting.ts
+var detectHostingPlatform = (environment = process.env) => {
+	if (environment.FORGEJO_SERVER_URL) return "forgejo";
+	try {
+		return new URL(environment.GITHUB_API_URL ?? "https://api.github.com").pathname.replace(/\/+$/, "").endsWith("/api/v1") ? "forgejo" : "github";
+	} catch {
+		return "github";
+	}
+};
+var buildRunUrl = (platform, repoUrl, runId, runNumber) => {
+	const segment = platform === "forgejo" ? runNumber : runId;
+	return segment ? `${repoUrl}/actions/runs/${segment}` : void 0;
+};
+var defaultMaxCommentLength = (platform) => platform === "forgejo" ? 1e6 : 6e4;
 // src/services/github.ts
 var NIX_DIFF_ACTION_MARKER_BASE = "<!-- nix-diff-action";
 var getNixDiffActionMarker = (displayName) => displayName ? `${NIX_DIFF_ACTION_MARKER_BASE}:${displayName} -->` : `${NIX_DIFF_ACTION_MARKER_BASE} -->`;
-var MAX_COMMENT_LENGTH = 6e4;
 var truncateDiff = (diff, maxLength) => {
 	if (diff.length <= maxLength) return {
 		text: diff,
@@ -79633,7 +79646,7 @@ var nameCell = (row, withNote) => {
 var SELECTION_LEGEND = "<sub>**Bold**: packages listed explicitly in `environment.systemPackages` of the base or the PR.</sub>";
 var COMMENT_MAX_VERSIONS = 5;
 var TABLE_HEADER = "| Package | Version | Size |\n| --- | --- | ---: |";
-var renderPackageTables = (view, budget) => {
+var renderPackageTables = (view, budget, { hint }) => {
 	const groups = [
 		{
 			label: "Changed",
@@ -79668,7 +79681,7 @@ var renderPackageTables = (view, budget) => {
 		if (lines.length > 0) remaining -= used;
 		if (omitted > 0) truncated = true;
 		const table = lines.length > 0 ? `\n\n${TABLE_HEADER}\n${lines.join("\n")}` : "";
-		const note = omitted > 0 ? `\n\n> **Note**: ${pluralize(omitted, "more package")} not shown. See the full output in the artifacts below.` : "";
+		const note = omitted > 0 ? `\n\n> **Note**: ${pluralize(omitted, "more package")} not shown. ${hint}` : "";
 		const explicitCount = countExplicit(group.rows);
 		const count = explicitCount > 0 ? `${group.rows.length}, ${explicitCount} explicit` : `${group.rows.length}`;
 		parts.push(`<details>
@@ -79681,22 +79694,22 @@ var renderPackageTables = (view, budget) => {
 		truncated
 	};
 };
-var renderReportBody = (view, budget) => {
+var renderReportBody = (view, budget, truncation) => {
 	const stats = renderStatsTable(view);
 	const hidden = view.hiddenCount > 0 ? `\n\n<sub>${pluralize(view.hiddenCount, "package")} with only a minor size change hidden.</sub>` : "";
 	if (isUnchanged(view)) return {
 		text: [stats, "No package additions, removals, or version changes."].filter(Boolean).join("\n\n") + hidden,
 		truncated: false
 	};
-	const tables = renderPackageTables(view, budget);
+	const tables = renderPackageTables(view, budget, truncation);
 	return {
 		text: `${stats ? `${stats}\n\n` : ""}${view.hasSelection ? `${SELECTION_LEGEND}\n\n` : ""}${tables.text}${hidden}`,
 		truncated: tables.truncated
 	};
 };
-var renderTextBody = (text, budget) => {
+var renderTextBody = (text, budget, { hint }) => {
 	const truncated = truncateDiff(text || "No differences found", budget);
-	const hint = truncated.truncated ? "\n\n> **Note**: Diff was truncated. See the full output in the artifacts below." : "";
+	const note = truncated.truncated ? `\n\n> **Note**: Diff was truncated. ${hint}` : "";
 	return {
 		text: `<details>
 <summary>Diff Output</summary>
@@ -79704,18 +79717,24 @@ var renderTextBody = (text, budget) => {
 \`\`\`
 ${truncated.text}
 \`\`\`
-${hint}
+${note}
 </details>`,
 		truncated: truncated.truncated
 	};
 };
-var renderResultBody = (result, budget) => result.diff.format === "json" ? renderReportBody(viewFromReport(result.diff.report, { maxVersions: COMMENT_MAX_VERSIONS }), budget) : renderTextBody(result.diff.text, budget);
-var renderSection = (result, budget) => `### ${sanitizeDisplayName(result.displayName)}
+var renderResultBody = (result, budget, truncation) => result.diff.format === "json" ? renderReportBody(viewFromReport(result.diff.report, { maxVersions: truncation.maxVersions }), budget, truncation) : renderTextBody(result.diff.text, budget, truncation);
+var renderSection = (result, budget, truncation) => `### ${sanitizeDisplayName(result.displayName)}
 
 **Attribute**: \`${result.attributePath}\`
 
-${renderResultBody(result, budget).text}`;
+${renderResultBody(result, budget, truncation).text}`;
 var formatAggregatedComment = (results, headSha, options) => {
+	const maxLength = options?.maxCommentLength ?? defaultMaxCommentLength("github");
+	const hint = options?.resultsArtifactAvailable === false ? "Raise `max-comment-length` to include it." : "See the full output in the artifacts below.";
+	const truncation = {
+		hint,
+		maxVersions: options?.resultsArtifactAvailable === false ? Infinity : COMMENT_MAX_VERSIONS
+	};
 	const marker = results.length === 1 ? getNixDiffActionMarker(results[0].displayName) : getNixDiffActionMarker();
 	const compareDisplay = options ? `[Compare changes](${options.repoUrl}/compare/${results[0].baseRef}...${results[0].prRef})` : `\`${results[0].baseRef}...${results[0].prRef}\``;
 	const htmlViewerLink = options?.runUrl && results.length > 0 && options.htmlViewerAvailable ? `\n> :page_facing_up: [View diff as HTML](${options.runUrl}) in the Artifacts section\n` : "";
@@ -79730,22 +79749,22 @@ ${compareDisplay}
 ${sections}
 ${htmlViewerLink}
 ${footer}`;
-	const omittedNotice = (count) => `\n\n> **Note**: ${pluralize(count, "more attribute")} not shown. See the full output in the artifacts below.`;
+	const omittedNotice = (count) => `\n\n> **Note**: ${pluralize(count, "more attribute")} not shown. ${hint}`;
 	let fixedLength = wrap("").length;
 	let shown = 0;
 	for (const result of results) {
-		const length = renderSection(result, 0).length + 2;
+		const length = renderSection(result, 0, truncation).length + 2;
 		const remaining = results.length - shown - 1;
 		const notice = remaining > 0 ? omittedNotice(remaining).length : 0;
-		if (shown > 0 && fixedLength + length + notice > MAX_COMMENT_LENGTH) break;
+		if (shown > 0 && fixedLength + length + notice > maxLength) break;
 		fixedLength += length;
 		shown++;
 	}
 	const kept = results.slice(0, shown);
 	const omitted = results.length - shown;
 	if (omitted > 0) fixedLength += omittedNotice(omitted).length;
-	const budget = Math.max(0, Math.floor((MAX_COMMENT_LENGTH - fixedLength) / Math.max(1, shown)));
-	return wrap(kept.map((result) => renderSection(result, budget)).join("\n\n") + (omitted > 0 ? omittedNotice(omitted) : ""));
+	const budget = Math.max(0, Math.floor((maxLength - fixedLength) / Math.max(1, shown)));
+	return wrap(kept.map((result) => renderSection(result, budget, truncation)).join("\n\n") + (omitted > 0 ? omittedNotice(omitted) : ""));
 };
 var listNixDiffComments = (octokit, context, prNumber, displayName) => tryPromise({
 	try: () => octokit.paginate(octokit.rest.issues.listComments, {
@@ -79848,7 +79867,8 @@ var ActionsConfigProvider = pipe(fromEnv(), orElse(fromUnknown({
 	directory: getInput("directory"),
 	build: getInput("build"),
 	"skip-no-change": getInput("skip-no-change"),
-	"comment-strategy": getInput("comment-strategy")
+	"comment-strategy": getInput("comment-strategy"),
+	"max-comment-length": getInput("max-comment-length")
 }, { preserveEmptyStrings: true })));
 var ActionConfig = {
 	mode: Literals([
@@ -79862,6 +79882,7 @@ var ActionConfig = {
 	build: Boolean$1("build"),
 	skipNoChange: Boolean$1("skip-no-change"),
 	commentStrategy: Literals(["create", "update"], "comment-strategy"),
+	maxCommentLength: String$1("max-comment-length"),
 	githubRunId: option(String$1("GITHUB_RUN_ID"))
 };
 var ConfigProviderLayer = layer(ActionsConfigProvider);
@@ -86401,7 +86422,7 @@ var require_public_api = /* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.parseDocument = parseDocument;
 	exports.stringify = stringify;
 }));
-// src/services/hosting.ts
+// src/programs/shared.ts
 var import_dist = (/* @__PURE__ */ __commonJSMin(((exports) => {
 	var composer = require_composer();
 	var Document = require_Document();
@@ -86448,19 +86469,6 @@ var import_dist = (/* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.visit = visit.visit;
 	exports.visitAsync = visit.visitAsync;
 })))();
-var detectHostingPlatform = (environment = process.env) => {
-	if (environment.FORGEJO_SERVER_URL) return "forgejo";
-	try {
-		return new URL(environment.GITHUB_API_URL ?? "https://api.github.com").pathname.replace(/\/+$/, "").endsWith("/api/v1") ? "forgejo" : "github";
-	} catch {
-		return "github";
-	}
-};
-var buildRunUrl = (platform, repoUrl, runId, runNumber) => {
-	const segment = platform === "forgejo" ? runNumber : runId;
-	return segment ? `${repoUrl}/actions/runs/${segment}` : void 0;
-};
-// src/programs/shared.ts
 /**
 * Get GitHub token from config (redacted for security)
 * Used by: runFull, runComment
@@ -86548,7 +86556,9 @@ var postComment = (params) => gen(function* () {
 	}, {
 		repoUrl,
 		runUrl: buildRunUrl(params.platform, repoUrl, params.runId, process.env.GITHUB_RUN_NUMBER),
-		htmlViewerAvailable: params.htmlViewerAvailable
+		htmlViewerAvailable: params.htmlViewerAvailable,
+		maxCommentLength: params.maxCommentLength,
+		resultsArtifactAvailable: params.resultsArtifactAvailable
 	});
 });
 /**
@@ -86556,10 +86566,14 @@ var postComment = (params) => gen(function* () {
 * Used by: runFull, runComment
 */
 var loadCommentConfig = gen(function* () {
+	const skipNoChange = yield* ActionConfig.skipNoChange;
+	const commentStrategy = yield* parseCommentStrategy(yield* ActionConfig.commentStrategy);
+	const platform = detectHostingPlatform();
 	return {
-		skipNoChange: yield* ActionConfig.skipNoChange,
-		commentStrategy: yield* parseCommentStrategy(yield* ActionConfig.commentStrategy),
-		platform: detectHostingPlatform()
+		skipNoChange,
+		commentStrategy,
+		maxCommentLength: yield* parseMaxCommentLength(yield* ActionConfig.maxCommentLength, platform),
+		platform
 	};
 });
 // src/programs/full.ts
@@ -86598,14 +86612,16 @@ var runFull = gen(function* () {
 	const token = yield* getGithubToken;
 	const commentConfig = yield* loadCommentConfig;
 	const { config, results } = yield* runDiffPipeline;
-	yield* artifactService.uploadJsonResult(results, "full").pipe(catchTag("ArtifactError", (error) => commentConfig.platform === "forgejo" ? logWarning(`Skipping diff result artifact: ${error.message}`) : fail(error)));
+	const resultsArtifactAvailable = yield* artifactService.uploadJsonResult(results, "full").pipe(as(true), catchTag("ArtifactError", (error) => commentConfig.platform === "forgejo" ? logWarning(`Skipping diff result artifact: ${error.message}`).pipe(as(false)) : fail(error)));
 	const htmlViewerAvailable = yield* artifactService.uploadAggregatedHtml(results).pipe(catch_((error) => logWarning(`HTML viewer artifact upload failed: ${error.message}`).pipe(as(false))));
 	yield* postComment({
 		results,
 		runId: getOrUndefined(config.githubRunId),
 		skipNoChange: commentConfig.skipNoChange,
 		commentStrategy: commentConfig.commentStrategy,
+		maxCommentLength: commentConfig.maxCommentLength,
 		platform: commentConfig.platform,
+		resultsArtifactAvailable,
 		token,
 		htmlViewerAvailable
 	});
@@ -86632,7 +86648,9 @@ var runComment = gen(function* () {
 		runId: context.runId > 0 ? String(context.runId) : void 0,
 		skipNoChange: commentConfig.skipNoChange,
 		commentStrategy: commentConfig.commentStrategy,
+		maxCommentLength: commentConfig.maxCommentLength,
 		platform: commentConfig.platform,
+		resultsArtifactAvailable: true,
 		token,
 		htmlViewerAvailable
 	});
@@ -86653,6 +86671,12 @@ var validateDirectory = (directory, workspaceRoot) => {
 	const normalizedWorkspace = nodePath.resolve(workspaceRoot);
 	return resolvedPath.startsWith(normalizedWorkspace + nodePath.sep) || resolvedPath === normalizedWorkspace ? succeed(resolvedPath) : fail(new InvalidDirectoryError({ message: `directory must be within the workspace. Got: ${directory} (resolved to ${resolvedPath})` }));
 };
+var parseMaxCommentLength = (input, platform) => {
+	const trimmed = input.trim();
+	if (trimmed === "") return succeed(defaultMaxCommentLength(platform));
+	const value = Number(trimmed);
+	return /^[1-9]\d*$/.test(trimmed) && Number.isSafeInteger(value) ? succeed(value) : fail(new InvalidMaxCommentLengthError({ value: input }));
+};
 // src/main.ts
 var program = gen(function* () {
 	switch (yield* ActionConfig.mode) {
@@ -86668,6 +86692,7 @@ var run = () => program.pipe(tapError((error) => logError("Action failed", { err
 	MissingAttributesError: (e) => setFailed(e.message),
 	AttributeParseError: (e) => setFailed(e.message),
 	InvalidCommentStrategyError: (e) => setFailed(`Invalid comment strategy: ${e.value}`),
+	InvalidMaxCommentLengthError: (e) => setFailed(`Invalid max-comment-length: ${e.value} (expected a positive integer)`),
 	InvalidDirectoryError: (e) => setFailed(e.message),
 	GitWorktreeError: (e) => setFailed(`Git ${e.operation} failed: ${e.message}`),
 	NixPathInfoError: (e) => setFailed(`Nix path-info failed for ${e.flakeRef}: ${e.message}`),

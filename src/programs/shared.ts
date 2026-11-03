@@ -16,9 +16,15 @@ import {
   NixDixError,
   GitHubApiError,
   InvalidCommentStrategyError,
+  InvalidMaxCommentLengthError,
 } from "../errors.js";
 import type { CommentStrategy } from "../types.js";
-import { parseAttributes, validateDirectory, parseCommentStrategy } from "./index.js";
+import {
+  parseAttributes,
+  validateDirectory,
+  parseCommentStrategy,
+  parseMaxCommentLength,
+} from "./index.js";
 import { buildRunUrl, detectHostingPlatform, type HostingPlatform } from "../services/hosting.js";
 import { ActionConfig } from "../config.js";
 import { processDiffResults } from "./full.js";
@@ -157,7 +163,10 @@ export type PostCommentParams = {
   // Whether the HTML viewer artifact is actually present in the run's artifacts.
   // Controls whether the "View diff as HTML" link is included in the comment.
   htmlViewerAvailable: boolean;
+  maxCommentLength: number;
   platform: HostingPlatform;
+  // False when the full results could not be uploaded as an artifact.
+  resultsArtifactAvailable: boolean;
 };
 
 /**
@@ -188,6 +197,8 @@ export const postComment = (
         repoUrl,
         runUrl: buildRunUrl(params.platform, repoUrl, params.runId, process.env.GITHUB_RUN_NUMBER),
         htmlViewerAvailable: params.htmlViewerAvailable,
+        maxCommentLength: params.maxCommentLength,
+        resultsArtifactAvailable: params.resultsArtifactAvailable,
       },
     );
   });
@@ -199,10 +210,14 @@ export const postComment = (
 export type CommentConfig = {
   skipNoChange: boolean;
   commentStrategy: CommentStrategy;
+  maxCommentLength: number;
   platform: HostingPlatform;
 };
 
-export type LoadCommentConfigError = InvalidCommentStrategyError | ConfigError;
+export type LoadCommentConfigError =
+  | InvalidCommentStrategyError
+  | InvalidMaxCommentLengthError
+  | ConfigError;
 
 /**
  * Load comment-related configuration
@@ -213,7 +228,12 @@ export const loadCommentConfig: Effect.Effect<CommentConfig, LoadCommentConfigEr
     const skipNoChange = yield* ActionConfig.skipNoChange;
     const commentStrategyInput = yield* ActionConfig.commentStrategy;
     const commentStrategy = yield* parseCommentStrategy(commentStrategyInput);
+    const platform = detectHostingPlatform();
+    const maxCommentLength = yield* parseMaxCommentLength(
+      yield* ActionConfig.maxCommentLength,
+      platform,
+    );
 
-    return { skipNoChange, commentStrategy, platform: detectHostingPlatform() };
+    return { skipNoChange, commentStrategy, maxCommentLength, platform };
   },
 );

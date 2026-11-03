@@ -28,3 +28,8 @@ export const buildRunUrl = (
   const segment = platform === "forgejo" ? runNumber : runId;
   return segment ? `${repoUrl}/actions/runs/${segment}` : undefined;
 };
+
+// GitHub rejects comment bodies over 65,536 characters. Forgejo stores them
+// as LONGTEXT and enforces no length, so its cap only guards page weight.
+export const defaultMaxCommentLength = (platform: HostingPlatform): number =>
+  platform === "forgejo" ? 1_000_000 : 60_000;

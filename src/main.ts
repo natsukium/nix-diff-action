@@ -15,6 +15,7 @@ import {
   MissingAttributesError,
   AttributeParseError,
   InvalidCommentStrategyError,
+  InvalidMaxCommentLengthError,
   InvalidDirectoryError,
   GitWorktreeError,
   NixPathInfoError,
@@ -62,6 +63,8 @@ export const run = (): Promise<void> =>
       AttributeParseError: (e: AttributeParseError) => setFailed(e.message),
       InvalidCommentStrategyError: (e: InvalidCommentStrategyError) =>
         setFailed(`Invalid comment strategy: ${e.value}`),
+      InvalidMaxCommentLengthError: (e: InvalidMaxCommentLengthError) =>
+        setFailed(`Invalid max-comment-length: ${e.value} (expected a positive integer)`),
       InvalidDirectoryError: (e: InvalidDirectoryError) => setFailed(e.message),
       GitWorktreeError: (e: GitWorktreeError) =>
         setFailed(`Git ${e.operation} failed: ${e.message}`),

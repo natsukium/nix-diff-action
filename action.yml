@@ -43,6 +43,10 @@ inputs:
     description: "'create' to always create new comment, 'update' to update existing comment instead of creating new one."
     required: false
     default: "create"
+  max-comment-length:
+    description: "Maximum length of the PR comment in characters. Longer diffs are truncated. Defaults to 60000 on GitHub, whose API rejects comments over 65536 characters, and to 1000000 on Forgejo."
+    required: false
+    default: ""
 
 outputs:
   diff:

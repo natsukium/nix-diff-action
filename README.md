@@ -78,9 +78,12 @@ between jobs as artifacts, and artifact upload currently fails on Forgejo:
 `@actions/artifact` 6.2 and later send a `mime_type` field that Forgejo's
 `CreateArtifactRequest` protobuf does not define, and Forgejo rejects the whole
 request rather than ignoring the unknown field. Full mode tolerates this — it
-logs a warning, skips the artifact, and still posts the comment, which carries
-the diff anyway. Comments that a newer run supersedes stay visible rather than
-being collapsed, because Forgejo has no GraphQL API to minimize them.
+logs a warning, skips the artifact, and still posts the comment. Because no
+artifact holds the full output, the comment is the only place the diff appears;
+Forgejo imposes no comment length limit, so `max-comment-length` defaults to
+1,000,000 characters there instead of GitHub's 60,000. Comments that a newer
+run supersedes stay visible rather than being collapsed, because Forgejo has no
+GraphQL API to minimize them.
 
 ## Modes
 
@@ -141,15 +144,16 @@ jobs:
 
 ## Inputs
 
-| Input              | Required | Default               | Description                                                                              |
-| ------------------ | -------- | --------------------- | ---------------------------------------------------------------------------------------- |
-| `mode`             | No       | `full`                | Operation mode: `full`, `diff-only`, or `comment-only`                                   |
-| `attributes`       | No\*     | -                     | Nix attributes in YAML format. Each item should have `displayName` and `attribute` keys. |
-| `build`            | No       | `false`               | Build derivations before comparing (see details below)                                   |
-| `directory`        | No       | `.`                   | Directory containing flake.nix                                                           |
-| `github-token`     | No       | `${{ github.token }}` | GitHub or Forgejo token for posting comments                                             |
-| `skip-no-change`   | No       | `true`                | Skip posting comment when there are no differences                                       |
-| `comment-strategy` | No       | `create`              | `create` to always create new comment, `update` to update existing comment               |
+| Input                | Required | Default                           | Description                                                                              |
+| -------------------- | -------- | --------------------------------- | ---------------------------------------------------------------------------------------- |
+| `mode`               | No       | `full`                            | Operation mode: `full`, `diff-only`, or `comment-only`                                   |
+| `attributes`         | No\*     | -                                 | Nix attributes in YAML format. Each item should have `displayName` and `attribute` keys. |
+| `build`              | No       | `false`                           | Build derivations before comparing (see details below)                                   |
+| `directory`          | No       | `.`                               | Directory containing flake.nix                                                           |
+| `github-token`       | No       | `${{ github.token }}`             | GitHub or Forgejo token for posting comments                                             |
+| `skip-no-change`     | No       | `true`                            | Skip posting comment when there are no differences                                       |
+| `comment-strategy`   | No       | `create`                          | `create` to always create new comment, `update` to update existing comment               |
+| `max-comment-length` | No       | 60000 (GitHub), 1000000 (Forgejo) | Maximum comment length in characters; longer diffs are truncated                         |
 
 \* `attributes` is required for `full` and `diff-only` modes. Not required for `comment-only` mode (which reads from artifacts).
 

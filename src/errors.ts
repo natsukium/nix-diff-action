@@ -59,3 +59,8 @@ export class InvalidDirectoryError extends Schema.TaggedError<InvalidDirectoryEr
   "InvalidDirectoryError",
   { message: Schema.String },
 ) {}
+
+export class InvalidMaxCommentLengthError extends Schema.TaggedError<InvalidMaxCommentLengthError>()(
+  "InvalidMaxCommentLengthError",
+  { value: Schema.String },
+) {}
