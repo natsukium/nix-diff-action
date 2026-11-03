@@ -4,6 +4,7 @@ import { GitHubService, ArtifactService } from "../services/index.js";
 import {
   NotPullRequestContextError,
   InvalidCommentStrategyError,
+  InvalidMaxCommentLengthError,
   ArtifactError,
   GitHubApiError,
 } from "../errors.js";
@@ -13,6 +14,7 @@ import { getGithubToken, loadCommentConfig, postComment } from "./shared.js";
 export type RunCommentError =
   | NotPullRequestContextError
   | InvalidCommentStrategyError
+  | InvalidMaxCommentLengthError
   | ArtifactError
   | GitHubApiError
   | ConfigError;
@@ -57,6 +59,9 @@ export const runComment: Effect.Effect<void, RunCommentError, GitHubService | Ar
       runId: context.runId > 0 ? String(context.runId) : undefined,
       skipNoChange: commentConfig.skipNoChange,
       commentStrategy: commentConfig.commentStrategy,
+      maxCommentLength: commentConfig.maxCommentLength,
+      platform: commentConfig.platform,
+      resultsArtifactAvailable: true,
       token,
       htmlViewerAvailable,
     });

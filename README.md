@@ -1,6 +1,6 @@
 # nix-diff-action
 
-A GitHub Action to compare Nix derivations between base and PR branches using [dix](https://github.com/manic-systems/dix).
+An action for GitHub Actions and Forgejo Actions that compares Nix derivations between base and PR branches using [dix](https://github.com/manic-systems/dix).
 
 > [!WARNING]
 > **Alpha Version** - This action is under active development. APIs and behavior may change without notice. We recommend pinning to a specific release version or commit SHA.
@@ -46,6 +46,44 @@ jobs:
             - displayName: my-macos
               attribute: darwinConfigurations.my-macos.system
 ```
+
+### Forgejo Actions
+
+Forgejo Runner exposes GitHub-compatible event variables, and nix-diff-action
+uses the Forgejo server and API URLs for pull request comments and compare
+links. Workflows live in `.forgejo/workflows`. The runner must provide Nix:
+the example targets a host runner labelled `x86_64-linux` that has it
+installed; on a container runner, add a step that installs Nix first.
+
+```yaml
+name: Nix Diff
+
+on:
+  pull_request:
+
+jobs:
+  nix-diff:
+    runs-on: x86_64-linux
+    steps:
+      - uses: https://data.forgejo.org/actions/checkout@v6
+      - uses: https://github.com/natsukium/nix-diff-action@main
+        with:
+          attributes: |
+            - displayName: my-nixos
+              attribute: nixosConfigurations.my-nixos.config.system.build.toplevel
+```
+
+Only `full` mode works on Forgejo. `diff-only` and `comment-only` hand results
+between jobs as artifacts, and artifact upload currently fails on Forgejo:
+`@actions/artifact` 6.2 and later send a `mime_type` field that Forgejo's
+`CreateArtifactRequest` protobuf does not define, and Forgejo rejects the whole
+request rather than ignoring the unknown field. Full mode tolerates this — it
+logs a warning, skips the artifact, and still posts the comment. Because no
+artifact holds the full output, the comment is the only place the diff appears;
+Forgejo imposes no comment length limit, so `max-comment-length` defaults to
+1,000,000 characters there instead of GitHub's 60,000. Comments that a newer
+run supersedes stay visible rather than being collapsed, because Forgejo has no
+GraphQL API to minimize them.
 
 ## Modes
 
@@ -106,15 +144,16 @@ jobs:
 
 ## Inputs
 
-| Input              | Required | Default               | Description                                                                              |
-| ------------------ | -------- | --------------------- | ---------------------------------------------------------------------------------------- |
-| `mode`             | No       | `full`                | Operation mode: `full`, `diff-only`, or `comment-only`                                   |
-| `attributes`       | No\*     | -                     | Nix attributes in YAML format. Each item should have `displayName` and `attribute` keys. |
-| `build`            | No       | `false`               | Build derivations before comparing (see details below)                                   |
-| `directory`        | No       | `.`                   | Directory containing flake.nix                                                           |
-| `github-token`     | No       | `${{ github.token }}` | GitHub token for posting comments                                                        |
-| `skip-no-change`   | No       | `true`                | Skip posting comment when there are no differences                                       |
-| `comment-strategy` | No       | `create`              | `create` to always create new comment, `update` to update existing comment               |
+| Input                | Required | Default                           | Description                                                                              |
+| -------------------- | -------- | --------------------------------- | ---------------------------------------------------------------------------------------- |
+| `mode`               | No       | `full`                            | Operation mode: `full`, `diff-only`, or `comment-only`                                   |
+| `attributes`         | No\*     | -                                 | Nix attributes in YAML format. Each item should have `displayName` and `attribute` keys. |
+| `build`              | No       | `false`                           | Build derivations before comparing (see details below)                                   |
+| `directory`          | No       | `.`                               | Directory containing flake.nix                                                           |
+| `github-token`       | No       | `${{ github.token }}`             | GitHub or Forgejo token for posting comments                                             |
+| `skip-no-change`     | No       | `true`                            | Skip posting comment when there are no differences                                       |
+| `comment-strategy`   | No       | `create`                          | `create` to always create new comment, `update` to update existing comment               |
+| `max-comment-length` | No       | 60000 (GitHub), 1000000 (Forgejo) | Maximum comment length in characters; longer diffs are truncated                         |
 
 \* `attributes` is required for `full` and `diff-only` modes. Not required for `comment-only` mode (which reads from artifacts).
 
@@ -213,6 +252,9 @@ Required permissions vary by mode:
 | `full`         | ✓ (git operations) | ✓ (post comments)      | -                      |
 | `diff-only`    | ✓ (git operations) | -                      | -                      |
 | `comment-only` | -                  | ✓ (post comments)      | ✓ (download artifacts) |
+
+On Forgejo, workflow `permissions` entries are ignored; the automatic token is
+scoped to the repository the workflow runs in.
 
 ## Fork Pull Requests
 

@@ -15,6 +15,7 @@ import {
   MissingAttributesError,
   AttributeParseError,
   InvalidCommentStrategyError,
+  InvalidMaxCommentLengthError,
   InvalidDirectoryError,
   GitWorktreeError,
   NixPathInfoError,
@@ -62,6 +63,8 @@ export const run = (): Promise<void> =>
       AttributeParseError: (e: AttributeParseError) => setFailed(e.message),
       InvalidCommentStrategyError: (e: InvalidCommentStrategyError) =>
         setFailed(`Invalid comment strategy: ${e.value}`),
+      InvalidMaxCommentLengthError: (e: InvalidMaxCommentLengthError) =>
+        setFailed(`Invalid max-comment-length: ${e.value} (expected a positive integer)`),
       InvalidDirectoryError: (e: InvalidDirectoryError) => setFailed(e.message),
       GitWorktreeError: (e: GitWorktreeError) =>
         setFailed(`Git ${e.operation} failed: ${e.message}`),
@@ -72,7 +75,7 @@ export const run = (): Promise<void> =>
       NixDixError: (e: NixDixError) =>
         setFailed(`Nix dix failed comparing ${e.basePath} vs ${e.prPath}: ${e.message}`),
       GitHubApiError: (e: GitHubApiError) =>
-        setFailed(`GitHub ${e.operation} failed: ${e.message}`),
+        setFailed(`Code hosting API ${e.operation} failed: ${e.message}`),
       ArtifactError: (e: ArtifactError) => setFailed(`Artifact ${e.name} failed: ${e.message}`),
       ConfigError: (e: ConfigError) => setFailed(`Configuration error: ${e}`),
     }),

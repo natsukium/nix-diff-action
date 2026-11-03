@@ -6,8 +6,10 @@ import {
   AttributeParseError,
   InvalidCommentStrategyError,
   InvalidDirectoryError,
+  InvalidMaxCommentLengthError,
 } from "../errors.js";
 import type { CommentStrategy } from "../types.js";
+import { defaultMaxCommentLength, type HostingPlatform } from "../services/hosting.js";
 
 export { runFull } from "./full.js";
 export { runDiff } from "./diff.js";
@@ -67,4 +69,16 @@ export const validateDirectory = (
           message: `directory must be within the workspace. Got: ${directory} (resolved to ${resolvedPath})`,
         }),
       );
+};
+
+export const parseMaxCommentLength = (
+  input: string,
+  platform: HostingPlatform,
+): Effect.Effect<number, InvalidMaxCommentLengthError> => {
+  const trimmed = input.trim();
+  if (trimmed === "") return Effect.succeed(defaultMaxCommentLength(platform));
+  const value = Number(trimmed);
+  return /^[1-9]\d*$/.test(trimmed) && Number.isSafeInteger(value)
+    ? Effect.succeed(value)
+    : Effect.fail(new InvalidMaxCommentLengthError({ value: input }));
 };

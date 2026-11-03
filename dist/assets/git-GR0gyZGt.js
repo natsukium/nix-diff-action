@@ -23661,6 +23661,13 @@ var tapCauseFilter = /*#__PURE__*/ dual(3, (self, filter, f) => catchCause$1(sel
 /** @internal */
 var tapError$1 = /*#__PURE__*/ dual(2, (self, f) => tapCauseFilter(self, findError, (e) => f(e)));
 /** @internal */
+var catchIf = /*#__PURE__*/ dual((args) => isEffect$1(args[0]), (self, predicate, f, orElse) => catchCause$1(self, (cause) => {
+	const error = findRecoverableError(cause);
+	if (isFailure(error)) return failCause$2(error.failure);
+	if (!predicate(error.success)) return orElse ? orElse(error.success) : failCause$2(cause);
+	return f(error.success);
+}));
+/** @internal */
 var catchFilter = /*#__PURE__*/ dual((args) => isEffect$1(args[0]), (self, filter, f, orElse) => catchCause$1(self, (cause) => {
 	const error = findRecoverableError(cause);
 	if (isFailure(error)) return failCause$2(error.failure);
@@ -23668,6 +23675,10 @@ var catchFilter = /*#__PURE__*/ dual((args) => isEffect$1(args[0]), (self, filte
 	if (isFailure(result)) return orElse ? orElse(result.failure) : failCause$2(cause);
 	return f(result.success);
 }));
+/** @internal */
+var catchTag$1 = /*#__PURE__*/ dual((args) => isEffect$1(args[0]), (self, k, f, orElse) => {
+	return catchIf(self, Array.isArray(k) ? (e) => hasProperty(e, "_tag") && k.includes(e._tag) : isTagged(k), f, orElse);
+});
 /** @internal */
 var catchTags$1 = /*#__PURE__*/ dual((args) => isEffect$1(args[0]), (self, cases, orElse) => {
 	let keys;
@@ -26688,6 +26699,61 @@ var map = map$2;
 */
 var as = as$1;
 var catch_ = catch_$1;
+/**
+* Catches and handles specific errors by their `_tag` field, which is used as a
+* discriminator.
+*
+* **When to use**
+*
+* Use when you need to recover from one specific tagged error in an effect
+* error channel.
+*
+* **Details**
+*
+* The error type must have a readonly `_tag` field. `catchTag` matches that
+* field and only handles errors with the requested tag.
+*
+* **Gotchas**
+*
+* If the cause contains a defect, the handler is skipped and every typed error
+* is converted to a defect, preserving reason order and interrupts. An
+* interruption alongside a typed error does not prevent recovery.
+*
+* **Example** (Handling a tagged error)
+*
+* ```ts import.meta.vitest
+* import { Effect } from "effect"
+*
+* class NetworkError {
+*   readonly _tag = "NetworkError"
+*   constructor(readonly message: string) {}
+* }
+*
+* class ValidationError {
+*   readonly _tag = "ValidationError"
+*   constructor(readonly message: string) {}
+* }
+*
+* const task: Effect.Effect<string, NetworkError | ValidationError> =
+*   Effect.fail(new NetworkError("offline"))
+*
+* const program = Effect.catchTag(
+*   task,
+*   "NetworkError",
+*   (error) => Effect.succeed(`Recovered from network error: ${error.message}`)
+* )
+*
+* Effect.runSync(program) // => "Recovered from network error: offline"
+* ```
+*
+* @see {@link catchTags} for handling multiple tagged errors in one call
+* @see {@link catchIf} for recovering from errors that match a predicate
+*
+* @stability stable
+* @category error handling
+* @since 2.0.0
+*/
+var catchTag = catchTag$1;
 /**
 * Handles multiple errors in a single block of code using their `_tag` field.
 *
@@ -32545,6 +32611,7 @@ var ArtifactError = class extends TaggedError()("ArtifactError", {
 	message: String$1
 }) {};
 var InvalidDirectoryError = class extends TaggedError()("InvalidDirectoryError", { message: String$1 }) {};
+var InvalidMaxCommentLengthError = class extends TaggedError()("InvalidMaxCommentLengthError", { value: String$1 }) {};
 // src/services/git.ts
 var sanitizeBranchName = (ref) => ref.replace(/[^a-zA-Z0-9-]/g, "-");
 var execGit = (args, ignoreReturnCode = false) => tryPromise({
@@ -32616,6 +32683,6 @@ var GitService = class extends Service()("GitService", { make: succeed$1({ creat
 } }) }) {
 	static layer = effect(this, this.make);
 };
-export { flatMapEager as $, Prototype as $t, makeFilter as A, __exportAll as An, makeFailReason as At, transformEffect$1 as B, succeed$5 as Bt, String$1 as C, BearerCredentialHandler as Cn, merge as Ct, decodeUnknownResult as D, require_tunnel as Dn, isDieReason as Dt, decodeUnknownEffect as E, require_undici as En, fromReasons as Et, getIndexSignatureKeys as F, flatMap$2 as Ft, as as G, fromNullishOr as Gt, value as H, Reference as Ht, toEncoded as I, isFailure as It, catchTags as J, isNone as Jt, catchCause as K, getOrElse as Kt, unknown as L, isSuccess$1 as Lt, decodeUnknownEffect$1 as M, __toCommonJS as Mn, reasonAnnotations as Mt, applyToSelfOrLastLinkEncoding as N, __toESM as Nn, isCanonicalArrayIndex as Nt, isPattern as O, __commonJSMin as On, isFailReason as Ot, decodeTo$1 as P, fail$4 as Pt, flatMap as Q, some as Qt, Transformation as R, map$5 as Rt, SchemaError as S, exec as Sn, effect as St, Union as T, HttpCodes as Tn, succeed$2 as Tt, acquireRelease as U, Service as Ut, Pointer as V, try_$2 as Vt, all as W, flatMap$3 as Wt, fail$1 as X, match$3 as Xt, catch_ as Y, map$6 as Yt, failCause as Z, none as Zt, Literals as _, info as _n, succeed$1 as _t, GitHubApiError as a, random as an, logError as at, Number$1 as b, setSecret as bn, tryPromise as bt, MissingAttributesError as c, isTagged as cn, map as ct, NixPathInfoError as d, memoize as dn, option as dt, PipeInspectableProto as en, fnUntraced as et, NotPullRequestContextError as f, pipe as fn, orElseSucceed as ft, Literal as g, getState as gn, scoped as gt, BooleanLiterals as h, getInput as hn, runPromise as ht, AttributeParseError as i, symbol as in, isEffect as it, toCodecStringTree as j, __require as jn, pretty as jt, make as k, __esmMin as kn, makeDieReason as kt, NixBuildError as l, dual as ln, mapEager as lt, Boolean$1 as m, error as mn, provide as mt, removeWorktree as n, toJson as nn, fromResult as nt, InvalidCommentStrategyError as o, symbol$1 as on, logInfo as ot, ArraySchema as p, debug as pn, promise as pt, catchEager as q, getOrUndefined$1 as qt, ArtifactError as r, format$1 as rn, gen as rt, InvalidDirectoryError as s, isObject as sn, logWarning as st, GitService as t, assignProperty as tn, forEach as tt, NixDixError as u, identity as un, mapError as ut, NonEmptyString as v, setFailed as vn, sync as vt, Struct as w, HttpClient as wn, mergeAll as wt, Redacted as x, warning as xn, try_ as xt, NullOr as y, setOutput as yn, tapError as yt, passthrough$1 as z, mapError$2 as zt };
+export { failCause as $, none as $t, make as A, __commonJSMin as An, isFailReason as At, passthrough$1 as B, map$5 as Bt, SchemaError as C, warning as Cn, try_ as Ct, decodeUnknownEffect as D, HttpCodes as Dn, succeed$2 as Dt, Union as E, HttpClient as En, mergeAll as Et, decodeTo$1 as F, __toESM as Fn, isCanonicalArrayIndex as Ft, all as G, Service as Gt, Pointer as H, succeed$5 as Ht, getIndexSignatureKeys as I, fail$4 as It, catchEager as J, getOrElse as Jt, as as K, flatMap$3 as Kt, toEncoded as L, flatMap$2 as Lt, toCodecStringTree as M, __exportAll as Mn, makeFailReason as Mt, decodeUnknownEffect$1 as N, __require as Nn, pretty as Nt, decodeUnknownResult as O, require_undici as On, fromReasons as Ot, applyToSelfOrLastLinkEncoding as P, __toCommonJS as Pn, reasonAnnotations as Pt, fail$1 as Q, match$3 as Qt, unknown as R, isFailure as Rt, Redacted as S, setSecret as Sn, tryPromise as St, Struct as T, BearerCredentialHandler as Tn, merge as Tt, value as U, try_$2 as Ut, transformEffect$1 as V, mapError$2 as Vt, acquireRelease as W, Reference as Wt, catchTags as X, isNone as Xt, catchTag as Y, getOrUndefined$1 as Yt, catch_ as Z, map$6 as Zt, Literal as _, getInput as _n, runPromise as _t, GitHubApiError as a, format$1 as an, gen as at, NullOr as b, setFailed as bn, sync as bt, InvalidMaxCommentLengthError as c, symbol$1 as cn, logInfo as ct, NixDixError as d, dual as dn, mapEager as dt, some as en, flatMap as et, NixPathInfoError as f, identity as fn, mapError as ft, BooleanLiterals as g, error as gn, provide as gt, Boolean$1 as h, debug as hn, promise as ht, AttributeParseError as i, toJson as in, fromResult as it, makeFilter as j, __esmMin as jn, makeDieReason as jt, isPattern as k, require_tunnel as kn, isDieReason as kt, MissingAttributesError as l, isObject as ln, logWarning as lt, ArraySchema as m, pipe as mn, orElseSucceed as mt, removeWorktree as n, PipeInspectableProto as nn, fnUntraced as nt, InvalidCommentStrategyError as o, symbol as on, isEffect as ot, NotPullRequestContextError as p, memoize as pn, option as pt, catchCause as q, fromNullishOr as qt, ArtifactError as r, assignProperty as rn, forEach as rt, InvalidDirectoryError as s, random as sn, logError as st, GitService as t, Prototype as tn, flatMapEager as tt, NixBuildError as u, isTagged as un, map as ut, Literals as v, getState as vn, scoped as vt, String$1 as w, exec as wn, effect as wt, Number$1 as x, setOutput as xn, tapError as xt, NonEmptyString as y, info as yn, succeed$1 as yt, Transformation as z, isSuccess$1 as zt };
 
-//# sourceMappingURL=git-BcNbCVsO.js.map
+//# sourceMappingURL=git-GR0gyZGt.js.map

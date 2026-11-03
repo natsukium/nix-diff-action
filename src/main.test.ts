@@ -1,7 +1,12 @@
 import { describe, expect, test } from "vitest";
 import { Cause, Effect, Exit, Layer, Option, Result } from "effect";
 import { formatAggregatedComment, truncateDiff, sanitizeDisplayName } from "./services/github.js";
-import { parseCommentStrategy, parseAttributes, validateDirectory } from "./programs/index.js";
+import {
+  parseCommentStrategy,
+  parseAttributes,
+  parseMaxCommentLength,
+  validateDirectory,
+} from "./programs/index.js";
 import { processDiffResults } from "./programs/full.js";
 import { GitService, sanitizeBranchName } from "./services/git.js";
 import { NixService, decodeDixReport, selectDixCli } from "./services/nix.js";
@@ -91,6 +96,22 @@ describe("parseAttributes", () => {
     expect(result).toHaveLength(1);
     expect(result[0].displayName).toBe("host1");
     expect(result[0].attribute).toBe("nixosConfigurations.host1.config.system.build.toplevel");
+  });
+});
+
+describe("parseMaxCommentLength", () => {
+  test("uses the platform default when the input is empty", async () => {
+    expect(await Effect.runPromise(parseMaxCommentLength("", "github"))).toBe(60_000);
+    expect(await Effect.runPromise(parseMaxCommentLength("", "forgejo"))).toBe(1_000_000);
+  });
+
+  test("accepts a positive integer", async () => {
+    expect(await Effect.runPromise(parseMaxCommentLength("200000", "forgejo"))).toBe(200_000);
+  });
+
+  test.each(["0", "-1", "1.5", "1e6", "abc", "9".repeat(400)])("rejects %s", async (input) => {
+    const exit = await Effect.runPromiseExit(parseMaxCommentLength(input, "github"));
+    expect(Exit.isFailure(exit)).toBe(true);
   });
 });
 
@@ -272,7 +293,7 @@ describe("formatAggregatedComment", () => {
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456", {
-      runId: "12345",
+      runUrl: "https://github.com/owner/repo/actions/runs/12345",
       repoUrl: "https://github.com/owner/repo",
       htmlViewerAvailable: true,
     });
@@ -295,7 +316,7 @@ describe("formatAggregatedComment", () => {
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456", {
-      runId: "12345",
+      runUrl: "https://github.com/owner/repo/actions/runs/12345",
       repoUrl: "https://github.com/owner/repo",
       htmlViewerAvailable: true,
     });
@@ -321,7 +342,7 @@ describe("formatAggregatedComment", () => {
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456", {
-      runId: "12345",
+      runUrl: "https://github.com/owner/repo/actions/runs/12345",
       repoUrl: "https://github.com/owner/repo",
       htmlViewerAvailable: false,
     });
@@ -342,7 +363,7 @@ describe("formatAggregatedComment", () => {
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456", {
-      runId: "12345",
+      runUrl: "https://github.com/owner/repo/actions/runs/12345",
       repoUrl: "https://github.com/owner/repo",
     });
 
@@ -1420,12 +1441,112 @@ describe("formatAggregatedComment with JSON reports", () => {
     }));
     const comment = formatAggregatedComment(results, "sha", {
       repoUrl: "https://github.com/owner/repo",
-      runId: "12345",
+      runUrl: "https://github.com/owner/repo/actions/runs/12345",
       htmlViewerAvailable: true,
     });
 
     expect(comment.length).toBeLessThan(65536);
     expect(comment).toContain("### host49");
+  });
+
+  test("fits a larger diff when maxCommentLength is raised", () => {
+    const rows = Array.from({ length: 2000 }, (_, i) =>
+      pkg({
+        name: `package-${i}`,
+        status: "Upgraded",
+        versions: [
+          {
+            kind: "changed",
+            old: { name: "1.0.0", amount: 1 },
+            new: { name: "1.0.1", amount: 1 },
+          },
+        ],
+      }),
+    );
+    const results = [jsonResult(report(rows))];
+
+    const capped = formatAggregatedComment(results, "sha");
+    const raised = formatAggregatedComment(results, "sha", {
+      repoUrl: "https://forge.example.com/owner/repo",
+      maxCommentLength: 1_000_000,
+    });
+
+    expect(capped).toContain("more packages not shown");
+    expect(raised).not.toContain("not shown");
+    expect(raised).toContain("`package-1999`");
+    expect(raised.length).toBeLessThanOrEqual(1_000_000);
+  });
+
+  test("points truncation notes at max-comment-length when no results artifact exists", () => {
+    const rows = Array.from({ length: 2000 }, (_, i) =>
+      pkg({
+        name: `package-${i}`,
+        status: "Added",
+        versions: [{ kind: "added" as const, version: { name: "1.0.0", amount: 1 } }],
+      }),
+    );
+    const comment = formatAggregatedComment([jsonResult(report(rows))], "sha", {
+      repoUrl: "https://forge.example.com/owner/repo",
+      resultsArtifactAvailable: false,
+    });
+
+    expect(comment).toContain("not shown. Raise `max-comment-length` to include it.");
+    expect(comment).not.toContain("artifacts below");
+  });
+
+  test.each([
+    [60_000, 2],
+    [60_000, 5],
+    [65_535, 10],
+    [100_000, 5],
+  ])("never exceeds a %i-character limit with %i large attributes", (limit, attributes) => {
+    const rows = Array.from({ length: 3000 }, (_, i) =>
+      pkg({
+        name: `p${i}`,
+        status: "Added",
+        versions: [{ kind: "added" as const, version: { name: "1.0", amount: 1 } }],
+        size_new: 1e6,
+        size_delta: 1e6,
+      }),
+    );
+    const results = Array.from({ length: attributes }, (_, i) => ({
+      ...jsonResult({
+        diffs: rows,
+        paths: { old: 1, new: 2, added: 1, removed: 0 },
+        size_old: 1,
+        size_new: 2,
+      }),
+      displayName: `host${i}`,
+      attributePath: `nixosConfigurations.host${i}`,
+      baseRef: "a",
+      prRef: "b",
+    }));
+    const comment = formatAggregatedComment(results, "sha", {
+      repoUrl: "https://x/y",
+      maxCommentLength: limit,
+    });
+
+    expect(comment.length).toBeLessThanOrEqual(limit);
+  });
+
+  test("lists every version when no results artifact exists", () => {
+    const many = pkg({
+      name: "linux-firmware",
+      status: "Changed",
+      versions: Array.from({ length: 8 }, (_, i) => ({
+        kind: "added" as const,
+        version: { name: `${i}.patch`, amount: 1 },
+      })),
+    });
+    const withArtifact = formatAggregatedComment([jsonResult(report([many]))], "sha");
+    const withoutArtifact = formatAggregatedComment([jsonResult(report([many]))], "sha", {
+      repoUrl: "https://forge.example.com/owner/repo",
+      resultsArtifactAvailable: false,
+    });
+
+    expect(withArtifact).toContain("+3 more");
+    expect(withoutArtifact).not.toContain("more`");
+    expect(withoutArtifact).toContain("7.patch");
   });
 });
 

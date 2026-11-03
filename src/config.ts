@@ -17,6 +17,7 @@ const ActionsConfigProvider = pipe(
         build: core.getInput("build"),
         "skip-no-change": core.getInput("skip-no-change"),
         "comment-strategy": core.getInput("comment-strategy"),
+        "max-comment-length": core.getInput("max-comment-length"),
       },
       { preserveEmptyStrings: true },
     ),
@@ -31,6 +32,7 @@ export const ActionConfig = {
   build: Config.Boolean("build"),
   skipNoChange: Config.Boolean("skip-no-change"),
   commentStrategy: Config.Literals(["create", "update"], "comment-strategy"),
+  maxCommentLength: Config.String("max-comment-length"),
   githubRunId: Config.option(Config.String("GITHUB_RUN_ID")),
 };
 

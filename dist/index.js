@@ -1,4 +1,4 @@
-import { $ as flatMapEager, $t as Prototype, A as makeFilter, An as __exportAll, At as makeFailReason, B as transformEffect, Bt as succeed$2, C as String$2, Cn as BearerCredentialHandler, Ct as merge$1, D as decodeUnknownResult, Dn as require_tunnel, Dt as isDieReason, E as decodeUnknownEffect$1, En as require_undici, Et as fromReasons, F as getIndexSignatureKeys, Ft as flatMap$1, G as as, Gt as fromNullishOr, H as value, Ht as Reference, I as toEncoded, It as isFailure, J as catchTags, Jt as isNone, K as catchCause, Kt as getOrElse, L as unknown, Lt as isSuccess, M as decodeUnknownEffect, Mn as __toCommonJS, Mt as reasonAnnotations, N as applyToSelfOrLastLinkEncoding, Nn as __toESM, Nt as isCanonicalArrayIndex, O as isPattern, On as __commonJSMin, Ot as isFailReason, P as decodeTo, Pt as fail$1, Q as flatMap, Qt as some$2, R as Transformation, Rt as map$4, S as SchemaError, Sn as exec, St as effect, T as Union, Tn as HttpCodes, Tt as succeed$1, U as acquireRelease, Ut as Service, V as Pointer, Vt as try_, W as all, Wt as flatMap$2, X as fail, Xt as match, Y as catch_, Yt as map$5, Z as failCause, Zt as none, _ as Literals$1, _n as info, _t as succeed, a as GitHubApiError, an as random, at as logError, b as Number$1, bn as setSecret, bt as tryPromise, c as MissingAttributesError, cn as isTagged, ct as map$3, d as NixPathInfoError, dn as memoize$1, dt as option$1, en as PipeInspectableProto, et as fnUntraced, f as NotPullRequestContextError, fn as pipe, ft as orElseSucceed, g as Literal, gt as scoped, h as BooleanLiterals, hn as getInput, ht as runPromise, i as AttributeParseError, in as symbol, it as isEffect, j as toCodecStringTree, jn as __require, jt as pretty, k as make$4, kn as __esmMin, kt as makeDieReason, l as NixBuildError, ln as dual, lt as mapEager, m as Boolean$2, mn as error, mt as provide, nn as toJson, nt as fromResult, o as InvalidCommentStrategyError, on as symbol$1, ot as logInfo, p as ArraySchema, pn as debug, pt as promise, q as catchEager, qt as getOrUndefined, r as ArtifactError, rn as format, rt as gen, s as InvalidDirectoryError, sn as isObject$2, st as logWarning, t as GitService, tn as assignProperty, tt as forEach, u as NixDixError, un as identity, ut as mapError$1, v as NonEmptyString, vn as setFailed$1, vt as sync, w as Struct, wn as HttpClient, wt as mergeAll, x as Redacted$1, xn as warning, xt as try_$1, y as NullOr, yn as setOutput, yt as tapError, z as passthrough, zt as mapError } from "./assets/git-BcNbCVsO.js";
+import { $ as failCause, $t as none, A as make$4, An as __commonJSMin, At as isFailReason, B as passthrough, Bt as map$4, C as SchemaError, Cn as warning, Ct as try_$1, D as decodeUnknownEffect$1, Dn as HttpCodes, Dt as succeed$1, E as Union, En as HttpClient, Et as mergeAll, F as decodeTo, Fn as __toESM, Ft as isCanonicalArrayIndex, G as all, Gt as Service, H as Pointer, Ht as succeed$2, I as getIndexSignatureKeys, It as fail$1, J as catchEager, Jt as getOrElse, K as as, Kt as flatMap$2, L as toEncoded, Lt as flatMap$1, M as toCodecStringTree, Mn as __exportAll, Mt as makeFailReason, N as decodeUnknownEffect, Nn as __require, Nt as pretty, O as decodeUnknownResult, On as require_undici, Ot as fromReasons, P as applyToSelfOrLastLinkEncoding, Pn as __toCommonJS, Pt as reasonAnnotations, Q as fail, Qt as match, R as unknown, Rt as isFailure, S as Redacted$1, Sn as setSecret, St as tryPromise, T as Struct, Tn as BearerCredentialHandler, Tt as merge$1, U as value, Ut as try_, V as transformEffect, Vt as mapError, W as acquireRelease, Wt as Reference, X as catchTags, Xt as isNone, Y as catchTag, Yt as getOrUndefined, Z as catch_, Zt as map$5, _ as Literal, _n as getInput, _t as runPromise, a as GitHubApiError, an as format, at as gen, b as NullOr, bn as setFailed$1, bt as sync, c as InvalidMaxCommentLengthError, cn as symbol$1, ct as logInfo, d as NixDixError, dn as dual, dt as mapEager, en as some$2, et as flatMap, f as NixPathInfoError, fn as identity, ft as mapError$1, g as BooleanLiterals, gn as error, gt as provide, h as Boolean$2, hn as debug, ht as promise, i as AttributeParseError, in as toJson, it as fromResult, j as makeFilter, jn as __esmMin, jt as makeDieReason, k as isPattern, kn as require_tunnel, kt as isDieReason, l as MissingAttributesError, ln as isObject$2, lt as logWarning, m as ArraySchema, mn as pipe, mt as orElseSucceed, nn as PipeInspectableProto, nt as fnUntraced, o as InvalidCommentStrategyError, on as symbol, ot as isEffect, p as NotPullRequestContextError, pn as memoize$1, pt as option$1, q as catchCause, qt as fromNullishOr, r as ArtifactError, rn as assignProperty, rt as forEach, s as InvalidDirectoryError, sn as random, st as logError, t as GitService, tn as Prototype, tt as flatMapEager, u as NixBuildError, un as isTagged, ut as map$3, v as Literals$1, vt as scoped, w as String$2, wn as exec, wt as effect, x as Number$1, xn as setOutput, xt as tapError, y as NonEmptyString, yn as info, yt as succeed, z as Transformation, zt as isSuccess } from "./assets/git-GR0gyZGt.js";
 import * as os$2 from "os";
 import os, { EOL } from "os";
 import * as crypto from "crypto";
@@ -79598,10 +79598,23 @@ var ArtifactService = class extends Service()("ArtifactService", { make: succeed
 };
 // src/services/utils.ts
 var hasDixChanges = (result) => result.basePath !== result.prPath;
+// src/services/hosting.ts
+var detectHostingPlatform = (environment = process.env) => {
+	if (environment.FORGEJO_SERVER_URL) return "forgejo";
+	try {
+		return new URL(environment.GITHUB_API_URL ?? "https://api.github.com").pathname.replace(/\/+$/, "").endsWith("/api/v1") ? "forgejo" : "github";
+	} catch {
+		return "github";
+	}
+};
+var buildRunUrl = (platform, repoUrl, runId, runNumber) => {
+	const segment = platform === "forgejo" ? runNumber : runId;
+	return segment ? `${repoUrl}/actions/runs/${segment}` : void 0;
+};
+var defaultMaxCommentLength = (platform) => platform === "forgejo" ? 1e6 : 6e4;
 // src/services/github.ts
 var NIX_DIFF_ACTION_MARKER_BASE = "<!-- nix-diff-action";
 var getNixDiffActionMarker = (displayName) => displayName ? `${NIX_DIFF_ACTION_MARKER_BASE}:${displayName} -->` : `${NIX_DIFF_ACTION_MARKER_BASE} -->`;
-var MAX_COMMENT_LENGTH = 6e4;
 var truncateDiff = (diff, maxLength) => {
 	if (diff.length <= maxLength) return {
 		text: diff,
@@ -79633,7 +79646,7 @@ var nameCell = (row, withNote) => {
 var SELECTION_LEGEND = "<sub>**Bold**: packages listed explicitly in `environment.systemPackages` of the base or the PR.</sub>";
 var COMMENT_MAX_VERSIONS = 5;
 var TABLE_HEADER = "| Package | Version | Size |\n| --- | --- | ---: |";
-var renderPackageTables = (view, budget) => {
+var renderPackageTables = (view, budget, { hint }) => {
 	const groups = [
 		{
 			label: "Changed",
@@ -79657,7 +79670,7 @@ var renderPackageTables = (view, budget) => {
 	groups.forEach((group, index) => {
 		const share = Math.floor(remaining / (groups.length - index));
 		const lines = [];
-		let used = 49;
+		let used = 51;
 		for (const row of group.rows) {
 			const line = `| ${nameCell(row, group.notes)} | ${codeCell(row.version)} | ${row.sizeDelta ?? ""} |`;
 			if (used + line.length + 1 > share) break;
@@ -79668,7 +79681,7 @@ var renderPackageTables = (view, budget) => {
 		if (lines.length > 0) remaining -= used;
 		if (omitted > 0) truncated = true;
 		const table = lines.length > 0 ? `\n\n${TABLE_HEADER}\n${lines.join("\n")}` : "";
-		const note = omitted > 0 ? `\n\n> **Note**: ${pluralize(omitted, "more package")} not shown. See the full output in the artifacts below.` : "";
+		const note = omitted > 0 ? `\n\n> **Note**: ${pluralize(omitted, "more package")} not shown. ${hint}` : "";
 		const explicitCount = countExplicit(group.rows);
 		const count = explicitCount > 0 ? `${group.rows.length}, ${explicitCount} explicit` : `${group.rows.length}`;
 		parts.push(`<details>
@@ -79681,22 +79694,22 @@ var renderPackageTables = (view, budget) => {
 		truncated
 	};
 };
-var renderReportBody = (view, budget) => {
+var renderReportBody = (view, budget, truncation) => {
 	const stats = renderStatsTable(view);
 	const hidden = view.hiddenCount > 0 ? `\n\n<sub>${pluralize(view.hiddenCount, "package")} with only a minor size change hidden.</sub>` : "";
 	if (isUnchanged(view)) return {
 		text: [stats, "No package additions, removals, or version changes."].filter(Boolean).join("\n\n") + hidden,
 		truncated: false
 	};
-	const tables = renderPackageTables(view, budget);
+	const tables = renderPackageTables(view, budget, truncation);
 	return {
 		text: `${stats ? `${stats}\n\n` : ""}${view.hasSelection ? `${SELECTION_LEGEND}\n\n` : ""}${tables.text}${hidden}`,
 		truncated: tables.truncated
 	};
 };
-var renderTextBody = (text, budget) => {
+var renderTextBody = (text, budget, { hint }) => {
 	const truncated = truncateDiff(text || "No differences found", budget);
-	const hint = truncated.truncated ? "\n\n> **Note**: Diff was truncated. See the full output in the artifacts below." : "";
+	const note = truncated.truncated ? `\n\n> **Note**: Diff was truncated. ${hint}` : "";
 	return {
 		text: `<details>
 <summary>Diff Output</summary>
@@ -79704,21 +79717,27 @@ var renderTextBody = (text, budget) => {
 \`\`\`
 ${truncated.text}
 \`\`\`
-${hint}
+${note}
 </details>`,
 		truncated: truncated.truncated
 	};
 };
-var renderResultBody = (result, budget) => result.diff.format === "json" ? renderReportBody(viewFromReport(result.diff.report, { maxVersions: COMMENT_MAX_VERSIONS }), budget) : renderTextBody(result.diff.text, budget);
-var renderSection = (result, budget) => `### ${sanitizeDisplayName(result.displayName)}
+var renderResultBody = (result, budget, truncation) => result.diff.format === "json" ? renderReportBody(viewFromReport(result.diff.report, { maxVersions: truncation.maxVersions }), budget, truncation) : renderTextBody(result.diff.text, budget, truncation);
+var renderSection = (result, budget, truncation) => `### ${sanitizeDisplayName(result.displayName)}
 
 **Attribute**: \`${result.attributePath}\`
 
-${renderResultBody(result, budget).text}`;
+${renderResultBody(result, budget, truncation).text}`;
 var formatAggregatedComment = (results, headSha, options) => {
+	const maxLength = options?.maxCommentLength ?? defaultMaxCommentLength("github");
+	const hint = options?.resultsArtifactAvailable === false ? "Raise `max-comment-length` to include it." : "See the full output in the artifacts below.";
+	const truncation = {
+		hint,
+		maxVersions: options?.resultsArtifactAvailable === false ? Infinity : COMMENT_MAX_VERSIONS
+	};
 	const marker = results.length === 1 ? getNixDiffActionMarker(results[0].displayName) : getNixDiffActionMarker();
 	const compareDisplay = options ? `[Compare changes](${options.repoUrl}/compare/${results[0].baseRef}...${results[0].prRef})` : `\`${results[0].baseRef}...${results[0].prRef}\``;
-	const htmlViewerLink = options?.runId && results.length > 0 && options.htmlViewerAvailable ? `\n> :page_facing_up: [View diff as HTML](${options.repoUrl}/actions/runs/${options.runId}) in the Artifacts section\n` : "";
+	const htmlViewerLink = options?.runUrl && results.length > 0 && options.htmlViewerAvailable ? `\n> :page_facing_up: [View diff as HTML](${options.runUrl}) in the Artifacts section\n` : "";
 	const footer = `---
 <sub>Generated by [nix-diff-action](https://github.com/natsukium/nix-diff-action) using [dix](https://github.com/manic-systems/dix)</sub>
 <!-- nix-diff-action-footer sha=${headSha} -->`;
@@ -79730,22 +79749,22 @@ ${compareDisplay}
 ${sections}
 ${htmlViewerLink}
 ${footer}`;
-	const omittedNotice = (count) => `\n\n> **Note**: ${pluralize(count, "more attribute")} not shown. See the full output in the artifacts below.`;
+	const omittedNotice = (count) => `\n\n> **Note**: ${pluralize(count, "more attribute")} not shown. ${hint}`;
 	let fixedLength = wrap("").length;
 	let shown = 0;
 	for (const result of results) {
-		const length = renderSection(result, 0).length + 2;
+		const length = renderSection(result, 0, truncation).length + 2;
 		const remaining = results.length - shown - 1;
 		const notice = remaining > 0 ? omittedNotice(remaining).length : 0;
-		if (shown > 0 && fixedLength + length + notice > MAX_COMMENT_LENGTH) break;
+		if (shown > 0 && fixedLength + length + notice > maxLength) break;
 		fixedLength += length;
 		shown++;
 	}
 	const kept = results.slice(0, shown);
 	const omitted = results.length - shown;
 	if (omitted > 0) fixedLength += omittedNotice(omitted).length;
-	const budget = Math.max(0, Math.floor((MAX_COMMENT_LENGTH - fixedLength) / Math.max(1, shown)));
-	return wrap(kept.map((result) => renderSection(result, budget)).join("\n\n") + (omitted > 0 ? omittedNotice(omitted) : ""));
+	const budget = Math.max(0, Math.floor((maxLength - fixedLength) / Math.max(1, shown)));
+	return wrap(kept.map((result) => renderSection(result, budget, truncation)).join("\n\n") + (omitted > 0 ? omittedNotice(omitted) : ""));
 };
 var listNixDiffComments = (octokit, context, prNumber, displayName) => tryPromise({
 	try: () => octokit.paginate(octokit.rest.issues.listComments, {
@@ -79831,7 +79850,7 @@ var GitHubService = class extends Service()("GitHubService", { make: succeed({
 				})
 			});
 		}
-		if (options.commentStrategy === "create") yield* minimizeOldComments(octokit, context, pr.number, pr.head.sha, displayName);
+		if (options.commentStrategy === "create") yield* options.platform === "forgejo" ? logInfo("Forgejo has no API to minimize outdated comments; leaving them visible") : minimizeOldComments(octokit, context, pr.number, pr.head.sha, displayName);
 		yield* createComment(octokit, context, pr.number, commentBody);
 		yield* logInfo("Posted new aggregated diff comment to PR");
 	})
@@ -79848,7 +79867,8 @@ var ActionsConfigProvider = pipe(fromEnv(), orElse(fromUnknown({
 	directory: getInput("directory"),
 	build: getInput("build"),
 	"skip-no-change": getInput("skip-no-change"),
-	"comment-strategy": getInput("comment-strategy")
+	"comment-strategy": getInput("comment-strategy"),
+	"max-comment-length": getInput("max-comment-length")
 }, { preserveEmptyStrings: true })));
 var ActionConfig = {
 	mode: Literals([
@@ -79862,6 +79882,7 @@ var ActionConfig = {
 	build: Boolean$1("build"),
 	skipNoChange: Boolean$1("skip-no-change"),
 	commentStrategy: Literals(["create", "update"], "comment-strategy"),
+	maxCommentLength: String$1("max-comment-length"),
 	githubRunId: option(String$1("GITHUB_RUN_ID"))
 };
 var ConfigProviderLayer = layer(ActionsConfigProvider);
@@ -86527,14 +86548,17 @@ var postComment = (params) => gen(function* () {
 	const githubService = yield* GitHubService;
 	const context = githubService.getContext();
 	const pr = yield* githubService.getPullRequest();
-	const repoUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}`;
+	const repoUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
 	yield* githubService.postAggregatedComment(githubService.createOctokit(params.token), context, pr, params.results, {
 		skipNoChange: params.skipNoChange,
-		commentStrategy: params.commentStrategy
+		commentStrategy: params.commentStrategy,
+		platform: params.platform
 	}, {
 		repoUrl,
-		runId: params.runId,
-		htmlViewerAvailable: params.htmlViewerAvailable
+		runUrl: buildRunUrl(params.platform, repoUrl, params.runId, process.env.GITHUB_RUN_NUMBER),
+		htmlViewerAvailable: params.htmlViewerAvailable,
+		maxCommentLength: params.maxCommentLength,
+		resultsArtifactAvailable: params.resultsArtifactAvailable
 	});
 });
 /**
@@ -86542,9 +86566,14 @@ var postComment = (params) => gen(function* () {
 * Used by: runFull, runComment
 */
 var loadCommentConfig = gen(function* () {
+	const skipNoChange = yield* ActionConfig.skipNoChange;
+	const commentStrategy = yield* parseCommentStrategy(yield* ActionConfig.commentStrategy);
+	const platform = detectHostingPlatform();
 	return {
-		skipNoChange: yield* ActionConfig.skipNoChange,
-		commentStrategy: yield* parseCommentStrategy(yield* ActionConfig.commentStrategy)
+		skipNoChange,
+		commentStrategy,
+		maxCommentLength: yield* parseMaxCommentLength(yield* ActionConfig.maxCommentLength, platform),
+		platform
 	};
 });
 // src/programs/full.ts
@@ -86583,13 +86612,16 @@ var runFull = gen(function* () {
 	const token = yield* getGithubToken;
 	const commentConfig = yield* loadCommentConfig;
 	const { config, results } = yield* runDiffPipeline;
-	yield* artifactService.uploadJsonResult(results, "full");
+	const resultsArtifactAvailable = yield* artifactService.uploadJsonResult(results, "full").pipe(as(true), catchTag("ArtifactError", (error) => commentConfig.platform === "forgejo" ? logWarning(`Skipping diff result artifact: ${error.message}`).pipe(as(false)) : fail(error)));
 	const htmlViewerAvailable = yield* artifactService.uploadAggregatedHtml(results).pipe(catch_((error) => logWarning(`HTML viewer artifact upload failed: ${error.message}`).pipe(as(false))));
 	yield* postComment({
 		results,
 		runId: getOrUndefined(config.githubRunId),
 		skipNoChange: commentConfig.skipNoChange,
 		commentStrategy: commentConfig.commentStrategy,
+		maxCommentLength: commentConfig.maxCommentLength,
+		platform: commentConfig.platform,
+		resultsArtifactAvailable,
 		token,
 		htmlViewerAvailable
 	});
@@ -86616,6 +86648,9 @@ var runComment = gen(function* () {
 		runId: context.runId > 0 ? String(context.runId) : void 0,
 		skipNoChange: commentConfig.skipNoChange,
 		commentStrategy: commentConfig.commentStrategy,
+		maxCommentLength: commentConfig.maxCommentLength,
+		platform: commentConfig.platform,
+		resultsArtifactAvailable: true,
 		token,
 		htmlViewerAvailable
 	});
@@ -86636,6 +86671,12 @@ var validateDirectory = (directory, workspaceRoot) => {
 	const normalizedWorkspace = nodePath.resolve(workspaceRoot);
 	return resolvedPath.startsWith(normalizedWorkspace + nodePath.sep) || resolvedPath === normalizedWorkspace ? succeed(resolvedPath) : fail(new InvalidDirectoryError({ message: `directory must be within the workspace. Got: ${directory} (resolved to ${resolvedPath})` }));
 };
+var parseMaxCommentLength = (input, platform) => {
+	const trimmed = input.trim();
+	if (trimmed === "") return succeed(defaultMaxCommentLength(platform));
+	const value = Number(trimmed);
+	return /^[1-9]\d*$/.test(trimmed) && Number.isSafeInteger(value) ? succeed(value) : fail(new InvalidMaxCommentLengthError({ value: input }));
+};
 // src/main.ts
 var program = gen(function* () {
 	switch (yield* ActionConfig.mode) {
@@ -86651,12 +86692,13 @@ var run = () => program.pipe(tapError((error) => logError("Action failed", { err
 	MissingAttributesError: (e) => setFailed(e.message),
 	AttributeParseError: (e) => setFailed(e.message),
 	InvalidCommentStrategyError: (e) => setFailed(`Invalid comment strategy: ${e.value}`),
+	InvalidMaxCommentLengthError: (e) => setFailed(`Invalid max-comment-length: ${e.value} (expected a positive integer)`),
 	InvalidDirectoryError: (e) => setFailed(e.message),
 	GitWorktreeError: (e) => setFailed(`Git ${e.operation} failed: ${e.message}`),
 	NixPathInfoError: (e) => setFailed(`Nix path-info failed for ${e.flakeRef}: ${e.message}`),
 	NixBuildError: (e) => setFailed(`Nix build failed for ${e.flakeRef}: ${e.message}`),
 	NixDixError: (e) => setFailed(`Nix dix failed comparing ${e.basePath} vs ${e.prPath}: ${e.message}`),
-	GitHubApiError: (e) => setFailed(`GitHub ${e.operation} failed: ${e.message}`),
+	GitHubApiError: (e) => setFailed(`Code hosting API ${e.operation} failed: ${e.message}`),
 	ArtifactError: (e) => setFailed(`Artifact ${e.name} failed: ${e.message}`),
 	ConfigError: (e) => setFailed(`Configuration error: ${e}`)
 }), catch_((error) => setFailed(`Unexpected error: ${error}`)), scoped, provide(merge$1(MainLayer, ConfigProviderLayer)), runPromise);
