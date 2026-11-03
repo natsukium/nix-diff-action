@@ -1427,6 +1427,33 @@ describe("formatAggregatedComment with JSON reports", () => {
     expect(comment.length).toBeLessThan(65536);
     expect(comment).toContain("### host49");
   });
+
+  test.each([2, 5])("never exceeds the comment limit with %i large attributes", (attributes) => {
+    const rows = Array.from({ length: 3000 }, (_, i) =>
+      pkg({
+        name: `p${i}`,
+        status: "Added",
+        versions: [{ kind: "added" as const, version: { name: "1.0", amount: 1 } }],
+        size_new: 1e6,
+        size_delta: 1e6,
+      }),
+    );
+    const results = Array.from({ length: attributes }, (_, i) => ({
+      ...jsonResult({
+        diffs: rows,
+        paths: { old: 1, new: 2, added: 1, removed: 0 },
+        size_old: 1,
+        size_new: 2,
+      }),
+      displayName: `host${i}`,
+      attributePath: `nixosConfigurations.host${i}`,
+      baseRef: "a",
+      prRef: "b",
+    }));
+    const comment = formatAggregatedComment(results, "sha", { repoUrl: "https://x/y" });
+
+    expect(comment.length).toBeLessThanOrEqual(60_000);
+  });
 });
 
 describe("slugify", () => {

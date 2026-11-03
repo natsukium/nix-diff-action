@@ -79657,7 +79657,7 @@ var renderPackageTables = (view, budget) => {
 	groups.forEach((group, index) => {
 		const share = Math.floor(remaining / (groups.length - index));
 		const lines = [];
-		let used = 49;
+		let used = 51;
 		for (const row of group.rows) {
 			const line = `| ${nameCell(row, group.notes)} | ${codeCell(row.version)} | ${row.sizeDelta ?? ""} |`;
 			if (used + line.length + 1 > share) break;

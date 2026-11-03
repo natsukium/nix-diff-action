@@ -105,7 +105,9 @@ const renderPackageTables = (view: DiffView, budget: number): RenderedBody => {
   groups.forEach((group, index) => {
     const share = Math.floor(remaining / (groups.length - index));
     const lines: string[] = [];
-    let used = TABLE_HEADER.length;
+    // The table is wrapped as "\n\n" + header + "\n" + rows joined by "\n",
+    // and each row below is charged its own trailing newline.
+    let used = TABLE_HEADER.length + 2;
     for (const row of group.rows) {
       const line = `| ${nameCell(row, group.notes)} | ${codeCell(row.version)} | ${row.sizeDelta ?? ""} |`;
       if (used + line.length + 1 > share) break;
