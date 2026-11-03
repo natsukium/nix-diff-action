@@ -18664,7 +18664,7 @@ var hash = (self) => {
 			const seen = backEdges;
 			let h;
 			try {
-				if ("~effect/Hash" in self) h = self[symbol$1]();
+				if (isHash(self)) h = self[symbol$1]();
 				else if (typeof self === "function") h = random(self);
 				else if (isArrayBufferLike(self)) {
 					const bytes = bufferBytes(self);
@@ -18781,6 +18781,40 @@ var combine = /*#__PURE__*/ dual(2, (self, b) => mix(Math.imul(self, 2654435761)
 * @since 2.0.0
 */
 var optimize = (n) => n & 3221225471 | n >>> 1 & 1073741824;
+/**
+* Checks whether a value implements the Hash interface.
+*
+* **When to use**
+*
+* Use to detect whether an unknown value provides a custom hash implementation.
+*
+* **Details**
+*
+* This function determines whether a given value has a function under the Hash
+* symbol, indicating that it can provide its own hash value implementation.
+* Data that merely carries the key, such as parsed JSON, is hashed as data.
+*
+* **Example** (Checking for Hash support)
+*
+* ```ts import.meta.vitest
+* import { Hash } from "effect"
+*
+* class MyHashable implements Hash.Hash {
+*   [Hash.symbol]() {
+*     return 42
+*   }
+* }
+*
+* Hash.isHash(new MyHashable()) // => true
+* Hash.isHash({}) // => false
+* Hash.isHash("string") // => false
+* ```
+*
+* @stability stable
+* @category guards
+* @since 2.0.0
+*/
+var isHash = (u) => hasProperty(u, "~effect/Hash") && typeof u["~effect/Hash"] === "function";
 var float64 = /*#__PURE__*/ new DataView(/*#__PURE__*/ new ArrayBuffer(8));
 /**
 * Computes a hash value for a number.
@@ -19137,8 +19171,8 @@ var equalEntries = (self, that) => compareBoth(self[0], that[0]) && compareBoth(
 * **Details**
 *
 * - Pure function, no side effects.
-* - Returns `true` if and only if `u` has a property keyed by
-*   {@link symbol}.
+* - Returns `true` if and only if `u` has a function keyed by {@link symbol}.
+*   Data that merely carries the key, such as parsed JSON, is not `Equal`.
 * - Acts as a TypeScript type guard, narrowing the input to {@link Equal}.
 *
 * **Example** (Checking Equal values)
@@ -19167,7 +19201,7 @@ var equalEntries = (self, that) => compareBoth(self[0], that[0]) && compareBoth(
 * @category guards
 * @since 2.0.0
 */
-var isEqual = (u) => hasProperty(u, symbol);
+var isEqual = (u) => hasProperty(u, "~effect/Equal") && typeof u["~effect/Equal"] === "function";
 // node_modules/effect/dist/Redactable.js
 /**
 * Defines the symbol used to identify objects that implement the {@link Redactable}
@@ -21072,9 +21106,8 @@ var ServiceProto = {
 var cacheKeys = /*#__PURE__*/ new Set();
 var ReferenceTypeId = "~effect/Context/Reference";
 var TypeId$16 = "~effect/Context";
-var MaxDepth = 8;
 var FlattenAfterBaseHits = 8;
-var makeImpl = (cacheRoot, base, overlay, depth) => {
+var makeImpl = (cacheRoot, base, overlay, depth, maxDepth) => {
 	const self = Object.create(Proto$5);
 	self.cacheRoot = cacheRoot ?? self;
 	self.base = base;
@@ -21082,6 +21115,7 @@ var makeImpl = (cacheRoot, base, overlay, depth) => {
 	self.depth = depth;
 	self._flat = void 0;
 	self.baseHits = 0;
+	self.maxDepth = maxDepth;
 	return self;
 };
 var applyOverlays = (map, overlay) => {
@@ -21099,7 +21133,7 @@ var flatten = (self) => {
 var withFlat = (self, f) => {
 	const map = new Map(self.mapUnsafe);
 	f(map);
-	return makeUnsafe$4(map);
+	return makeImpl(void 0, map, void 0, 0, self.maxDepth);
 };
 var notFound = /*#__PURE__*/ Symbol();
 var lookup = (self, key) => {
@@ -21122,7 +21156,22 @@ var lookup = (self, key) => {
 * Use when constructing a low-level `Context` from a trusted map whose lifecycle
 * you control.
 *
+* **Details**
+*
+* `options.maxDepth` sets how many `add` calls are kept as overlays before the
+* context is rebased into a flat map (default `8`). Lower values make lookups
+* cheaper, higher values make additions to a large base cheaper. Invalid
+* values fall back to the default.
+*
+* Contexts derived with `add`, `pick`, `omit`, and `merge` keep the setting
+* (`merge` from its first non-empty argument). `make`, `empty`, and `mergeAll`
+* use the default. Layers are combined with `mergeAll`, so apply it to the
+* final context rather than inside a layer.
+*
 * **Gotchas**
+*
+* Excessively large `maxDepth` values can cause stack overflow when overlays
+* are materialized or rebased. Choose a modest value.
 *
 * The provided map is retained without copying and must not be mutated after
 * construction. Prefer `empty`, `make`, `add`, or `merge` for normal Context
@@ -21146,7 +21195,10 @@ var lookup = (self, key) => {
 * @category constructors
 * @since 4.0.0
 */
-var makeUnsafe$4 = (mapUnsafe) => makeImpl(void 0, mapUnsafe, void 0, 0);
+var makeUnsafe$4 = (mapUnsafe, options) => {
+	const maxDepth = options?.maxDepth;
+	return makeImpl(void 0, mapUnsafe, void 0, 0, Number.isInteger(maxDepth) && maxDepth >= 0 ? maxDepth : 8);
+};
 var Proto$5 = {
 	get mapUnsafe() {
 		return flatten(this);
@@ -21314,17 +21366,17 @@ var add = /*#__PURE__*/ dual(3, (self, key, service) => addUnsafe(self, key.key,
 var addUnsafe = (self, key, service) => {
 	const impl = self;
 	const cacheRoot = cacheKeys.has(key) ? void 0 : impl.cacheRoot;
-	if (impl.depth >= MaxDepth) {
+	if (impl.depth >= impl.maxDepth) {
 		const map = new Map(impl._flat ?? impl.base);
 		if (!impl._flat) applyOverlays(map, impl.overlay);
 		map.set(key, service);
-		return makeImpl(cacheRoot, map, void 0, 0);
+		return makeImpl(cacheRoot, map, void 0, 0, impl.maxDepth);
 	}
 	return makeImpl(cacheRoot, impl.base, {
 		key,
 		value: service,
 		parent: impl.overlay
-	}, impl.depth + 1);
+	}, impl.depth + 1, impl.maxDepth);
 };
 /**
 * Returns the service currently stored for a key, or `undefined` when the key
@@ -22821,6 +22873,8 @@ var MinimumLogLevel = /*#__PURE__*/ Reference("effect/References/MinimumLogLevel
 	defaultValue: () => "Info"
 });
 /** @internal */
+var UnhandledLogLevel = /*#__PURE__*/ Reference("effect/References/UnhandledLogLevel", { defaultValue: () => "Error" });
+/** @internal */
 var CurrentLogSpans = /*#__PURE__*/ Reference("effect/References/CurrentLogSpans", { defaultValue: () => [] });
 // node_modules/effect/dist/internal/effect.js
 /** @internal */
@@ -23125,6 +23179,12 @@ var FiberImpl = class {
 		this._stack.length = 0;
 		this._children = void 0;
 		this.context = empty$1();
+		const cache = this.cache;
+		if (cache.span !== void 0 || cache.stackFrame !== void 0) this.cache = {
+			...cache,
+			span: void 0,
+			stackFrame: void 0
+		};
 	}
 	runLoop(effect) {
 		const prevFiber = globalThis[currentFiberTypeId];
@@ -23429,8 +23489,10 @@ var gen$1 = (...args) => {
 	const [options, body] = args;
 	return suspend$1(() => fromIteratorUnsafe(body.call(options.self)));
 };
+var fnBody = (bodyOrOptions, pipeables) => typeof bodyOrOptions === "function" ? bodyOrOptions : pipeables.shift().bind(bodyOrOptions.self);
 /** @internal */
-var fnUntraced$1 = (body, ...pipeables) => {
+var fnUntraced$1 = (bodyOrOptions, ...pipeables) => {
+	const body = fnBody(bodyOrOptions, pipeables);
 	const fn = pipeables.length === 0 ? function() {
 		return suspend$1(() => fromIteratorUnsafe(body.apply(this, arguments)));
 	} : function() {
@@ -23445,13 +23507,16 @@ var defineFunctionLength = (length, fn) => Object.defineProperty(fn, "length", {
 	configurable: true
 });
 /** @internal */
-var fnUntracedEager$1 = (body, ...pipeables) => defineFunctionLength(body.length, pipeables.length === 0 ? function() {
-	return fromIteratorEagerUnsafe(() => body.apply(this, arguments));
-} : function() {
-	let effect = fromIteratorEagerUnsafe(() => body.apply(this, arguments));
-	for (const pipeable of pipeables) effect = pipeable(effect, ...arguments);
-	return effect;
-});
+var fnUntracedEager$1 = (bodyOrOptions, ...pipeables) => {
+	const body = fnBody(bodyOrOptions, pipeables);
+	return defineFunctionLength(body.length, pipeables.length === 0 ? function() {
+		return fromIteratorEagerUnsafe(() => body.apply(this, arguments));
+	} : function() {
+		let effect = fromIteratorEagerUnsafe(() => body.apply(this, arguments));
+		for (const pipeable of pipeables) effect = pipeable(effect, ...arguments);
+		return effect;
+	});
+};
 var fromIteratorEagerUnsafe = (evaluate) => {
 	try {
 		const iterator = evaluate();
@@ -23697,12 +23762,17 @@ var mapBoth = /*#__PURE__*/ dual(2, (self, options) => matchCauseEffect(self, {
 /** @internal */
 var orElseSucceed$1 = /*#__PURE__*/ dual(2, (self, f) => catch_$1(self, (error) => sync$1(() => f(error))));
 /** @internal */
+var ignoreCauseLogger = (log) => log === "Unhandled" ? (...message) => withFiber((fiber) => {
+	const level = fiber.getRef(UnhandledLogLevel);
+	return level === void 0 ? void_$2 : logWithLevel(level)(...message);
+}) : logWithLevel(log === true ? void 0 : log);
+/** @internal */
 var ignore$1 = /*#__PURE__*/ dual((args) => isEffect$1(args[0]), (self, options) => {
 	if (!options?.log) return matchEffect(self, {
 		onFailure: (_) => void_$2,
 		onSuccess: (_) => void_$2
 	});
-	const logEffect = logWithLevel(options.log === true ? void 0 : options.log);
+	const logEffect = ignoreCauseLogger(options.log);
 	return matchCauseEffect(self, {
 		onFailure(cause) {
 			const error = findRecoverableError(cause);
@@ -25723,8 +25793,32 @@ var Proto$4 = {
 		return toDateUtc$1(this).toJSON();
 	}
 };
-({ ...Proto$4 });
-({ ...Proto$4 });
+var ProtoUtc = {
+	...Proto$4,
+	_tag: "Utc",
+	[symbol$1]() {
+		return number$1(this.epochMilliseconds);
+	},
+	[symbol](that) {
+		return isDateTime$1(that) && that._tag === "Utc" && this.epochMilliseconds === that.epochMilliseconds;
+	},
+	toString() {
+		return `DateTime.Utc(${toDateUtc$1(this).toJSON()})`;
+	}
+};
+var ProtoZoned = {
+	...Proto$4,
+	_tag: "Zoned",
+	[symbol$1]() {
+		return combine(number$1(this.epochMilliseconds))(hash(this.zone));
+	},
+	[symbol](that) {
+		return isDateTime$1(that) && that._tag === "Zoned" && this.epochMilliseconds === that.epochMilliseconds && equals$1(this.zone, that.zone);
+	},
+	toString() {
+		return `DateTime.Zoned(${formatIsoZoned(this)})`;
+	}
+};
 var ProtoTimeZone = {
 	[TimeZoneTypeId]: TimeZoneTypeId,
 	[NodeInspectSymbol]() {
@@ -25733,8 +25827,90 @@ var ProtoTimeZone = {
 };
 ({ ...ProtoTimeZone });
 ({ ...ProtoTimeZone });
+var cacheSlot = {
+	value: void 0,
+	enumerable: false,
+	writable: true
+};
+var sealedCaches = /*#__PURE__*/ new WeakMap();
+var cacheAccessor = (key, slots) => ({
+	get() {
+		return Object.isExtensible(this) ? void 0 : sealedCaches.get(this)?.[key];
+	},
+	set(value) {
+		if (Object.isExtensible(this)) {
+			for (const slot of slots) Object.defineProperty(this, slot, cacheSlot);
+			this[key] = value;
+		} else {
+			let caches = sealedCaches.get(this);
+			if (caches === void 0) {
+				caches = {};
+				sealedCaches.set(this, caches);
+			}
+			caches[key] = value;
+		}
+	}
+});
+var zonedSlots = [
+	"partsUtc",
+	"adjustedEpochMilliseconds",
+	"partsAdjusted"
+];
+Object.defineProperty(ProtoUtc, "partsUtc", cacheAccessor("partsUtc", ["partsUtc"]));
+Object.defineProperties(ProtoZoned, {
+	partsUtc: cacheAccessor("partsUtc", zonedSlots),
+	adjustedEpochMilliseconds: cacheAccessor("adjustedEpochMilliseconds", zonedSlots),
+	partsAdjusted: cacheAccessor("partsAdjusted", zonedSlots)
+});
+/** @internal */
+var isDateTime$1 = (u) => hasProperty(u, TypeId$12);
 /** @internal */
 var toDateUtc$1 = (self) => new Date(self.epochMilliseconds);
+/** @internal */
+var toDate = (self) => {
+	if (self._tag === "Utc") return new Date(self.epochMilliseconds);
+	else if (self.zone._tag === "Offset") return new Date(self.epochMilliseconds + self.zone.offset);
+	else if (self.adjustedEpochMilliseconds !== void 0) return new Date(self.adjustedEpochMilliseconds);
+	let bc = false;
+	const parts = self.zone.format.formatToParts(self.epochMilliseconds).filter((_) => {
+		if (_.type === "era") {
+			bc = _.value === "BC";
+			return false;
+		}
+		return _.type !== "literal";
+	});
+	const year = Number(parts[2].value);
+	const date = /* @__PURE__ */ new Date(0);
+	date.setUTCFullYear(bc ? 1 - year : year, Number(parts[0].value) - 1, Number(parts[1].value));
+	date.setUTCHours(Number(parts[3].value), Number(parts[4].value), Number(parts[5].value), parts[6]?.type === "fractionalSecond" ? Number(parts[6].value) : (self.epochMilliseconds % 1e3 + 1e3) % 1e3);
+	self.adjustedEpochMilliseconds = date.getTime();
+	return date;
+};
+/** @internal */
+var zonedOffset = (self) => {
+	return toDate(self).getTime() - toEpochMillis$1(self);
+};
+var offsetToString = (offset) => {
+	const abs = Math.abs(offset);
+	let hours = Math.floor(abs / 36e5);
+	let minutes = Math.round(abs % 36e5 / 6e4);
+	if (minutes === 60) {
+		hours += 1;
+		minutes = 0;
+	}
+	return `${offset < 0 ? "-" : "+"}${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+};
+/** @internal */
+var zonedOffsetIso = (self) => offsetToString(zonedOffset(self));
+/** @internal */
+var toEpochMillis$1 = (self) => self.epochMilliseconds;
+/** @internal */
+var formatIsoOffset = (self) => {
+	const date = toDate(self);
+	return self._tag === "Utc" ? date.toISOString() : `${date.toISOString().slice(0, -1)}${zonedOffsetIso(self)}`;
+};
+/** @internal */
+var formatIsoZoned = (self) => self.zone._tag === "Offset" ? formatIsoOffset(self) : `${formatIsoOffset(self)}[${self.zone.id}]`;
 // node_modules/effect/dist/internal/layer.js
 var provideLayer = (self, layer, options) => scopedWith((scope) => flatMap$1(options?.local ? buildWithMemoMap(layer, makeMemoMapUnsafe(), scope) : buildWithScope(layer, scope), (context) => provideContext(self, context)));
 /** @internal */
@@ -26945,6 +27121,9 @@ var tapError = tapError$1;
 *
 * Use the `log` option to emit the full {@link Cause} when the effect fails,
 * and `message` to prepend a custom log message.
+* Set `log: "Unhandled"` to read `References.UnhandledLogLevel` when the
+* failure occurs; `undefined` disables logging. Minimum log level filtering
+* still applies.
 *
 * **Gotchas**
 *
@@ -27274,7 +27453,9 @@ var runSyncExit = runSyncExit$1;
 * boundary and does not create tracing spans. Use {@link fn} when you need
 * those stack frames or spans. Additional arguments after the generator body
 * act like `pipe` transforms: each transform receives the previous result and
-* the original function arguments. Annotate the generator return type with
+* the original function arguments. Generator bodies may declare a `this`
+* parameter; pass `{ self }` before the body to bind `this` when the function
+* is created. Annotate the generator return type with
 * `Effect.fn.Return<A, E, R>` when the produced `Effect` type needs to be
 * stated explicitly.
 *
@@ -27660,6 +27841,8 @@ var catchEager = catchEager$1;
 *
 * Executes generator functions eagerly when all yielded effects are synchronous,
 * stopping at the first async effect and deferring to normal execution.
+* Additional arguments after the generator body act like `pipe` transforms, and
+* `{ self }` before the body binds `this`, as with {@link fnUntraced}.
 *
 * **Example** (Defining eager untraced effect functions)
 *
@@ -27688,6 +27871,9 @@ var fnUntracedEager = fnUntracedEager$1;
 * decimal scale, which lets the module parse, compare, add, subtract, multiply,
 * divide, round, and format decimal values such as money, quantities, and
 * measurements.
+*
+* Parsed scales are limited to ±10,000, and operations that align scales throw
+* a `RangeError` when the scales differ by more than 20,000.
 *
 * @stability stable
 * @since 2.0.0
@@ -27822,12 +28008,16 @@ var normalize$1 = (self) => {
 		if (self.value === bigint0) self.normalized = zero;
 		else {
 			const digits = `${self.value}`;
-			let end = digits.length;
-			while (digits[end - 1] === "0") end--;
-			self.normalized = makeNormalized(BigInt(digits.slice(0, end)), self.scale - (digits.length - end));
+			const zeros = trailingZeros(digits);
+			self.normalized = makeNormalized(BigInt(digits.slice(0, digits.length - zeros)), self.scale - zeros);
 		}
 	}
 	return self.normalized;
+};
+var trailingZeros = (digits) => {
+	let end = digits.length;
+	while (digits[end - 1] === "0") end--;
+	return digits.length - end;
 };
 var MAX_COMPARISON_SCALE_ALIGNMENT = 100;
 var comparisonPowersOfTen = [bigint1];
@@ -32685,4 +32875,4 @@ var GitService = class extends Service()("GitService", { make: succeed$1({ creat
 };
 export { failCause as $, none as $t, make as A, __commonJSMin as An, isFailReason as At, passthrough$1 as B, map$5 as Bt, SchemaError as C, warning as Cn, try_ as Ct, decodeUnknownEffect as D, HttpCodes as Dn, succeed$2 as Dt, Union as E, HttpClient as En, mergeAll as Et, decodeTo$1 as F, __toESM as Fn, isCanonicalArrayIndex as Ft, all as G, Service as Gt, Pointer as H, succeed$5 as Ht, getIndexSignatureKeys as I, fail$4 as It, catchEager as J, getOrElse as Jt, as as K, flatMap$3 as Kt, toEncoded as L, flatMap$2 as Lt, toCodecStringTree as M, __exportAll as Mn, makeFailReason as Mt, decodeUnknownEffect$1 as N, __require as Nn, pretty as Nt, decodeUnknownResult as O, require_undici as On, fromReasons as Ot, applyToSelfOrLastLinkEncoding as P, __toCommonJS as Pn, reasonAnnotations as Pt, fail$1 as Q, match$3 as Qt, unknown as R, isFailure as Rt, Redacted as S, setSecret as Sn, tryPromise as St, Struct as T, BearerCredentialHandler as Tn, merge as Tt, value as U, try_$2 as Ut, transformEffect$1 as V, mapError$2 as Vt, acquireRelease as W, Reference as Wt, catchTags as X, isNone as Xt, catchTag as Y, getOrUndefined$1 as Yt, catch_ as Z, map$6 as Zt, Literal as _, getInput as _n, runPromise as _t, GitHubApiError as a, format$1 as an, gen as at, NullOr as b, setFailed as bn, sync as bt, InvalidMaxCommentLengthError as c, symbol$1 as cn, logInfo as ct, NixDixError as d, dual as dn, mapEager as dt, some as en, flatMap as et, NixPathInfoError as f, identity as fn, mapError as ft, BooleanLiterals as g, error as gn, provide as gt, Boolean$1 as h, debug as hn, promise as ht, AttributeParseError as i, toJson as in, fromResult as it, makeFilter as j, __esmMin as jn, makeDieReason as jt, isPattern as k, require_tunnel as kn, isDieReason as kt, MissingAttributesError as l, isObject as ln, logWarning as lt, ArraySchema as m, pipe as mn, orElseSucceed as mt, removeWorktree as n, PipeInspectableProto as nn, fnUntraced as nt, InvalidCommentStrategyError as o, symbol as on, isEffect as ot, NotPullRequestContextError as p, memoize as pn, option as pt, catchCause as q, fromNullishOr as qt, ArtifactError as r, assignProperty as rn, forEach as rt, InvalidDirectoryError as s, random as sn, logError as st, GitService as t, Prototype as tn, flatMapEager as tt, NixBuildError as u, isTagged as un, map as ut, Literals as v, getState as vn, scoped as vt, String$1 as w, exec as wn, effect as wt, Number$1 as x, setOutput as xn, tapError as xt, NonEmptyString as y, info as yn, succeed$1 as yt, Transformation as z, isSuccess$1 as zt };
 
-//# sourceMappingURL=git-GR0gyZGt.js.map
+//# sourceMappingURL=git-BBmxhVPn.js.map
