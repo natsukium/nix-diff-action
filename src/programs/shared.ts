@@ -19,6 +19,7 @@ import {
 } from "../errors.js";
 import type { CommentStrategy } from "../types.js";
 import { parseAttributes, validateDirectory, parseCommentStrategy } from "./index.js";
+import { buildRunUrl, detectHostingPlatform, type HostingPlatform } from "../services/hosting.js";
 import { ActionConfig } from "../config.js";
 import { processDiffResults } from "./full.js";
 
@@ -156,6 +157,7 @@ export type PostCommentParams = {
   // Whether the HTML viewer artifact is actually present in the run's artifacts.
   // Controls whether the "View diff as HTML" link is included in the comment.
   htmlViewerAvailable: boolean;
+  platform: HostingPlatform;
 };
 
 /**
@@ -170,17 +172,21 @@ export const postComment = (
     const context = githubService.getContext();
     const pr = yield* githubService.getPullRequest();
 
-    const repoUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}`;
+    const repoUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
 
     yield* githubService.postAggregatedComment(
       githubService.createOctokit(params.token),
       context,
       pr,
       params.results,
-      { skipNoChange: params.skipNoChange, commentStrategy: params.commentStrategy },
+      {
+        skipNoChange: params.skipNoChange,
+        commentStrategy: params.commentStrategy,
+        platform: params.platform,
+      },
       {
         repoUrl,
-        runId: params.runId,
+        runUrl: buildRunUrl(params.platform, repoUrl, params.runId, process.env.GITHUB_RUN_NUMBER),
         htmlViewerAvailable: params.htmlViewerAvailable,
       },
     );
@@ -193,6 +199,7 @@ export const postComment = (
 export type CommentConfig = {
   skipNoChange: boolean;
   commentStrategy: CommentStrategy;
+  platform: HostingPlatform;
 };
 
 export type LoadCommentConfigError = InvalidCommentStrategyError | ConfigError;
@@ -207,6 +214,6 @@ export const loadCommentConfig: Effect.Effect<CommentConfig, LoadCommentConfigEr
     const commentStrategyInput = yield* ActionConfig.commentStrategy;
     const commentStrategy = yield* parseCommentStrategy(commentStrategyInput);
 
-    return { skipNoChange, commentStrategy };
+    return { skipNoChange, commentStrategy, platform: detectHostingPlatform() };
   },
 );

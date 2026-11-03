@@ -137,8 +137,17 @@ export const runFull: Effect.Effect<
   // Run diff pipeline
   const { config, results } = yield* runDiffPipeline;
 
-  // Always upload diff results as artifact (JSON format for consistency with diff-only mode)
-  yield* artifactService.uploadJsonResult(results, "full");
+  // Forgejo rejects the upload (no mime_type in its CreateArtifactRequest), and
+  // the comment then carries the diff on its own.
+  yield* artifactService
+    .uploadJsonResult(results, "full")
+    .pipe(
+      Effect.catchTag("ArtifactError", (error) =>
+        commentConfig.platform === "forgejo"
+          ? Effect.logWarning(`Skipping diff result artifact: ${error.message}`)
+          : Effect.fail(error),
+      ),
+    );
   // HTML viewer is a nice-to-have — don't block the comment on it. Record the
   // outcome so the comment only links the viewer when it was actually uploaded.
   const htmlViewerAvailable = yield* artifactService
@@ -157,6 +166,7 @@ export const runFull: Effect.Effect<
     runId: Option.getOrUndefined(config.githubRunId),
     skipNoChange: commentConfig.skipNoChange,
     commentStrategy: commentConfig.commentStrategy,
+    platform: commentConfig.platform,
     token,
     htmlViewerAvailable,
   });

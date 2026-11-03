@@ -57,6 +57,7 @@ export const runComment: Effect.Effect<void, RunCommentError, GitHubService | Ar
       runId: context.runId > 0 ? String(context.runId) : undefined,
       skipNoChange: commentConfig.skipNoChange,
       commentStrategy: commentConfig.commentStrategy,
+      platform: commentConfig.platform,
       token,
       htmlViewerAvailable,
     });

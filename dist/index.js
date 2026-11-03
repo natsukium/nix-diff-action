@@ -1,4 +1,4 @@
-import { $ as flatMapEager, $t as Prototype, A as makeFilter, An as __exportAll, At as makeFailReason, B as transformEffect, Bt as succeed$2, C as String$2, Cn as BearerCredentialHandler, Ct as merge$1, D as decodeUnknownResult, Dn as require_tunnel, Dt as isDieReason, E as decodeUnknownEffect$1, En as require_undici, Et as fromReasons, F as getIndexSignatureKeys, Ft as flatMap$1, G as as, Gt as fromNullishOr, H as value, Ht as Reference, I as toEncoded, It as isFailure, J as catchTags, Jt as isNone, K as catchCause, Kt as getOrElse, L as unknown, Lt as isSuccess, M as decodeUnknownEffect, Mn as __toCommonJS, Mt as reasonAnnotations, N as applyToSelfOrLastLinkEncoding, Nn as __toESM, Nt as isCanonicalArrayIndex, O as isPattern, On as __commonJSMin, Ot as isFailReason, P as decodeTo, Pt as fail$1, Q as flatMap, Qt as some$2, R as Transformation, Rt as map$4, S as SchemaError, Sn as exec, St as effect, T as Union, Tn as HttpCodes, Tt as succeed$1, U as acquireRelease, Ut as Service, V as Pointer, Vt as try_, W as all, Wt as flatMap$2, X as fail, Xt as match, Y as catch_, Yt as map$5, Z as failCause, Zt as none, _ as Literals$1, _n as info, _t as succeed, a as GitHubApiError, an as random, at as logError, b as Number$1, bn as setSecret, bt as tryPromise, c as MissingAttributesError, cn as isTagged, ct as map$3, d as NixPathInfoError, dn as memoize$1, dt as option$1, en as PipeInspectableProto, et as fnUntraced, f as NotPullRequestContextError, fn as pipe, ft as orElseSucceed, g as Literal, gt as scoped, h as BooleanLiterals, hn as getInput, ht as runPromise, i as AttributeParseError, in as symbol, it as isEffect, j as toCodecStringTree, jn as __require, jt as pretty, k as make$4, kn as __esmMin, kt as makeDieReason, l as NixBuildError, ln as dual, lt as mapEager, m as Boolean$2, mn as error, mt as provide, nn as toJson, nt as fromResult, o as InvalidCommentStrategyError, on as symbol$1, ot as logInfo, p as ArraySchema, pn as debug, pt as promise, q as catchEager, qt as getOrUndefined, r as ArtifactError, rn as format, rt as gen, s as InvalidDirectoryError, sn as isObject$2, st as logWarning, t as GitService, tn as assignProperty, tt as forEach, u as NixDixError, un as identity, ut as mapError$1, v as NonEmptyString, vn as setFailed$1, vt as sync, w as Struct, wn as HttpClient, wt as mergeAll, x as Redacted$1, xn as warning, xt as try_$1, y as NullOr, yn as setOutput, yt as tapError, z as passthrough, zt as mapError } from "./assets/git-BcNbCVsO.js";
+import { $ as flatMap, $t as some$2, A as makeFilter, An as __esmMin, At as makeDieReason, B as transformEffect, Bt as mapError, C as String$2, Cn as exec, Ct as effect, D as decodeUnknownResult, Dn as require_undici, Dt as fromReasons, E as decodeUnknownEffect$1, En as HttpCodes, Et as succeed$1, F as getIndexSignatureKeys, Ft as fail$1, G as as, Gt as flatMap$2, H as value, Ht as try_, I as toEncoded, It as flatMap$1, J as catchTag, Jt as getOrUndefined, K as catchCause, Kt as fromNullishOr, L as unknown, Lt as isFailure, M as decodeUnknownEffect, Mn as __require, Mt as pretty, N as applyToSelfOrLastLinkEncoding, Nn as __toCommonJS, Nt as reasonAnnotations, O as isPattern, On as require_tunnel, Ot as isDieReason, P as decodeTo, Pn as __toESM, Pt as isCanonicalArrayIndex, Q as failCause, Qt as none, R as Transformation, Rt as isSuccess, S as SchemaError, Sn as warning, St as try_$1, T as Union, Tn as HttpClient, Tt as mergeAll, U as acquireRelease, Ut as Reference, V as Pointer, Vt as succeed$2, W as all, Wt as Service, X as catch_, Xt as map$5, Y as catchTags, Yt as isNone, Z as fail, Zt as match, _ as Literals$1, _t as scoped, a as GitHubApiError, an as symbol, at as isEffect, b as Number$1, bn as setOutput, bt as tapError, c as MissingAttributesError, cn as isObject$2, ct as logWarning, d as NixPathInfoError, dn as identity, dt as mapError$1, en as Prototype, et as flatMapEager, f as NotPullRequestContextError, fn as memoize$1, ft as option$1, g as Literal, gn as getInput, gt as runPromise, h as BooleanLiterals, hn as error, ht as provide, i as AttributeParseError, in as format, it as gen, j as toCodecStringTree, jn as __exportAll, jt as makeFailReason, k as make$4, kn as __commonJSMin, kt as isFailReason, l as NixBuildError, ln as isTagged, lt as map$3, m as Boolean$2, mn as debug, mt as promise, nn as assignProperty, nt as forEach, o as InvalidCommentStrategyError, on as random, ot as logError, p as ArraySchema, pn as pipe, pt as orElseSucceed, q as catchEager, qt as getOrElse, r as ArtifactError, rn as toJson, rt as fromResult, s as InvalidDirectoryError, sn as symbol$1, st as logInfo, t as GitService, tn as PipeInspectableProto, tt as fnUntraced, u as NixDixError, un as dual, ut as mapEager, v as NonEmptyString, vn as info, vt as succeed, w as Struct, wn as BearerCredentialHandler, wt as merge$1, x as Redacted$1, xn as setSecret, xt as tryPromise, y as NullOr, yn as setFailed$1, yt as sync, z as passthrough, zt as map$4 } from "./assets/git-CK-MHdh0.js";
 import * as os$2 from "os";
 import os, { EOL } from "os";
 import * as crypto from "crypto";
@@ -79718,7 +79718,7 @@ ${renderResultBody(result, budget).text}`;
 var formatAggregatedComment = (results, headSha, options) => {
 	const marker = results.length === 1 ? getNixDiffActionMarker(results[0].displayName) : getNixDiffActionMarker();
 	const compareDisplay = options ? `[Compare changes](${options.repoUrl}/compare/${results[0].baseRef}...${results[0].prRef})` : `\`${results[0].baseRef}...${results[0].prRef}\``;
-	const htmlViewerLink = options?.runId && results.length > 0 && options.htmlViewerAvailable ? `\n> :page_facing_up: [View diff as HTML](${options.repoUrl}/actions/runs/${options.runId}) in the Artifacts section\n` : "";
+	const htmlViewerLink = options?.runUrl && results.length > 0 && options.htmlViewerAvailable ? `\n> :page_facing_up: [View diff as HTML](${options.runUrl}) in the Artifacts section\n` : "";
 	const footer = `---
 <sub>Generated by [nix-diff-action](https://github.com/natsukium/nix-diff-action) using [dix](https://github.com/manic-systems/dix)</sub>
 <!-- nix-diff-action-footer sha=${headSha} -->`;
@@ -79831,7 +79831,7 @@ var GitHubService = class extends Service()("GitHubService", { make: succeed({
 				})
 			});
 		}
-		if (options.commentStrategy === "create") yield* minimizeOldComments(octokit, context, pr.number, pr.head.sha, displayName);
+		if (options.commentStrategy === "create") yield* options.platform === "forgejo" ? logInfo("Forgejo has no API to minimize outdated comments; leaving them visible") : minimizeOldComments(octokit, context, pr.number, pr.head.sha, displayName);
 		yield* createComment(octokit, context, pr.number, commentBody);
 		yield* logInfo("Posted new aggregated diff comment to PR");
 	})
@@ -86401,7 +86401,7 @@ var require_public_api = /* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.parseDocument = parseDocument;
 	exports.stringify = stringify;
 }));
-// src/programs/shared.ts
+// src/services/hosting.ts
 var import_dist = (/* @__PURE__ */ __commonJSMin(((exports) => {
 	var composer = require_composer();
 	var Document = require_Document();
@@ -86448,6 +86448,19 @@ var import_dist = (/* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.visit = visit.visit;
 	exports.visitAsync = visit.visitAsync;
 })))();
+var detectHostingPlatform = (environment = process.env) => {
+	if (environment.FORGEJO_SERVER_URL) return "forgejo";
+	try {
+		return new URL(environment.GITHUB_API_URL ?? "https://api.github.com").pathname.replace(/\/+$/, "").endsWith("/api/v1") ? "forgejo" : "github";
+	} catch {
+		return "github";
+	}
+};
+var buildRunUrl = (platform, repoUrl, runId, runNumber) => {
+	const segment = platform === "forgejo" ? runNumber : runId;
+	return segment ? `${repoUrl}/actions/runs/${segment}` : void 0;
+};
+// src/programs/shared.ts
 /**
 * Get GitHub token from config (redacted for security)
 * Used by: runFull, runComment
@@ -86527,13 +86540,14 @@ var postComment = (params) => gen(function* () {
 	const githubService = yield* GitHubService;
 	const context = githubService.getContext();
 	const pr = yield* githubService.getPullRequest();
-	const repoUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}`;
+	const repoUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
 	yield* githubService.postAggregatedComment(githubService.createOctokit(params.token), context, pr, params.results, {
 		skipNoChange: params.skipNoChange,
-		commentStrategy: params.commentStrategy
+		commentStrategy: params.commentStrategy,
+		platform: params.platform
 	}, {
 		repoUrl,
-		runId: params.runId,
+		runUrl: buildRunUrl(params.platform, repoUrl, params.runId, process.env.GITHUB_RUN_NUMBER),
 		htmlViewerAvailable: params.htmlViewerAvailable
 	});
 });
@@ -86544,7 +86558,8 @@ var postComment = (params) => gen(function* () {
 var loadCommentConfig = gen(function* () {
 	return {
 		skipNoChange: yield* ActionConfig.skipNoChange,
-		commentStrategy: yield* parseCommentStrategy(yield* ActionConfig.commentStrategy)
+		commentStrategy: yield* parseCommentStrategy(yield* ActionConfig.commentStrategy),
+		platform: detectHostingPlatform()
 	};
 });
 // src/programs/full.ts
@@ -86583,13 +86598,14 @@ var runFull = gen(function* () {
 	const token = yield* getGithubToken;
 	const commentConfig = yield* loadCommentConfig;
 	const { config, results } = yield* runDiffPipeline;
-	yield* artifactService.uploadJsonResult(results, "full");
+	yield* artifactService.uploadJsonResult(results, "full").pipe(catchTag("ArtifactError", (error) => commentConfig.platform === "forgejo" ? logWarning(`Skipping diff result artifact: ${error.message}`) : fail(error)));
 	const htmlViewerAvailable = yield* artifactService.uploadAggregatedHtml(results).pipe(catch_((error) => logWarning(`HTML viewer artifact upload failed: ${error.message}`).pipe(as(false))));
 	yield* postComment({
 		results,
 		runId: getOrUndefined(config.githubRunId),
 		skipNoChange: commentConfig.skipNoChange,
 		commentStrategy: commentConfig.commentStrategy,
+		platform: commentConfig.platform,
 		token,
 		htmlViewerAvailable
 	});
@@ -86616,6 +86632,7 @@ var runComment = gen(function* () {
 		runId: context.runId > 0 ? String(context.runId) : void 0,
 		skipNoChange: commentConfig.skipNoChange,
 		commentStrategy: commentConfig.commentStrategy,
+		platform: commentConfig.platform,
 		token,
 		htmlViewerAvailable
 	});
@@ -86656,7 +86673,7 @@ var run = () => program.pipe(tapError((error) => logError("Action failed", { err
 	NixPathInfoError: (e) => setFailed(`Nix path-info failed for ${e.flakeRef}: ${e.message}`),
 	NixBuildError: (e) => setFailed(`Nix build failed for ${e.flakeRef}: ${e.message}`),
 	NixDixError: (e) => setFailed(`Nix dix failed comparing ${e.basePath} vs ${e.prPath}: ${e.message}`),
-	GitHubApiError: (e) => setFailed(`GitHub ${e.operation} failed: ${e.message}`),
+	GitHubApiError: (e) => setFailed(`Code hosting API ${e.operation} failed: ${e.message}`),
 	ArtifactError: (e) => setFailed(`Artifact ${e.name} failed: ${e.message}`),
 	ConfigError: (e) => setFailed(`Configuration error: ${e}`)
 }), catch_((error) => setFailed(`Unexpected error: ${error}`)), scoped, provide(merge$1(MainLayer, ConfigProviderLayer)), runPromise);

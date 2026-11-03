@@ -72,7 +72,7 @@ export const run = (): Promise<void> =>
       NixDixError: (e: NixDixError) =>
         setFailed(`Nix dix failed comparing ${e.basePath} vs ${e.prPath}: ${e.message}`),
       GitHubApiError: (e: GitHubApiError) =>
-        setFailed(`GitHub ${e.operation} failed: ${e.message}`),
+        setFailed(`Code hosting API ${e.operation} failed: ${e.message}`),
       ArtifactError: (e: ArtifactError) => setFailed(`Artifact ${e.name} failed: ${e.message}`),
       ConfigError: (e: ConfigError) => setFailed(`Configuration error: ${e}`),
     }),

@@ -188,7 +188,7 @@ const renderResultBody = (result: DiffResult, budget: number): RenderedBody =>
 
 export type FormatCommentOptions = {
   repoUrl: string;
-  runId?: string;
+  runUrl?: string;
   // Whether the HTML viewer artifact was uploaded successfully. When false,
   // the "View diff as HTML" link is omitted to avoid linking to a 404.
   htmlViewerAvailable?: boolean;
@@ -221,8 +221,8 @@ export const formatAggregatedComment = (
   // Skip the viewer link when the HTML artifact was not uploaded (either no
   // results or upload failure), otherwise the link would 404.
   const htmlViewerLink =
-    options?.runId && results.length > 0 && options.htmlViewerAvailable
-      ? `\n> :page_facing_up: [View diff as HTML](${options.repoUrl}/actions/runs/${options.runId}) in the Artifacts section\n`
+    options?.runUrl && results.length > 0 && options.htmlViewerAvailable
+      ? `\n> :page_facing_up: [View diff as HTML](${options.runUrl}) in the Artifacts section\n`
       : "";
 
   const footer = `---
@@ -456,7 +456,11 @@ export class GitHubService extends Context.Service<GitHubService>()("GitHubServi
         }
 
         if (options.commentStrategy === "create") {
-          yield* minimizeOldComments(octokit, context, pr.number, pr.head.sha, displayName);
+          yield* options.platform === "forgejo"
+            ? Effect.logInfo(
+                "Forgejo has no API to minimize outdated comments; leaving them visible",
+              )
+            : minimizeOldComments(octokit, context, pr.number, pr.head.sha, displayName);
         }
         yield* createComment(octokit, context, pr.number, commentBody);
         yield* Effect.logInfo("Posted new aggregated diff comment to PR");

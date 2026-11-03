@@ -1,5 +1,5 @@
 name: Nix Diff Action
-description: Compare Nix derivations between base and PR branches using dix
+description: Compare Nix derivations between base and PR branches on GitHub or Forgejo using dix
 author: natsukium
 
 branding:
@@ -32,7 +32,7 @@ inputs:
     required: false
     default: "."
   github-token:
-    description: GitHub token for commenting on PRs. Required for full and comment-only modes.
+    description: GitHub or Forgejo token for commenting on PRs. Required for full and comment-only modes.
     required: false
     default: ${{ github.token }}
   skip-no-change:

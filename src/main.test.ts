@@ -272,7 +272,7 @@ describe("formatAggregatedComment", () => {
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456", {
-      runId: "12345",
+      runUrl: "https://github.com/owner/repo/actions/runs/12345",
       repoUrl: "https://github.com/owner/repo",
       htmlViewerAvailable: true,
     });
@@ -295,7 +295,7 @@ describe("formatAggregatedComment", () => {
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456", {
-      runId: "12345",
+      runUrl: "https://github.com/owner/repo/actions/runs/12345",
       repoUrl: "https://github.com/owner/repo",
       htmlViewerAvailable: true,
     });
@@ -321,7 +321,7 @@ describe("formatAggregatedComment", () => {
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456", {
-      runId: "12345",
+      runUrl: "https://github.com/owner/repo/actions/runs/12345",
       repoUrl: "https://github.com/owner/repo",
       htmlViewerAvailable: false,
     });
@@ -342,7 +342,7 @@ describe("formatAggregatedComment", () => {
       },
     ];
     const comment = formatAggregatedComment(results, "abc123def456", {
-      runId: "12345",
+      runUrl: "https://github.com/owner/repo/actions/runs/12345",
       repoUrl: "https://github.com/owner/repo",
     });
 
@@ -1420,7 +1420,7 @@ describe("formatAggregatedComment with JSON reports", () => {
     }));
     const comment = formatAggregatedComment(results, "sha", {
       repoUrl: "https://github.com/owner/repo",
-      runId: "12345",
+      runUrl: "https://github.com/owner/repo/actions/runs/12345",
       htmlViewerAvailable: true,
     });
 
