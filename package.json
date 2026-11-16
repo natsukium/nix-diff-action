@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "@github/local-action": "7.0.1",
-    "@types/node": "25.9.9",
+    "@types/node": "26.6.6",
     "oxfmt": "0.75.0",
     "oxlint": "1.90.0",
     "typescript": "7.0.2",
